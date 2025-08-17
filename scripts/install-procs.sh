@@ -21,7 +21,7 @@ RUST_MIN_VERSION="1.74.0"
 # Default options
 BUILD_TYPE="release"      # debug, release, optimized
 MODE="install"            # config, build, install
-INSTALL_METHOD="binary"   # source, binary
+INSTALL_METHOD="source"   # source, binary
 SKIP_DEPS=false
 RUN_TESTS=false
 FORCE_INSTALL=false
@@ -46,8 +46,8 @@ Modes:
   -i, --install         Configure, build, and install (default)
 
 Installation Methods:
-  --source             Build from source (requires Rust toolchain)
-  --binary             Download pre-built binary (default, faster)
+  --source             Build from source (default, follows gearbox patterns)
+  --binary             Download pre-built binary (faster)
 
 Feature Options:
   --no-docker          Disable Docker container support
@@ -60,8 +60,8 @@ Options:
   -h, --help           Show this help message
 
 Examples:
-  $0                   # Default: binary installation with all features
-  $0 --source          # Build from source
+  $0                   # Default: source build with all features
+  $0 --binary          # Use pre-built binary (faster)
   $0 -d -c --source    # Debug build, config only (source)
   $0 -o --source       # Optimized musl build (source)
   $0 --no-docker       # Build without Docker support

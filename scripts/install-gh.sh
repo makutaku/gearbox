@@ -12,7 +12,7 @@ RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'; BLUE='\033[0;34m'; NC
 GH_DIR="cli"; GH_REPO="https://github.com/cli/cli.git"; GO_MIN_VERSION="1.21.0"
 
 # Defaults
-BUILD_TYPE="release"; MODE="install"; INSTALL_METHOD="binary"
+BUILD_TYPE="release"; MODE="install"; INSTALL_METHOD="source"
 SKIP_DEPS=false; RUN_TESTS=false; FORCE_INSTALL=false; SETUP_COMPLETIONS=true
 
 show_help() {
@@ -21,7 +21,7 @@ gh Installation Script for Debian Linux
 
 Build Types: -d/--debug, -r/--release (default), -o/--optimized
 Modes: -c/--config-only, -b/--build-only, -i/--install (default)
-Methods: --source (Go build), --binary (default), --package (apt)
+Methods: --source (Go build, default), --binary, --package (apt)
 Options: --skip-deps, --run-tests, --no-completions, --force, -h/--help
 
 About gh: GitHub CLI for repository management, PRs, issues, and workflows.

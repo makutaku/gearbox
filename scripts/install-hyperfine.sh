@@ -21,7 +21,7 @@ RUST_MIN_VERSION="1.76.0"
 # Default options
 BUILD_TYPE="release"      # debug, release, optimized
 MODE="install"            # config, build, install
-INSTALL_METHOD="binary"   # source, binary, package
+INSTALL_METHOD="source"   # source, binary, package
 SKIP_DEPS=false
 RUN_TESTS=false
 FORCE_INSTALL=false
@@ -45,8 +45,8 @@ Modes:
   -i, --install         Configure, build, and install (default)
 
 Installation Methods:
-  --source             Build from source (requires Rust toolchain)
-  --binary             Download pre-built binary (default, faster)
+  --source             Build from source (default, follows gearbox patterns)
+  --binary             Download pre-built binary (faster)
   --package            Use apt package manager (fastest, may be outdated)
 
 Options:
@@ -57,9 +57,9 @@ Options:
   -h, --help           Show this help message
 
 Examples:
-  $0                   # Default: binary installation
+  $0                   # Default: source build
+  $0 --binary          # Use pre-built binary (faster)
   $0 --package         # Use apt package (may be outdated)
-  $0 --source          # Build from source
   $0 -o --source       # Optimized source build
   $0 --skip-deps       # Skip dependency installation
 
