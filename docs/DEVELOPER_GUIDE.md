@@ -8,8 +8,9 @@ Complete technical guide for understanding the architecture and contributing to 
 2. [Development Setup](#development-setup)
 3. [Adding New Tools](#adding-new-tools)
 4. [Technical Standards](#technical-standards)
-5. [Testing and Validation](#testing-and-validation)
-6. [Advanced Topics](#advanced-topics)
+5. [Language-Specific Patterns](#language-specific-patterns)
+6. [Testing and Validation](#testing-and-validation)
+7. [Advanced Topics](#advanced-topics)
 
 ## Architecture Overview
 
@@ -50,13 +51,15 @@ This separation keeps the scripts repository clean while organizing build artifa
 
 **Shared Toolchains:** Install programming language toolchains once, use across multiple tools:
 - Go toolchain → fzf
-- Rust toolchain → ripgrep, fd
-- C/C++ toolchain → jq, ffmpeg, 7zip
+- Rust toolchain → ripgrep, fd, zoxide, yazi, fclones
+- Python toolchain → serena (virtual environment pattern)
+- C/C++ toolchain → jq, ffmpeg, 7zip, imagemagick
 
 **Optimal Installation Order:** 
 1. Go tools (fzf) - installs Go
-2. Rust tools (ripgrep, fd) - installs Rust, reuses toolchain
-3. C/C++ tools (jq, ffmpeg, 7zip) - independent builds
+2. Rust tools (ripgrep, fd, zoxide, yazi, fclones) - installs Rust, reuses toolchain
+3. Python tools (serena) - installs Python 3.11 + uv, uses virtual environment pattern
+4. C/C++ tools (jq, ffmpeg, 7zip, imagemagick) - independent builds
 
 ## Development Setup
 
@@ -451,6 +454,165 @@ verify_installation() {
     
     success "$TOOL_NAME verified successfully"
 }
+```
+
+## Language-Specific Patterns
+
+### Python Tools Pattern
+
+Python tools require special handling due to virtual environment best practices and externally managed Python environments (like Debian). Use this pattern for Python-based tools:
+
+#### Virtual Environment + Global Wrapper Pattern
+
+This pattern provides the best balance of Python best practices and gearbox consistency:
+
+```bash
+# Create virtual environment for tool isolation
+log "Creating virtual environment for $TOOL_NAME..."
+uv venv --python python3.11 .venv || error "Failed to create virtual environment"
+
+# Install tool in virtual environment
+log "Installing $TOOL_NAME in virtual environment..."
+if [[ -n "$UV_INSTALL_OPTIONS" ]]; then
+    uv pip install -e . $UV_INSTALL_OPTIONS || error "$TOOL_NAME installation failed"
+else
+    uv pip install -e . || error "$TOOL_NAME installation failed"
+fi
+
+# Create global wrapper script for system-wide access
+log "Creating global wrapper script..."
+WRAPPER_SCRIPT="/usr/local/bin/$TOOL_NAME"
+sudo tee "$WRAPPER_SCRIPT" > /dev/null << EOF
+#!/bin/bash
+# $TOOL_NAME wrapper script - executes from virtual environment
+exec "$TOOL_SOURCE_DIR/.venv/bin/$TOOL_NAME" "\$@"
+EOF
+
+sudo chmod +x "$WRAPPER_SCRIPT"
+
+# Verify wrapper works
+if [[ -x "$WRAPPER_SCRIPT" ]]; then
+    success "Global wrapper script created: $WRAPPER_SCRIPT"
+else
+    error "Failed to create executable wrapper script"
+fi
+```
+
+#### Python Dependency Management
+
+```bash
+# Check Python version compatibility
+PYTHON_MIN_VERSION="3.11.0"
+PYTHON_MAX_VERSION="3.12.0"
+
+# Version range checking function
+version_in_range() {
+    local version=$1
+    local min_version=$2
+    local max_version=$3
+    
+    if version_compare "$version" "$min_version" && ! version_compare "$version" "$max_version"; then
+        return 0
+    else
+        return 1
+    fi
+}
+
+# Find compatible Python
+PYTHON_CMD=""
+for py_cmd in python3.11 python3 python; do
+    if command -v "$py_cmd" &> /dev/null; then
+        PYTHON_VERSION=$($py_cmd --version 2>&1 | grep -oP '\d+\.\d+\.\d+')
+        if version_in_range "$PYTHON_VERSION" "$PYTHON_MIN_VERSION" "$PYTHON_MAX_VERSION"; then
+            PYTHON_CMD="$py_cmd"
+            break
+        fi
+    fi
+done
+
+# Install uv if needed (modern Python package installer)
+if ! command -v uv &> /dev/null; then
+    log "Installing uv (modern Python package installer)..."
+    curl -LsSf https://astral.sh/uv/install.sh | sh
+    source ~/.cargo/env || export PATH="$HOME/.cargo/bin:$PATH"
+fi
+```
+
+#### Build Type Mapping for Python Tools
+
+```bash
+# Map gearbox build types to Python-specific options
+get_python_build_options() {
+    case $BUILD_TYPE in
+        minimal)
+            echo "--no-dev"  # Core features only
+            ;;
+        standard)
+            echo ""          # Default recommended features
+            ;;
+        full)
+            echo "--all-extras"  # All optional dependencies
+            ;;
+    esac
+}
+```
+
+#### Why This Pattern?
+
+1. **Python Best Practices**: Uses virtual environments for proper isolation
+2. **System Compatibility**: Respects externally managed Python (Debian policy)
+3. **User Experience**: Maintains global command availability like other gearbox tools
+4. **Dependency Safety**: Prevents conflicts with system Python packages
+5. **Maintainability**: Virtual environment stays with source code as "build artifact"
+
+#### Alternative Approaches Considered
+
+- **`--system` installation**: Blocked by externally managed Python
+- **`--user` installation**: Complex PATH management, not globally available
+- **Global virtual environment**: Breaks isolation principle
+- **Per-tool system directories**: Too complex for the gearbox model
+
+### Rust Tools Pattern
+
+For reference, Rust tools follow this simpler pattern since Rust doesn't have system conflicts:
+
+```bash
+# Install/update Rust if needed
+if ! command -v cargo &> /dev/null; then
+    curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y
+    source ~/.cargo/env
+fi
+
+# Build with cargo
+case $BUILD_TYPE in
+    debug)
+        cargo build
+        ;;
+    release)
+        cargo build --release
+        ;;
+    optimized)
+        RUSTFLAGS="-C target-cpu=native -C lto=fat" cargo build --release
+        ;;
+esac
+
+# Install directly to system
+sudo cp target/release/$TOOL_NAME /usr/local/bin/
+```
+
+### Go Tools Pattern
+
+Go tools use direct installation:
+
+```bash
+# Install Go if needed
+if ! command -v go &> /dev/null; then
+    # Install Go via system packages or download
+fi
+
+# Build and install
+go build -o $TOOL_NAME
+sudo cp $TOOL_NAME /usr/local/bin/
 ```
 
 ## Testing and Validation

@@ -43,6 +43,9 @@ Navigation & File Management:
               
   fclones     Duplicate file finder (Rust)
               Efficient tool to find, remove, and deduplicate identical files
+              
+  serena      Coding agent toolkit (Python)
+              Semantic retrieval and editing capabilities for codebases
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -92,6 +95,7 @@ Available Tools:
   zoxide      Smart cd command (Rust)
   yazi        Terminal file manager (Rust)
   fclones     Duplicate file finder (Rust)
+  serena      Coding agent toolkit (Python)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -146,8 +150,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 10 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 11 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"
