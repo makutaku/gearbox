@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose")
 SELECTED_TOOLS=()
 
 # Show help
@@ -62,6 +62,10 @@ Tools (install all if none specified):
   tokei               Code statistics and line counting tool
   hyperfine           Command-line benchmarking tool
   gh                  GitHub CLI for repository management
+  dust                Better disk usage analyzer
+  sd                  Intuitive find & replace CLI
+  tealdeer            Fast tldr pages client
+  choose              Human-friendly cut/awk alternative
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -102,7 +106,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -300,6 +304,10 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        dust|sd|tealdeer|choose)
+            # These tools use simple installation, no build flags needed
+            echo ""
+            ;;
     esac
 }
 
@@ -397,7 +405,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -599,6 +607,34 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ gh: $(gh --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("gh")
+            fi
+            ;;
+        dust)
+            if command -v dust &> /dev/null; then
+                log "✓ dust: $(dust --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("dust")
+            fi
+            ;;
+        sd)
+            if command -v sd &> /dev/null; then
+                log "✓ sd: $(sd --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("sd")
+            fi
+            ;;
+        tealdeer)
+            if command -v tldr &> /dev/null; then
+                log "✓ tealdeer: $(tldr --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("tealdeer")
+            fi
+            ;;
+        choose)
+            if command -v choose &> /dev/null; then
+                log "✓ choose: $(choose --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("choose")
             fi
             ;;
     esac

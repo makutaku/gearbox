@@ -49,6 +49,10 @@ gearbox install --minimal fd ripgrep
 | **tokei** | Code statistics tool | Fast line counting for 200+ languages |
 | **hyperfine** | Command-line benchmarking | Statistical command execution analysis |
 | **gh** | GitHub CLI | Repository management, PRs, issues, workflows |
+| **dust** | Better disk usage analyzer | Intuitive directory size visualization |
+| **sd** | Find & replace CLI | Intuitive sed alternative for text replacement |
+| **tealdeer** | Fast tldr client | Quick command help without full man pages |
+| **choose** | Cut/awk alternative | Human-friendly text column selection |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
