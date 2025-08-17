@@ -24,7 +24,19 @@ gearbox list
 
 This shows all available tools with descriptions and usage examples.
 
-### One-Command Installation (Recommended)
+### Recommended: Install Specific Tools
+
+Install just the tools you need:
+
+```bash
+# Essential development tools
+gearbox install fd ripgrep fzf jq
+
+# Media processing tools  
+gearbox install ffmpeg 7zip
+```
+
+### Install All Tools (With Confirmation)
 
 Install all tools with optimal dependency management:
 
@@ -32,7 +44,7 @@ Install all tools with optimal dependency management:
 gearbox install
 ```
 
-This installs all 6 tools in optimal order, sharing dependencies efficiently.
+This will show a confirmation prompt before installing all 6 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
 
 ### Selective Installation
 

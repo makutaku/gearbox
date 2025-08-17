@@ -81,8 +81,8 @@ Available Tools:
 
 Examples:
   gearbox list                         # Show available tools
-  gearbox install                      # Install all tools
-  gearbox install fd ripgrep fzf       # Install specific tools
+  gearbox install fd ripgrep fzf       # Install specific tools (recommended)
+  gearbox install                      # Install all tools (with confirmation)
   gearbox install --minimal fd ripgrep # Fast installation
   gearbox install --maximum ffmpeg     # Full-featured build
 
@@ -126,6 +126,32 @@ fi
 # Handle commands
 case "$COMMAND" in
     install)
+        # Check if no tools specified (just "gearbox install" with no tool names)
+        if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
+            # Installing all tools - show confirmation
+            echo "You're about to install ALL 6 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, ffmpeg, 7zip"
+            echo ""
+            echo "This will:"
+            echo "  • Take 30-60 minutes depending on your system"
+            echo "  • Download and compile source code"
+            echo "  • Install to /usr/local/bin/"
+            echo "  • Require ~2GB of temporary build space"
+            echo ""
+            echo "Tip: Use 'gearbox list' to see available tools"
+            echo "     Use 'gearbox install fd ripgrep fzf' for specific tools"
+            echo ""
+            read -p "Continue with full installation? [y/N]: " -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                echo "Installation cancelled."
+                echo "Run 'gearbox list' to see available tools."
+                exit 0
+            fi
+            echo "Starting full installation..."
+            echo
+        fi
+        
         # Ensure we're in the build directory
         cd "$BUILD_DIR" || {
             error "Could not access build directory: $BUILD_DIR"
