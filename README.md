@@ -48,6 +48,7 @@ gearbox install --minimal fd ripgrep
 | **procs** | Modern ps replacement | Enhanced process info, tree view, colors |
 | **tokei** | Code statistics tool | Fast line counting for 200+ languages |
 | **hyperfine** | Command-line benchmarking | Statistical command execution analysis |
+| **gh** | GitHub CLI | Repository management, PRs, issues, workflows |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
