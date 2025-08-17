@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv")
 SELECTED_TOOLS=()
 
 # Show help
@@ -50,6 +50,7 @@ Tools (install all if none specified):
   yazi                Terminal file manager
   fclones             Duplicate file finder
   serena              Coding agent toolkit
+  uv                  Python package manager
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -90,7 +91,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -204,6 +205,13 @@ get_build_flag() {
                 maximum) echo "-f" ;;
             esac
             ;;
+        uv)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -301,7 +309,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -419,6 +427,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ serena: $(serena --version 2>/dev/null | head -n1 || echo 'installed')"
             else
                 FAILED_TOOLS+=("serena")
+            fi
+            ;;
+        uv)
+            if command -v uv &> /dev/null; then
+                log "✓ uv: $(uv --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("uv")
             fi
             ;;
     esac

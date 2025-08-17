@@ -37,6 +37,7 @@ gearbox install --minimal fd ripgrep
 | **yazi** | Terminal file manager | Vim-like keys, preview support |
 | **fclones** | Duplicate file finder | Efficient deduplication, link replacement |
 | **serena** | Coding agent toolkit | Semantic retrieval, IDE-like analysis |
+| **uv** | Python package manager | 10-100x faster than pip, unified tooling |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
