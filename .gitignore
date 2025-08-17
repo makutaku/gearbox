@@ -1,0 +1,19 @@
+# Build directories (where source code is cloned)
+build/
+cache/
+workspace/
+
+# Temporary files
+*.tmp
+*.log
+.DS_Store
+*~
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS generated files
+Thumbs.db
