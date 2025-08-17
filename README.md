@@ -44,6 +44,7 @@ gearbox install --minimal fd ripgrep
 | **eza** | Modern ls replacement | Git integration, tree view, enhanced colors |
 | **delta** | Syntax-highlighting pager | Git diff enhancement, word-level highlighting |
 | **lazygit** | Terminal UI for Git | Interactive Git operations, visual interface |
+| **bottom** | Cross-platform system monitor | Beautiful terminal resource monitoring |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |

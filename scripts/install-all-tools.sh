@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom")
 SELECTED_TOOLS=()
 
 # Show help
@@ -57,6 +57,7 @@ Tools (install all if none specified):
   eza                 Modern ls replacement with Git integration
   delta               Syntax-highlighting pager for Git and diff output
   lazygit             Terminal UI for Git operations
+  bottom              Cross-platform system monitor
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -97,7 +98,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -260,6 +261,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        bottom)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -357,7 +365,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -524,6 +532,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ lazygit: $(lazygit --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("lazygit")
+            fi
+            ;;
+        bottom)
+            if command -v btm &> /dev/null; then
+                log "✓ bottom: $(btm --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("bottom")
             fi
             ;;
     esac

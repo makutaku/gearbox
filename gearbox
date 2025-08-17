@@ -67,6 +67,9 @@ Navigation & File Management:
               
   lazygit     Terminal UI for Git (Go)
               Interactive Git operations with visual interface
+              
+  bottom      Cross-platform system monitor (Rust)
+              Beautiful terminal-based system resource monitoring
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -124,6 +127,7 @@ Available Tools:
   eza         Modern ls replacement (Rust)
   delta       Syntax-highlighting pager (Rust)
   lazygit     Terminal UI for Git (Go)
+  bottom      Cross-platform system monitor (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -178,8 +182,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 18 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 19 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"
