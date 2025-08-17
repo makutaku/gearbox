@@ -1,267 +1,105 @@
 # Contributing to Essential Tools Installer
 
-Thank you for your interest in contributing! This guide will help you add new tools and improve the installer.
+Thank you for your interest in contributing! This project helps developers set up essential command-line tools efficiently, and we welcome contributions of all kinds.
 
-## Development Setup
+## Ways to Contribute
 
-### 1. Fork and Clone
+- **Add new tools** - Expand the collection with additional essential tools
+- **Improve existing scripts** - Enhance build processes, add features, fix bugs  
+- **Improve documentation** - Help make the project more accessible
+- **Report issues** - Help us identify problems and improvement opportunities
+- **Share feedback** - Tell us about your experience using the installer
+
+## Quick Start for Contributors
+
+### 1. Get Set Up
+
 ```bash
 # Fork the repository on GitHub, then:
 git clone https://github.com/yourusername/gearbox.git
 cd gearbox
+
+# Test the current setup
+./tests/test-runner.sh
+./install-tools --minimal fd  # Try a simple installation
 ```
 
-### 2. Understand the Architecture
-Read the [Development Guide](docs/DEVELOPMENT.md) to understand:
-- Three-tier script architecture (config → orchestration → individual scripts)
-- Shared dependency management strategy
-- Build type system (minimal/standard/maximum)
+### 2. Understand the Project
 
-### 3. Set Up Development Environment
+- **For users**: Read the [User Guide](docs/USER_GUIDE.md) to understand what we're building
+- **For developers**: Read the [Developer Guide](docs/DEVELOPER_GUIDE.md) for architecture and technical details
+
+### 3. Make Your Contribution
+
+**Adding a new tool?** The [Developer Guide](docs/DEVELOPER_GUIDE.md) has a complete step-by-step process with templates and examples.
+
+**Other improvements?** Check existing patterns in the codebase and follow the same conventions.
+
+### 4. Test Your Changes
+
 ```bash
-# Test that existing scripts work
+# Basic validation
 ./tests/test-runner.sh
 
-# Try a minimal installation
-./install-tools --minimal fd
+# Test your specific changes
+./install-tools your-tool --run-tests
+
+# Test in a clean environment (recommended)
+docker run -it debian:bookworm bash
 ```
 
-## Adding New Tools
-
-### 1. Create Installation Script
-Create `scripts/install-newtool.sh` following the established pattern:
-
-**Required Elements:**
-- Source `config.sh` for shared functions and configuration
-- Support standard command-line flags: `--debug`, `--release`, `--optimized`
-- Include `--skip-deps`, `--run-tests`, `--force` options
-- Use shared logging functions: `log()`, `error()`, `success()`, `warning()`
-- Follow the standard directory structure (`~/tools/build/`, `/usr/local/bin/`)
-
-**Example Template:**
-```bash
-#!/bin/bash
-# Tool Name Installation Script for Debian Linux
-# Usage: ./install-newtool.sh [OPTIONS]
-
-set -e
-
-# Source shared configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
-source "$REPO_DIR/config.sh"
-
-# Tool configuration
-TOOL_DIR="newtool"
-TOOL_REPO="https://github.com/author/newtool.git"
-MIN_VERSION="1.0.0"
-
-# Standard options
-BUILD_TYPE="release"
-MODE="install"
-SKIP_DEPS=false
-RUN_TESTS=false
-FORCE_INSTALL=false
-
-# Help function, argument parsing, dependency installation,
-# build configuration, compilation, and installation logic
-```
-
-### 2. Update Main Installer
-Add your tool to `scripts/install-all-tools.sh`:
+### 5. Submit Your Contribution
 
 ```bash
-# Add to AVAILABLE_TOOLS array
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "newtool")
+# Create a feature branch
+git checkout -b your-feature-name
 
-# Add build flag mapping
-newtool)
-    case $BUILD_TYPE in
-        minimal) echo "-d" ;;
-        standard) echo "-r" ;;
-        maximum) echo "-o" ;;
-    esac
-    ;;
-
-# Add to installation order (consider dependencies)
-```
-
-### 3. Update Documentation
-- Add tool entry to main `README.md` tools table
-- Include usage examples in `docs/QUICK_START.md`
-- Document any special requirements or limitations
-
-## Script Guidelines
-
-### Command-Line Interface Standards
-All scripts must support:
-```bash
-# Build types
--d, --debug           # Debug build with symbols
--r, --release         # Optimized release build (default)
--o, --optimized       # Maximum optimizations
-
-# Common options
---skip-deps          # Skip dependency installation
---run-tests          # Run test suite after building
---force              # Force reinstallation
--h, --help           # Show help message
-```
-
-### Error Handling Best Practices
-```bash
-# Always use error handling
-set -e
-
-# Use shared logging functions
-log "Starting installation..."
-success "Installation completed!"
-error "Build failed: $error_message"
-warning "Non-critical issue detected"
-
-# Provide context in error messages
-error "Failed to compile $TOOL_NAME: missing dependency $DEP_NAME"
-```
-
-### Directory Management
-```bash
-# Use shared configuration
-source "$REPO_DIR/config.sh"
-
-# Follow standard paths
-TOOL_SOURCE_DIR="$(get_source_dir "$TOOL_NAME")"
-CACHE_FILE="$(get_cache_path "tool-download.tar.gz")"
-
-# Clean up on failure
-trap 'rm -rf "$TEMP_DIR"' EXIT
-```
-
-### Version and Dependency Handling
-```bash
-# Check existing installations
-if command -v "$TOOL_NAME" &> /dev/null && [[ "$FORCE_INSTALL" != true ]]; then
-    log "$TOOL_NAME already installed. Use --force to reinstall."
-    exit 0
-fi
-
-# Install dependencies conditionally
-if [[ "$SKIP_DEPS" != true ]]; then
-    install_dependencies
-fi
-
-# Verify installation
-if ! command -v "$TOOL_NAME" &> /dev/null; then
-    error "$TOOL_NAME installation failed - binary not found"
-fi
-```
-
-## Testing Guidelines
-
-### Basic Testing
-```bash
-# Run the basic test suite
-./tests/test-runner.sh
-
-# Test your specific script
-scripts/install-newtool.sh --debug --run-tests
-
-# Test via main installer
-./install-tools --minimal newtool --run-tests
-```
-
-### Manual Verification
-```bash
-# Verify installation success
-which newtool
-newtool --version
-
-# Test in clean environment (Docker recommended)
-docker run -it debian:bookworm /bin/bash
-# Clone repo and test installation
-```
-
-### Integration Testing
-```bash
-# Test with different build types
-scripts/install-newtool.sh --debug
-scripts/install-newtool.sh --release  
-scripts/install-newtool.sh --optimized
-
-# Test dependency skipping
-scripts/install-common-deps.sh
-scripts/install-newtool.sh --skip-deps
-
-# Test forced reinstallation
-scripts/install-newtool.sh --force
-```
-
-## Code Quality Standards
-
-### Script Structure
-1. **Header**: Tool description and usage
-2. **Configuration**: Tool-specific settings and defaults
-3. **Functions**: Helper functions and main logic
-4. **Argument parsing**: Handle command-line options
-5. **Dependency management**: Install or skip dependencies
-6. **Build process**: Configure, compile, install
-7. **Verification**: Confirm successful installation
-
-### Documentation Requirements
-- Clear usage examples in help text
-- Document any special build requirements
-- Include troubleshooting notes for common issues
-- Update relevant documentation files
-
-### Performance Considerations
-- Use optimal build flags for each build type
-- Consider parallel builds where appropriate
-- Minimize redundant dependency installations
-- Clean up temporary files and directories
-
-## Submission Process
-
-### Before Submitting
-1. **Test thoroughly**: Run tests on clean systems
-2. **Update documentation**: Ensure all docs are current
-3. **Follow conventions**: Match existing code style and patterns
-4. **Verify integration**: Test with main installer script
-
-### Pull Request Guidelines
-```bash
-# Create feature branch
-git checkout -b add-newtool-support
-
-# Make your changes
-# ... implement script and documentation updates ...
-
-# Test your changes
-./tests/test-runner.sh
-./install-tools newtool --run-tests
-
-# Commit with clear messages
+# Make your changes and commit
 git add .
-git commit -m "Add newtool installation script
+git commit -m "Brief description of changes"
 
-- Implement scripts/install-newtool.sh with standard options
-- Add newtool to main installer with build type support  
-- Update documentation with usage examples
-- Include test validation for successful installation"
-
-# Push and create pull request
-git push origin add-newtool-support
+# Push and create a pull request
+git push origin your-feature-name
 ```
 
-### Pull Request Description
-Include:
-- **Tool description**: What the tool does and why it's useful
-- **Implementation details**: Build process, dependencies, special considerations
-- **Testing performed**: Platforms tested, build types verified
-- **Documentation updates**: Files modified and examples added
+## What We Look For
+
+- **Follows existing patterns** - Look at current scripts for examples
+- **Well tested** - Works on clean systems and different scenarios
+- **Good documentation** - Help others understand your contribution
+- **User-focused** - Makes the installation experience better
 
 ## Getting Help
 
-- **Questions**: Open an issue with the "question" label
-- **Bugs**: Report issues with detailed reproduction steps
-- **Feature requests**: Propose new tools or improvements
+- **Questions about contributing?** Open an issue with the "question" label
+- **Need help with the architecture?** Check the [Developer Guide](docs/DEVELOPER_GUIDE.md)
+- **Found a bug?** Open an issue with detailed reproduction steps
+- **Have an idea?** Open an issue to discuss it before implementing
 
-Thank you for contributing to make development environment setup easier for everyone!
+## Community Guidelines
+
+- **Be respectful** - We welcome contributors of all experience levels
+- **Be collaborative** - Help others and ask for help when needed
+- **Be patient** - Reviews and discussions take time
+- **Be constructive** - Focus on making the project better
+
+## Recognition
+
+Contributors are recognized in several ways:
+- Listed in project contributors
+- Mentioned in release notes for significant contributions
+- Credited in commit messages and pull requests
+
+## Technical Details
+
+For complete technical information including:
+- Project architecture and design principles
+- Step-by-step guide for adding new tools
+- Coding standards and testing requirements
+- Build system details and advanced topics
+
+**See the [Developer Guide](docs/DEVELOPER_GUIDE.md)**
+
+---
+
+We appreciate your interest in making development environment setup easier for everyone! 🚀

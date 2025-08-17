@@ -2,62 +2,61 @@
 
 Automated installation scripts for essential command-line tools on Debian Linux. Build from source with optimized configurations and proper dependency management.
 
-## 🚀 Quick Start
+## Why This Project?
 
-### One-Command Installation
+- **Source builds** with optimized configurations for best performance
+- **Smart dependency management** - install once, share across tools
+- **Multiple build types** - minimal, standard, or maximum feature sets
+- **Battle-tested** - idempotent, safe, non-root installations
+
+## Quick Start
+
 ```bash
+# Install all essential tools
 ./install-tools
+
+# Install specific tools only  
+./install-tools fd ripgrep fzf jq
+
+# Fast builds for quick setup
+./install-tools --minimal
 ```
 
-### Selective Installation
-```bash
-./install-tools fd ripgrep fzf
-```
+## Available Tools
 
-### Different Build Types
-```bash
-./install-tools --minimal     # Fast, basic builds
-./install-tools --maximum     # Full-featured builds
-```
+| Tool | Description | Key Features |
+|------|-------------|--------------|
+| **fd** | Fast file finder | Intuitive syntax, parallel search |
+| **ripgrep** | Fast text search | PCRE2 support, multi-line search |
+| **fzf** | Fuzzy finder | Shell integration, preview support |
+| **jq** | JSON processor | JSONPath queries, streaming |
+| **ffmpeg** | Video/audio processing | Comprehensive codec support |
+| **7zip** | Compression tool | High compression ratios |
 
-## 📦 Available Tools
+## Documentation
 
-| Tool | Description | Language | Key Features |
-|------|-------------|----------|--------------|
-| **fd** | Fast file finder | Rust | Intuitive syntax, parallel search |
-| **ripgrep** | Fast text search | Rust | PCRE2 support, multi-line search |
-| **fzf** | Fuzzy finder | Go | Shell integration, preview support |
-| **jq** | JSON processor | C | JSONPath queries, streaming |
-| **ffmpeg** | Video/audio processing | C/C++ | Comprehensive codec support |
-| **7zip** | Compression tool | C/C++ | High compression ratios |
+### For Users
+📖 **[User Guide](docs/USER_GUIDE.md)** - Complete installation guide, usage examples, and troubleshooting
 
-## 🛠 Build Options
+### For Contributors  
+🛠 **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture, adding tools, and development guidelines
 
-Each tool supports multiple build types:
-- **Minimal**: Fast builds with essential features
-- **Standard**: Balanced performance and features (default)
-- **Maximum**: Full-featured builds with all optimizations
+👥 **[Contributing](CONTRIBUTING.md)** - Quick start for contributors
 
-## 🔧 Architecture
+## Key Features
 
-- **`config.sh`**: Shared configuration and utility functions
-- **`install-tools`**: Main wrapper script
-- **`scripts/`**: Individual installation scripts for each tool
-- **Installation directories**:
-  - Source builds: `~/tools/build/`
-  - Binaries: `/usr/local/bin/`
-  - Cache: `~/tools/cache/`
+- **Three build types**: Minimal (fast) → Standard (balanced) → Maximum (full-featured)
+- **Optimal installation order**: Shared toolchains (Go → Rust → C/C++)
+- **Safety first**: Non-root execution, existing installation detection
+- **Shell integration**: Automatic setup for fzf key bindings
+- **Clean architecture**: Source builds in `~/tools/build/`, binaries in `/usr/local/bin/`
 
-## 📚 Documentation
+## Requirements
 
-- [Quick Start Guide](docs/QUICK_START.md) - Get up and running fast
-- [Development Guide](docs/DEVELOPMENT.md) - Architecture and contribution guidelines
-- [Contributing](CONTRIBUTING.md) - How to add new tools
+- Debian Linux (or derivatives)
+- Internet connection for downloading sources
+- `sudo` access for system package installation
 
-## 🛡 Safety Features
+---
 
-- Non-root execution enforcement
-- Idempotent installations
-- Proper dependency management
-- Version conflict resolution
-- Existing installation detection
+**Ready to get started?** See the [User Guide](docs/USER_GUIDE.md) for comprehensive installation instructions and examples.
