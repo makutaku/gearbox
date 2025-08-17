@@ -16,6 +16,42 @@ else
     exit 1
 fi
 
+# Show available tools
+show_tools() {
+    cat << EOF
+Available Tools:
+
+Core Development Tools:
+  fd          Fast file finder (Rust)
+              Alternative to 'find' with intuitive syntax and parallel search
+              
+  ripgrep     Fast text search (Rust)
+              High-performance grep replacement with PCRE2 and multi-line support
+              
+  fzf         Fuzzy finder (Go)
+              Interactive file/command finder with shell integration
+              
+  jq          JSON processor (C)
+              Command-line JSON processor with powerful query capabilities
+
+Media & Compression:
+  ffmpeg      Video/audio processing (C/C++)
+              Comprehensive media processing suite with extensive codec support
+              
+  7zip        Compression tool (C/C++)
+              High-ratio compression tool with multiple format support
+
+Usage Examples:
+  gearbox install fd ripgrep fzf       # Install core development tools
+  gearbox install ffmpeg               # Install just ffmpeg
+  gearbox install --minimal fd ripgrep # Fast builds
+  gearbox install --maximum ffmpeg     # Full-featured build
+
+For detailed tool documentation, see: docs/USER_GUIDE.md
+
+EOF
+}
+
 # Show help
 show_help() {
     cat << EOF
@@ -25,6 +61,7 @@ Usage: gearbox [COMMAND] [OPTIONS] [TOOLS...]
 
 Commands:
   install     Install tools (default command)
+  list        Show available tools with descriptions
   help        Show this help message
 
 Install Options:
@@ -43,11 +80,11 @@ Available Tools:
   7zip        Compression tool (C/C++)
 
 Examples:
+  gearbox list                         # Show available tools
   gearbox install                      # Install all tools
   gearbox install fd ripgrep fzf       # Install specific tools
   gearbox install --minimal fd ripgrep # Fast installation
   gearbox install --maximum ffmpeg     # Full-featured build
-  gearbox help                         # Show this help
 
 For detailed documentation, see:
   docs/USER_GUIDE.md      - Complete user guide
@@ -63,6 +100,10 @@ if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
         install)
             COMMAND="install"
             shift
+            ;;
+        list|ls)
+            show_tools
+            exit 0
             ;;
         help|--help|-h)
             show_help

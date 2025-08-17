@@ -14,6 +14,16 @@ Complete guide for installing and using essential command-line tools.
 
 ## Getting Started
 
+### Discover Available Tools
+
+See what tools are available before installing:
+
+```bash
+gearbox list
+```
+
+This shows all available tools with descriptions and usage examples.
+
 ### One-Command Installation (Recommended)
 
 Install all tools with optimal dependency management:

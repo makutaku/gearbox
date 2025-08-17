@@ -12,6 +12,9 @@ Automated installation scripts for essential command-line tools on Debian Linux.
 ## Quick Start
 
 ```bash
+# See what tools are available
+gearbox list
+
 # Install all essential tools
 gearbox install
 
