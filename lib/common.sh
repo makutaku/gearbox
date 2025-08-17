@@ -441,6 +441,209 @@ cleanup_on_error() {
 }
 
 # =============================================================================
+# SECURITY FUNCTIONS
+# =============================================================================
+
+# @function secure_download
+# @brief Securely download file with checksum verification
+# @param $1 URL to download
+# @param $2 Output file path
+# @param $3 Expected SHA256 checksum (optional)
+# @param $4 Maximum file size in bytes (optional, default 100MB)
+secure_download() {
+    local url="$1"
+    local output_file="$2"
+    local expected_checksum="${3:-}"
+    local max_size="${4:-104857600}"  # 100MB default
+    
+    [[ -z "$url" ]] && error "Download URL not specified"
+    [[ -z "$output_file" ]] && error "Output file not specified"
+    
+    # Validate URL format
+    [[ "$url" =~ ^https?:// ]] || error "Invalid URL format: $url (must start with http:// or https://)"
+    
+    # Validate output path
+    validate_file_path "$(basename "$output_file")"
+    
+    log "Securely downloading from $url..."
+    
+    # Download with size limit and timeout
+    curl --fail --silent --show-error --location \
+         --max-filesize "$max_size" \
+         --max-time 300 \
+         --proto '=https,http' \
+         --tlsv1.2 \
+         --output "$output_file" \
+         "$url" || error "Failed to download $url"
+    
+    # Verify file was actually downloaded
+    [[ -f "$output_file" ]] || error "Downloaded file not found: $output_file"
+    
+    # Checksum verification if provided
+    if [[ -n "$expected_checksum" ]]; then
+        log "Verifying checksum..."
+        local actual_checksum
+        actual_checksum=$(sha256sum "$output_file" | cut -d' ' -f1)
+        
+        if [[ "$actual_checksum" != "$expected_checksum" ]]; then
+            rm -f "$output_file"  # Remove corrupted download
+            error "Checksum verification failed! Expected: $expected_checksum, Got: $actual_checksum"
+        fi
+        
+        success "Checksum verification passed"
+    else
+        warning "No checksum provided - download integrity not verified"
+    fi
+    
+    success "Secure download completed: $output_file"
+}
+
+# @function secure_download_and_pipe
+# @brief Securely download and pipe to command (for install scripts)
+# @param $1 URL to download
+# @param $2 Command to pipe to
+# @param $3 Expected content pattern (optional)
+secure_download_and_pipe() {
+    local url="$1"
+    local pipe_command="$2"
+    local expected_pattern="${3:-}"
+    
+    [[ -z "$url" ]] && error "Download URL not specified"
+    [[ -z "$pipe_command" ]] && error "Pipe command not specified"
+    
+    # Validate URL
+    [[ "$url" =~ ^https:// ]] || error "Only HTTPS URLs allowed for piped downloads: $url"
+    
+    # Create temporary file for inspection
+    local temp_file
+    temp_file=$(mktemp)
+    
+    # Download to temp file first
+    log "Downloading script from $url for inspection..."
+    curl --fail --silent --show-error --location \
+         --max-filesize 10485760 \
+         --max-time 60 \
+         --proto '=https' \
+         --tlsv1.2 \
+         --output "$temp_file" \
+         "$url" || {
+        rm -f "$temp_file"
+        error "Failed to download $url"
+    }
+    
+    # Basic content validation
+    if [[ -n "$expected_pattern" ]]; then
+        if ! grep -q "$expected_pattern" "$temp_file"; then
+            rm -f "$temp_file"
+            error "Downloaded script does not contain expected pattern: $expected_pattern"
+        fi
+    fi
+    
+    # Check for suspicious content
+    if grep -q -E "(curl.*\|.*sh|wget.*\|.*sh|rm.*-rf.*\$|>\s*/dev/)" "$temp_file"; then
+        warning "Downloaded script contains potentially dangerous patterns"
+        warning "Please review the script before continuing: $temp_file"
+        read -p "Continue anyway? [y/N]: " -n 1 -r
+        echo
+        if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            rm -f "$temp_file"
+            error "Installation cancelled by user"
+        fi
+    fi
+    
+    # Execute the piped command
+    log "Executing: $pipe_command"
+    cat "$temp_file" | eval "$pipe_command" || {
+        rm -f "$temp_file"
+        error "Piped command failed: $pipe_command"
+    }
+    
+    # Clean up
+    rm -f "$temp_file"
+    success "Secure download and pipe completed"
+}
+
+# @function secure_execute_script
+# @brief Safely execute installation script with validation
+# @param $1 Script path
+# @param $@ Additional arguments
+secure_execute_script() {
+    local script_path="$1"
+    shift
+    local args=("$@")
+    
+    [[ -z "$script_path" ]] && error "Script path not specified"
+    
+    # Validate script exists and is executable
+    [[ -f "$script_path" ]] || error "Script not found: $script_path"
+    [[ -x "$script_path" ]] || error "Script not executable: $script_path"
+    
+    # Validate script path for security
+    validate_file_path "$(basename "$script_path")"
+    
+    # Validate all arguments
+    for arg in "${args[@]}"; do
+        # Check for command injection attempts
+        [[ "$arg" =~ [;\|&\$\`] ]] && error "Invalid argument detected: $arg"
+        
+        # Validate flag format
+        if [[ "$arg" =~ ^-- ]]; then
+            [[ "$arg" =~ ^--[a-zA-Z0-9-]+$ ]] || error "Invalid flag format: $arg"
+        elif [[ "$arg" =~ ^- ]]; then
+            [[ "$arg" =~ ^-[a-zA-Z0-9]+$ ]] || error "Invalid flag format: $arg"
+        fi
+    done
+    
+    log "Executing script: $script_path ${args[*]}"
+    
+    # Execute safely without eval
+    "$script_path" "${args[@]}" || error "Script execution failed: $script_path"
+    
+    success "Script executed successfully: $script_path"
+}
+
+# @function validate_url
+# @brief Validate URL for security
+# @param $1 URL to validate
+validate_url() {
+    local url="$1"
+    
+    [[ -z "$url" ]] && error "URL not specified"
+    
+    # Check URL format
+    [[ "$url" =~ ^https?:// ]] || error "Invalid URL format: $url"
+    
+    # Check for suspicious patterns
+    [[ "$url" =~ [[:space:]\|&\;] ]] && error "Invalid characters in URL: $url"
+    
+    # Limit URL length
+    [[ ${#url} -gt 500 ]] && error "URL too long: $url"
+    
+    return 0
+}
+
+# @function sanitize_filename
+# @brief Sanitize filename for security
+# @param $1 Filename to sanitize
+# @return Sanitized filename
+sanitize_filename() {
+    local filename="$1"
+    
+    [[ -z "$filename" ]] && error "Filename not specified"
+    
+    # Remove dangerous characters and replace with underscores
+    filename=$(echo "$filename" | tr -cd '[:alnum:]._-' | tr ' ' '_')
+    
+    # Limit length
+    [[ ${#filename} -gt 100 ]] && filename="${filename:0:100}"
+    
+    # Ensure not empty after sanitization
+    [[ -z "$filename" ]] && filename="sanitized_file"
+    
+    echo "$filename"
+}
+
+# =============================================================================
 # UTILITY FUNCTIONS
 # =============================================================================
 
@@ -478,18 +681,62 @@ safe_sudo_copy() {
     [[ -z "$src_file" ]] && error "Source file not specified"
     [[ -z "$dest_file" ]] && error "Destination file not specified"
     
-    # Validate source file exists
+    # Validate source file exists and is readable
     [[ -f "$src_file" ]] || error "Source file does not exist: $src_file"
+    [[ -r "$src_file" ]] || error "Source file not readable: $src_file"
     
-    # Validate paths
+    # Validate file paths for security
     validate_file_path "$(basename "$src_file")"
     validate_file_path "$(basename "$dest_file")"
     
-    # Perform copy
-    sudo cp "$src_file" "$dest_file" || error "Failed to copy $src_file to $dest_file"
-    sudo chmod +x "$dest_file" || error "Failed to make $dest_file executable"
+    # Ensure source file is not a symlink to prevent attacks
+    [[ -L "$src_file" ]] && error "Source file is a symbolic link, refusing to copy: $src_file"
     
-    success "Copied $src_file to $dest_file"
+    # Validate destination directory exists and is secure
+    local dest_dir
+    dest_dir="$(dirname "$dest_file")"
+    [[ -d "$dest_dir" ]] || error "Destination directory does not exist: $dest_dir"
+    
+    # Restrict destination to safe directories
+    case "$dest_dir" in
+        /usr/local/bin|/opt/*/bin|"$HOME"/.local/bin)
+            # Allow these safe installation directories
+            ;;
+        *)
+            error "Unsafe destination directory: $dest_dir. Only /usr/local/bin, /opt/*/bin, and ~/.local/bin are allowed."
+            ;;
+    esac
+    
+    # Get file size for verification
+    local src_size
+    src_size=$(stat -c%s "$src_file" 2>/dev/null || echo "0")
+    
+    log "Copying $src_file to $dest_file (size: $src_size bytes)"
+    
+    # Perform copy with error checking
+    if ! sudo cp "$src_file" "$dest_file"; then
+        error "Failed to copy $src_file to $dest_file"
+    fi
+    
+    # Verify copy was successful
+    [[ -f "$dest_file" ]] || error "Copy failed - destination file not found: $dest_file"
+    
+    local dest_size
+    dest_size=$(stat -c%s "$dest_file" 2>/dev/null || echo "0")
+    
+    [[ "$src_size" == "$dest_size" ]] || error "Copy verification failed - size mismatch (src: $src_size, dest: $dest_size)"
+    
+    # Set secure permissions
+    sudo chmod 755 "$dest_file" || error "Failed to set permissions on $dest_file"
+    
+    # Verify ownership is root (for system directories)
+    if [[ "$dest_dir" == "/usr/local/bin" ]]; then
+        local owner
+        owner=$(stat -c%U "$dest_file" 2>/dev/null || echo "unknown")
+        [[ "$owner" == "root" ]] || warning "Destination file owner is not root: $owner"
+    fi
+    
+    success "Securely copied $src_file to $dest_file"
 }
 
 # =============================================================================

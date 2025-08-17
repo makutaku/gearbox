@@ -203,16 +203,20 @@ install_from_binary() {
     version=$(curl -s "https://api.github.com/repos/$GITHUB_REPO/releases/latest" | grep '"tag_name"' | cut -d '"' -f 4)
     [[ -z "$version" ]] && error "Failed to fetch latest version"
     
-    # Download and extract
+    # Download and extract securely
     local download_url="https://github.com/$GITHUB_REPO/releases/download/${version}/dust-${version}-${arch_tag}.tar.gz"
-    log "Downloading $TOOL_NAME $version for $arch_tag..."
+    local filename="dust-${version}-${arch_tag}.tar.gz"
     
     local temp_dir
     temp_dir=$(create_temp_dir)
     cd "$temp_dir"
     
-    curl -fLO "$download_url" || error "Failed to download $TOOL_NAME"
-    tar -xzf "$(basename "$download_url")" || error "Failed to extract archive"
+    # Use secure download function
+    local temp_file="$temp_dir/$filename"
+    secure_download "$download_url" "$temp_file"
+    
+    # Extract archive
+    tar -xzf "$temp_file" || error "Failed to extract archive"
     
     # Find and install binary
     local dust_bin

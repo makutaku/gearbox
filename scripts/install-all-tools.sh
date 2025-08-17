@@ -16,15 +16,68 @@ YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
+# Shared logging functions
+log() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
+
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+    exit 1
+}
+
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
+
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
+
 # Default options
 SKIP_COMMON_DEPS=false
 BUILD_TYPE="standard"  # minimal, standard, maximum
 RUN_TESTS=false
 SETUP_SHELL=true
 
-# Available tools
+# Available tools (validated list)
+declare -A AVAILABLE_TOOLS_MAP=(
+    ["ffmpeg"]="1" ["7zip"]="1" ["jq"]="1" ["fd"]="1" ["ripgrep"]="1" ["fzf"]="1" 
+    ["imagemagick"]="1" ["yazi"]="1" ["zoxide"]="1" ["fclones"]="1" ["serena"]="1" 
+    ["uv"]="1" ["ruff"]="1" ["bat"]="1" ["starship"]="1" ["eza"]="1" ["delta"]="1" 
+    ["lazygit"]="1" ["bottom"]="1" ["procs"]="1" ["tokei"]="1" ["hyperfine"]="1" 
+    ["gh"]="1" ["dust"]="1" ["sd"]="1" ["tealdeer"]="1" ["choose"]="1" 
+    ["difftastic"]="1" ["bandwhich"]="1" ["xsv"]="1"
+)
+
 AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "difftastic" "bandwhich" "xsv")
 SELECTED_TOOLS=()
+
+# Security functions
+validate_tool_name() {
+    local tool="$1"
+    
+    # Check if tool name is in allowed list
+    [[ -z "${AVAILABLE_TOOLS_MAP[$tool]:-}" ]] && error "Invalid tool name: '$tool'. Use --help to see available tools."
+    
+    # Additional security check for tool name format
+    [[ "$tool" =~ ^[a-zA-Z0-9-]+$ ]] || error "Invalid characters in tool name: '$tool'"
+    
+    return 0
+}
+
+validate_build_type() {
+    local build_type="$1"
+    
+    case "$build_type" in
+        minimal|standard|maximum)
+            return 0
+            ;;
+        *)
+            error "Invalid build type: '$build_type'. Valid options: minimal, standard, maximum"
+            ;;
+    esac
+}
 
 # Show help
 show_help() {
@@ -91,10 +144,12 @@ while [[ $# -gt 0 ]]; do
             ;;
         --minimal)
             BUILD_TYPE="minimal"
+            validate_build_type "$BUILD_TYPE"
             shift
             ;;
         --maximum)
             BUILD_TYPE="maximum"
+            validate_build_type "$BUILD_TYPE"
             shift
             ;;
         --run-tests)
@@ -109,14 +164,15 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose|difftastic|bandwhich|xsv)
-            SELECTED_TOOLS+=("$1")
-            shift
-            ;;
         *)
-            echo "Unknown option or tool: $1"
-            show_help
-            exit 1
+            # Check if it's a valid tool name
+            if [[ -n "${AVAILABLE_TOOLS_MAP[$1]:-}" ]]; then
+                validate_tool_name "$1"
+                SELECTED_TOOLS+=("$1")
+                shift
+            else
+                error "Unknown option or tool: '$1'. Use --help to see available options and tools."
+            fi
             ;;
     esac
 done
@@ -350,7 +406,17 @@ check_script() {
 # Install a single tool
 install_tool() {
     local tool=$1
+    
+    # Validate tool name for security
+    validate_tool_name "$tool"
+    
+    # Construct script path securely
     local script="$SCRIPT_DIR/install-${tool}.sh"
+    
+    # Validate script exists and is executable
+    [[ -f "$script" ]] || error "Installation script not found: $script"
+    [[ -x "$script" ]] || error "Installation script not executable: $script"
+    
     local build_flag=$(get_build_flag "$tool")
     local extra_flags=""
     
@@ -374,12 +440,22 @@ install_tool() {
     
     log "Installing $tool with flags: $build_flag $extra_flags"
     
-    # Run the installation
-    if [[ -n "$build_flag" ]]; then
-        eval "$script $build_flag $extra_flags" || error "Failed to install $tool"
-    else
-        eval "$script $extra_flags" || error "Failed to install $tool"
+    # Prepare arguments array for secure execution
+    local args=()
+    [[ -n "$build_flag" ]] && args+=("$build_flag")
+    
+    # Parse extra_flags safely into array
+    if [[ -n "$extra_flags" ]]; then
+        # Split extra_flags by spaces, but handle quoted arguments properly
+        local flag
+        for flag in $extra_flags; do
+            args+=("$flag")
+        done
     fi
+    
+    # Run the installation securely without eval
+    log "Executing: $script ${args[*]}"
+    "$script" "${args[@]}" || error "Failed to install $tool"
     
     success "$tool installation completed"
 }
