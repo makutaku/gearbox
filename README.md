@@ -35,6 +35,7 @@ gearbox install --minimal fd ripgrep
 | **jq** | JSON processor | JSONPath queries, streaming |
 | **zoxide** | Smart cd command | Frecency-based navigation |
 | **yazi** | Terminal file manager | Vim-like keys, preview support |
+| **fclones** | Duplicate file finder | Efficient deduplication, link replacement |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |

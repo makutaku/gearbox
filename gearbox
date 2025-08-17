@@ -40,6 +40,9 @@ Navigation & File Management:
               
   yazi        Terminal file manager (Rust)
               Fast terminal file manager with vim-like keybindings and preview
+              
+  fclones     Duplicate file finder (Rust)
+              Efficient tool to find, remove, and deduplicate identical files
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -88,6 +91,7 @@ Available Tools:
   jq          JSON processor (C)
   zoxide      Smart cd command (Rust)
   yazi        Terminal file manager (Rust)
+  fclones     Duplicate file finder (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -142,8 +146,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 9 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 10 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"

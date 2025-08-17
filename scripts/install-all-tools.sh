@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones")
 SELECTED_TOOLS=()
 
 # Show help
@@ -48,6 +48,7 @@ Tools (install all if none specified):
   jq                  JSON processor
   zoxide              Smart cd command
   yazi                Terminal file manager
+  fclones             Duplicate file finder
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -88,7 +89,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -188,6 +189,13 @@ get_build_flag() {
             # Return empty string to use default behavior
             echo ""
             ;;
+        fclones)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -285,7 +293,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -389,6 +397,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ zoxide: $(zoxide --version)"
             else
                 FAILED_TOOLS+=("zoxide")
+            fi
+            ;;
+        fclones)
+            if command -v fclones &> /dev/null; then
+                log "✓ fclones: $(fclones --version | head -n1)"
+            else
+                FAILED_TOOLS+=("fclones")
             fi
             ;;
     esac
