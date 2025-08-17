@@ -46,6 +46,7 @@ gearbox install --minimal fd ripgrep
 | **lazygit** | Terminal UI for Git | Interactive Git operations, visual interface |
 | **bottom** | Cross-platform system monitor | Beautiful terminal resource monitoring |
 | **procs** | Modern ps replacement | Enhanced process info, tree view, colors |
+| **tokei** | Code statistics tool | Fast line counting for 200+ languages |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |

@@ -73,6 +73,9 @@ Navigation & File Management:
               
   procs       Modern ps replacement (Rust)
               Enhanced process information with tree view and colors
+              
+  tokei       Code statistics tool (Rust)
+              Fast line counting for 200+ programming languages
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -132,6 +135,7 @@ Available Tools:
   lazygit     Terminal UI for Git (Go)
   bottom      Cross-platform system monitor (Rust)
   procs       Modern ps replacement (Rust)
+  tokei       Code statistics tool (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -186,8 +190,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 20 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 21 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, tokei, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"
