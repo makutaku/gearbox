@@ -21,7 +21,7 @@ cd gearbox
 
 # Test the current setup
 ./tests/test-runner.sh
-./install-tools --minimal fd  # Try a simple installation
+gearbox install --minimal fd  # Try a simple installation
 ```
 
 ### 2. Understand the Project
@@ -42,7 +42,7 @@ cd gearbox
 ./tests/test-runner.sh
 
 # Test your specific changes
-./install-tools your-tool --run-tests
+gearbox install your-tool --run-tests
 
 # Test in a clean environment (recommended)
 docker run -it debian:bookworm bash

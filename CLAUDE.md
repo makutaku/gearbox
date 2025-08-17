@@ -9,12 +9,12 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ## Common Commands
 
 ### Installation Commands
-- `./install-tools` - Install all tools with standard builds
-- `./install-tools --minimal` - Install all tools with minimal/fast builds  
-- `./install-tools --maximum` - Install all tools with full-featured builds
-- `./install-tools fd ripgrep fzf` - Install only specified tools
-- `./install-tools --skip-common-deps` - Skip common dependency installation
-- `./install-tools --run-tests` - Run test suites for tools that support it
+- `gearbox` - Install all tools with standard builds
+- `gearbox --minimal` - Install all tools with minimal/fast builds  
+- `gearbox --maximum` - Install all tools with full-featured builds
+- `gearbox fd ripgrep fzf` - Install only specified tools
+- `gearbox --skip-common-deps` - Skip common dependency installation
+- `gearbox --run-tests` - Run test suites for tools that support it
 
 ### Testing
 - `./tests/test-runner.sh` - Run basic validation tests for installation scripts
@@ -30,7 +30,7 @@ Each tool has its own script in `scripts/`:
 ### Directory Structure
 - `scripts/` - Individual installation scripts for each tool
 - `config.sh` - Shared configuration and utility functions
-- `install-tools` - Main wrapper script that delegates to `scripts/install-all-tools.sh`
+- `gearbox` - Main CLI script that delegates to `scripts/install-all-tools.sh`
 - `docs/` - Documentation files
 - `examples/` - Example usage scripts
 - `tests/` - Basic validation tests

@@ -19,7 +19,7 @@ Complete guide for installing and using essential command-line tools.
 Install all tools with optimal dependency management:
 
 ```bash
-./install-tools
+gearbox install
 ```
 
 This installs all 6 tools in optimal order, sharing dependencies efficiently.
@@ -30,13 +30,13 @@ Install only the tools you need:
 
 ```bash
 # Essential development tools
-./install-tools fd ripgrep fzf jq
+gearbox install fd ripgrep fzf jq
 
 # Media processing tools
-./install-tools ffmpeg 7zip
+gearbox install ffmpeg 7zip
 
 # Just file tools
-./install-tools fd ripgrep fzf
+gearbox install fd ripgrep fzf
 ```
 
 ### Verify Installation
@@ -69,29 +69,29 @@ Each tool supports three build types:
 
 ```bash
 # Fast installation for quick setup
-./install-tools --minimal
+gearbox install --minimal
 
 # Maximum features for production use
-./install-tools --maximum fd ripgrep ffmpeg
+gearbox install --maximum fd ripgrep ffmpeg
 
 # Standard build (default)
-./install-tools fd ripgrep fzf
+gearbox install fd ripgrep fzf
 ```
 
 ### Advanced Installation Options
 
 ```bash
 # Skip dependency installation (if already installed)
-./install-tools --skip-common-deps fd ripgrep
+gearbox install --skip-common-deps fd ripgrep
 
 # Include test suites for validation
-./install-tools --run-tests fd ripgrep jq
+gearbox install --run-tests fd ripgrep jq
 
 # Install without shell integration
-./install-tools --no-shell fzf
+gearbox install --no-shell fzf
 
 # Combine options
-./install-tools --minimal --run-tests fd ripgrep
+gearbox install --minimal --run-tests fd ripgrep
 ```
 
 ### Dependencies Handled Automatically
@@ -256,13 +256,13 @@ Essential tools for development:
 
 ```bash
 # Core development tools
-./install-tools fd ripgrep fzf jq
+gearbox install fd ripgrep fzf jq
 
 # With testing validation
-./install-tools --run-tests fd ripgrep fzf jq
+gearbox install --run-tests fd ripgrep fzf jq
 
 # Minimal for CI/containers
-./install-tools --minimal fd ripgrep
+gearbox install --minimal fd ripgrep
 ```
 
 ### Media Processing Setup
@@ -271,7 +271,7 @@ Tools for media work:
 
 ```bash
 # Media tools with full features
-./install-tools --maximum ffmpeg 7zip
+gearbox install --maximum ffmpeg 7zip
 
 # Just ffmpeg with specific features
 scripts/install-ffmpeg.sh --maximum --run-tests
@@ -295,7 +295,7 @@ Fast setup with essential tools:
 
 ```bash
 # One command for essential tools
-./install-tools --minimal fd ripgrep fzf jq
+gearbox install --minimal fd ripgrep fzf jq
 ```
 
 ## Shell Integration

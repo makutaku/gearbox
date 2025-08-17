@@ -89,7 +89,7 @@ cat scripts/install-ripgrep.sh
 ./tests/test-runner.sh
 
 # Try a minimal installation to understand the flow
-./install-tools --minimal fd
+gearbox --minimal fd
 
 # Examine the build directory structure
 ls -la ~/tools/build/
@@ -465,7 +465,7 @@ verify_installation() {
 scripts/install-newtool.sh --debug --run-tests
 
 # Test via main installer
-./install-tools --minimal newtool --run-tests
+gearbox --minimal newtool --run-tests
 ```
 
 ### Manual Verification
@@ -620,7 +620,7 @@ git checkout -b add-newtool-support
 
 # Test thoroughly
 ./tests/test-runner.sh
-./install-tools newtool --run-tests
+gearbox newtool --run-tests
 
 # Commit with descriptive message
 git add .

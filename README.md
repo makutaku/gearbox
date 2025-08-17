@@ -13,13 +13,13 @@ Automated installation scripts for essential command-line tools on Debian Linux.
 
 ```bash
 # Install all essential tools
-./install-tools
+gearbox install
 
 # Install specific tools only  
-./install-tools fd ripgrep fzf jq
+gearbox install fd ripgrep fzf jq
 
 # Fast builds for quick setup
-./install-tools --minimal
+gearbox install --minimal
 ```
 
 ## Available Tools

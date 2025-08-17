@@ -1,0 +1,99 @@
+#!/bin/bash
+
+# Gearbox - Essential Tools Installer
+# Main command-line interface for installing development tools
+
+set -e
+
+# Find the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
+# Source configuration
+if [[ -f "$SCRIPT_DIR/config.sh" ]]; then
+    source "$SCRIPT_DIR/config.sh"
+else
+    echo "Error: config.sh not found in $SCRIPT_DIR"
+    exit 1
+fi
+
+# Show help
+show_help() {
+    cat << EOF
+Gearbox - Essential Tools Installer
+
+Usage: gearbox [COMMAND] [OPTIONS] [TOOLS...]
+
+Commands:
+  install     Install tools (default command)
+  help        Show this help message
+
+Install Options:
+  --minimal           Fast builds with essential features
+  --maximum           Full-featured builds with all optimizations
+  --skip-common-deps  Skip common dependency installation
+  --run-tests         Run test suites for validation
+  --no-shell          Skip shell integration setup (fzf)
+
+Available Tools:
+  fd          Fast file finder (Rust)
+  ripgrep     Fast text search (Rust) 
+  fzf         Fuzzy finder (Go)
+  jq          JSON processor (C)
+  ffmpeg      Video/audio processing (C/C++)
+  7zip        Compression tool (C/C++)
+
+Examples:
+  gearbox install                      # Install all tools
+  gearbox install fd ripgrep fzf       # Install specific tools
+  gearbox install --minimal fd ripgrep # Fast installation
+  gearbox install --maximum ffmpeg     # Full-featured build
+  gearbox help                         # Show this help
+
+For detailed documentation, see:
+  docs/USER_GUIDE.md      - Complete user guide
+  docs/DEVELOPER_GUIDE.md - Technical documentation
+
+EOF
+}
+
+# Parse command
+COMMAND=""  # No default command - require explicit action
+if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
+    case "$1" in
+        install)
+            COMMAND="install"
+            shift
+            ;;
+        help|--help|-h)
+            show_help
+            exit 0
+            ;;
+        *)
+            # If first arg is not a known command and doesn't start with --, 
+            # assume it's a tool name and use install command
+            COMMAND="install"
+            ;;
+    esac
+else
+    # No arguments provided - show help instead of auto-installing everything
+    if [[ $# -eq 0 ]]; then
+        show_help
+        exit 0
+    fi
+fi
+
+# Handle commands
+case "$COMMAND" in
+    install)
+        # Ensure we're in the build directory
+        cd "$BUILD_DIR" || {
+            error "Could not access build directory: $BUILD_DIR"
+        }
+        
+        # Run the main installer
+        exec "$SCRIPT_DIR/scripts/install-all-tools.sh" "$@"
+        ;;
+    *)
+        error "Unknown command: $COMMAND. Use 'gearbox help' for usage information."
+        ;;
+esac
