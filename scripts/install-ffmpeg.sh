@@ -301,7 +301,7 @@ log "Configuring FFmpeg with $BUILD_TYPE settings..."
 CONFIGURE_OPTIONS=$(get_configure_options)
 log "Configure options: $CONFIGURE_OPTIONS"
 
-eval "./configure $CONFIGURE_OPTIONS" || error "Configuration failed"
+configure_with_options "./configure" "$CONFIGURE_OPTIONS"
 
 success "Configuration completed successfully"
 

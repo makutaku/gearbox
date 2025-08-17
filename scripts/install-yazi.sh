@@ -471,9 +471,9 @@ fi
 log "Building yazi (this may take a while)..."
 
 if [[ -n "$CARGO_BUILD_OPTIONS" ]]; then
-    eval "cargo build $CARGO_BUILD_OPTIONS" || error "Build failed"
+    build_with_options cargo "$CARGO_BUILD_OPTIONS"
 else
-    cargo build || error "Build failed"
+    execute_command_safely cargo build
 fi
 
 # Verify build output

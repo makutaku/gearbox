@@ -316,9 +316,9 @@ fi
 
 # Run configure with appropriate options
 if [[ -n "$CFLAGS_OPTIONS" ]]; then
-    eval "$CFLAGS_OPTIONS ./configure $CONFIGURE_OPTIONS" || error "Configuration failed"
+    env $CFLAGS_OPTIONS configure_with_options "./configure" "$CONFIGURE_OPTIONS"
 else
-    eval "./configure $CONFIGURE_OPTIONS" || error "Configuration failed"
+    configure_with_options "./configure" "$CONFIGURE_OPTIONS"
 fi
 
 success "Configuration completed successfully"
@@ -340,7 +340,7 @@ NPROC=$(nproc)
 log "Using $NPROC CPU cores for parallel build"
 
 if [[ -n "$MAKE_OPTIONS" ]]; then
-    eval "make -j$NPROC $MAKE_OPTIONS" || error "Build failed"
+    build_with_options make "-j$NPROC" "$MAKE_OPTIONS"
 else
     make -j$NPROC || error "Build failed"
 fi

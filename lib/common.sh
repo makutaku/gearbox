@@ -740,6 +740,72 @@ safe_sudo_copy() {
 }
 
 # =============================================================================
+# SAFE COMMAND EXECUTION
+# =============================================================================
+
+# @function execute_command_safely
+# @brief Safely execute commands without eval, preventing injection attacks
+# @param $@ Command and arguments to execute
+execute_command_safely() {
+    local cmd=("$@")
+    
+    # Validate that we have at least one argument
+    [[ ${#cmd[@]} -eq 0 ]] && error "No command specified"
+    
+    # Log the command being executed
+    debug "Executing command: ${cmd[*]}"
+    
+    # Execute the command array safely
+    "${cmd[@]}" || {
+        local exit_code=$?
+        error "Command failed (exit code $exit_code): ${cmd[*]}"
+    }
+}
+
+# @function build_with_options
+# @brief Safely build with dynamic options for cargo, make, etc.
+# @param $1 Build command (cargo, make, etc.)
+# @param $2 Build options string (may be empty)
+# @param $@ Additional fixed arguments
+build_with_options() {
+    local build_cmd="$1"
+    local options="$2"
+    shift 2
+    
+    local cmd=("$build_cmd")
+    
+    # Add options if provided (split by spaces)
+    if [[ -n "$options" ]]; then
+        IFS=' ' read -ra option_array <<< "$options"
+        cmd+=("${option_array[@]}")
+    fi
+    
+    # Add remaining arguments
+    cmd+=("$@")
+    
+    execute_command_safely "${cmd[@]}"
+}
+
+# @function configure_with_options
+# @brief Safely run configure scripts with dynamic options
+# @param $1 Configure script path
+# @param $2 Configure options string (may be empty)
+configure_with_options() {
+    local configure_script="$1"
+    local options="$2"
+    
+    local cmd=("$configure_script")
+    
+    # Add options if provided (split by spaces)
+    if [[ -n "$options" ]]; then
+        IFS=' ' read -ra option_array <<< "$options"
+        cmd+=("${option_array[@]}")
+    fi
+    
+    execute_command_safely "${cmd[@]}"
+}
+
+# =============================================================================
 # INITIALIZATION
 # =============================================================================
 

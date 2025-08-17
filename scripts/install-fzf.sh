@@ -424,7 +424,8 @@ fi
 # Build fzf
 log "Building fzf (this may take a while)..."
 
-eval "$MAKE_COMMAND" || error "Build failed"
+IFS=' ' read -ra make_cmd <<< "$MAKE_COMMAND"
+execute_command_safely "${make_cmd[@]}"
 
 # Verify build output
 if [[ ! -f "bin/fzf" ]]; then

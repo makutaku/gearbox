@@ -315,7 +315,7 @@ log "Configuring ImageMagick with $BUILD_TYPE settings..."
 log "Configure options: $CONFIGURE_OPTIONS"
 
 # Run configure
-eval "./configure $CONFIGURE_OPTIONS" || error "Configuration failed"
+configure_with_options "./configure" "$CONFIGURE_OPTIONS"
 
 success "Configuration completed successfully"
 

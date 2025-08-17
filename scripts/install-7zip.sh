@@ -314,9 +314,9 @@ NPROC=$(nproc)
 log "Using $NPROC CPU cores for parallel build"
 
 if [[ -n "$BUILD_VARS" ]]; then
-    eval "make -j$NPROC -f $MAKEFILE $BUILD_VARS" || error "Build failed"
+    build_with_options make "-j$NPROC -f $MAKEFILE" "$BUILD_VARS"
 else
-    make -j$NPROC -f "$MAKEFILE" || error "Build failed"
+    execute_command_safely make -j$NPROC -f "$MAKEFILE"
 fi
 
 # Verify build output
