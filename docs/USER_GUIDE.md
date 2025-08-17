@@ -44,7 +44,7 @@ Install all tools with optimal dependency management:
 gearbox install
 ```
 
-This will show a confirmation prompt before installing all 6 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
+This will show a confirmation prompt before installing all 30 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
 
 ### Selective Installation
 
@@ -121,9 +121,10 @@ gearbox install --minimal --run-tests fd ripgrep
 The installer manages these dependencies:
 
 **Programming Languages:**
-- Rust ≥ 1.88.0 (for fd, ripgrep)
-- Go ≥ 1.23.4 (for fzf)
-- C/C++ toolchain (for ffmpeg, 7zip, jq)
+- Rust ≥ 1.88.0 (for most tools: fd, ripgrep, bat, eza, zoxide, yazi, fclones, etc.)
+- Go ≥ 1.23.4 (for fzf, lazygit, gh)
+- Python ≥ 3.11 (for serena, uv, ruff)
+- C/C++ toolchain (for ffmpeg, 7zip, jq, imagemagick)
 
 **System Packages:**
 - `build-essential`, `git`, `curl`, `wget`, `make`
@@ -133,7 +134,11 @@ The installer manages these dependencies:
 
 ## Individual Tools
 
-### fd - Fast File Finder
+The installer provides 30 essential tools organized by category. Here are the most commonly used tools with installation and usage examples:
+
+### Core Development Tools
+
+#### fd - Fast File Finder
 
 Modern replacement for `find` with intuitive syntax.
 
@@ -155,7 +160,7 @@ fd pattern ~/Documents        # Search in specific directory
 - `--minimal`: Basic functionality, fast build
 - `--release`: Optimized performance (default)
 
-### ripgrep - Fast Text Search
+#### ripgrep - Fast Text Search
 
 High-performance text search with regex support.
 
@@ -178,7 +183,7 @@ rg "pattern" path/            # Search in specific path
 - `--release`: Standard build with PCRE2 (default)
 - `--optimized`: CPU-optimized for maximum performance
 
-### fzf - Fuzzy Finder
+#### fzf - Fuzzy Finder
 
 Interactive fuzzy finder for files, commands, and more.
 
@@ -204,7 +209,7 @@ git log --oneline | fzf       # Interactive git log browser
 - **Ctrl+R**: Command history search
 - **Alt+C**: Directory navigation
 
-### jq - JSON Processor
+#### jq - JSON Processor
 
 Command-line JSON processor with powerful query capabilities.
 
@@ -226,7 +231,152 @@ jq '.items | length'                        # Array length
 - `--standard`: Standard build (default)
 - `--optimized`: Performance optimized
 
-### ffmpeg - Video/Audio Processing
+### Navigation & File Management
+
+#### zoxide - Smart cd Command
+
+Smarter directory navigation with frecency (frequency + recency).
+
+```bash
+# Install and usage
+scripts/install-zoxide.sh
+z Documents                   # Jump to Documents directory
+z proj                        # Jump to most recent project directory
+zi                           # Interactive selection with fzf
+```
+
+#### yazi - Terminal File Manager
+
+Fast terminal file manager with vim-like keybindings and preview.
+
+```bash
+# Install and usage
+scripts/install-yazi.sh
+yazi                         # Open file manager
+yazi /path/to/directory      # Open specific directory
+```
+
+#### bat - Enhanced cat
+
+Cat clone with syntax highlighting, Git integration, and themes.
+
+```bash
+# Install and usage
+scripts/install-bat.sh
+bat file.py                  # View file with syntax highlighting
+bat -n file.txt              # Show line numbers
+bat --theme=GitHub file.md   # Use specific theme
+```
+
+#### eza - Modern ls
+
+Enhanced file listings with Git integration and tree view.
+
+```bash
+# Install and usage
+scripts/install-eza.sh
+eza                          # Enhanced ls
+eza -la                      # Long format with hidden files
+eza --tree                   # Tree view
+eza --git                    # Show Git status
+```
+
+### Development Tools
+
+#### uv - Python Package Manager
+
+Extremely fast Python package and project manager (10-100x faster than pip).
+
+```bash
+# Install and usage
+scripts/install-uv.sh
+uv pip install package       # Fast package installation
+uv venv                      # Create virtual environment
+uv run script.py             # Run Python with automatic dependency management
+```
+
+#### ruff - Python Linter & Formatter
+
+10-100x faster than Flake8/Black with 800+ lint rules.
+
+```bash
+# Install and usage
+scripts/install-ruff.sh
+ruff check .                 # Lint current directory
+ruff format .                # Format code
+ruff check --fix .           # Auto-fix issues
+```
+
+#### starship - Shell Prompt
+
+Fast, minimal prompt with contextual information.
+
+```bash
+# Install and usage
+scripts/install-starship.sh
+# Automatically configured for bash/zsh/fish
+```
+
+#### lazygit - Terminal UI for Git
+
+Interactive Git operations with visual interface.
+
+```bash
+# Install and usage
+scripts/install-lazygit.sh
+lazygit                      # Launch interactive Git UI
+```
+
+#### gh - GitHub CLI
+
+Repository management, PRs, issues, and workflows.
+
+```bash
+# Install and usage
+scripts/install-gh.sh
+gh repo list                 # List repositories
+gh pr create                 # Create pull request
+gh issue list                # List issues
+```
+
+### System Monitoring
+
+#### bottom - System Monitor
+
+Beautiful terminal-based system resource monitoring.
+
+```bash
+# Install and usage
+scripts/install-bottom.sh
+btm                          # Launch system monitor
+btm --basic                  # Basic mode
+```
+
+#### procs - Modern ps
+
+Enhanced process information with tree view and colors.
+
+```bash
+# Install and usage
+scripts/install-procs.sh
+procs                        # Enhanced process list
+procs firefox                # Filter by process name
+procs --tree                 # Tree view
+```
+
+#### bandwhich - Network Monitor
+
+Terminal bandwidth utilization by process.
+
+```bash
+# Install and usage
+scripts/install-bandwhich.sh
+sudo bandwhich              # Network monitoring (requires sudo)
+```
+
+### Media Processing
+
+#### ffmpeg - Video/Audio Processing
 
 Comprehensive media processing suite.
 
@@ -248,7 +398,19 @@ ffmpeg -i input.mp4 -ss 00:01:00 -t 30 out  # Extract 30s clip
 - `--general`: Standard codec support (default)
 - `--maximum`: All available codecs and features
 
-### 7zip - Compression Tool
+#### imagemagick - Image Manipulation
+
+Powerful image processing and manipulation toolkit.
+
+```bash
+# Install and usage
+scripts/install-imagemagick.sh
+convert input.jpg -resize 50% output.jpg    # Resize image
+identify image.jpg                          # Get image info
+montage *.jpg grid.jpg                      # Create image grid
+```
+
+#### 7zip - Compression Tool
 
 High-ratio compression tool.
 
@@ -269,6 +431,22 @@ scripts/install-7zip.sh --asm-optimized  # Assembly optimized
 - `--basic`: Basic functionality
 - `--optimized`: Performance optimized (default)
 - `--asm-optimized`: Assembly optimizations for best performance
+
+### All Available Tools
+
+For a complete list of all 30 tools with descriptions:
+
+```bash
+gearbox list
+```
+
+**Core Development:** fd, ripgrep, fzf, jq  
+**Navigation:** zoxide, yazi, fclones, bat, eza, dust  
+**Development:** serena, uv, ruff, starship, delta, lazygit, gh, difftastic  
+**System Monitoring:** bottom, procs, bandwhich  
+**Text Processing:** sd, xsv, choose, tealdeer  
+**Analysis:** tokei, hyperfine  
+**Media:** ffmpeg, imagemagick, 7zip
 
 ## Common Workflows
 
@@ -449,19 +627,48 @@ ls -la ~/tools/
 | ripgrep | `rg` | - |
 | fzf | `fzf` | - |
 | jq | `jq` | - |
+| zoxide | `z`, `zi` | Also `zoxide` |
+| yazi | `yazi` | - |
+| fclones | `fclones` | - |
+| serena | `serena` | - |
+| uv | `uv` | - |
+| ruff | `ruff` | - |
+| bat | `bat` | - |
+| starship | `starship` | - |
+| eza | `eza` | - |
+| delta | `delta` | - |
+| lazygit | `lazygit` | - |
+| bottom | `btm` | - |
+| procs | `procs` | - |
+| tokei | `tokei` | - |
+| difftastic | `difft` | - |
+| bandwhich | `bandwhich` | Requires sudo |
+| xsv | `xsv` | - |
+| hyperfine | `hyperfine` | - |
+| gh | `gh` | - |
+| dust | `dust` | - |
+| sd | `sd` | - |
+| tealdeer | `tldr` | - |
+| choose | `choose` | - |
 | ffmpeg | `ffmpeg` | Also `ffprobe`, `ffplay` |
+| imagemagick | `convert`, `identify` | Many utilities |
 | 7zip | `7zz` | - |
 
 ### Build Order (Automatic)
 
 Tools are installed in this order for optimal dependency sharing:
 
-1. **fzf** (installs Go toolchain)
-2. **ripgrep** (installs Rust 1.88.0+)
-3. **fd** (uses existing Rust)
-4. **jq** (independent C build)
-5. **ffmpeg** (independent C/C++ build)
-6. **7zip** (independent C/C++ build)
+**Go Tools (installs Go toolchain):**
+1. **fzf**, **lazygit**, **gh**
+
+**Rust Tools (installs Rust 1.88.0+, reuses toolchain):**
+2. **ripgrep**, **fd**, **zoxide**, **yazi**, **fclones**, **bat**, **starship**, **eza**, **delta**, **bottom**, **procs**, **tokei**, **difftastic**, **bandwhich**, **xsv**, **hyperfine**, **dust**, **sd**, **tealdeer**, **choose**
+
+**Python Tools (installs Python 3.11+ and uv):**
+3. **serena**, **uv**, **ruff**
+
+**C/C++ Tools (independent builds):**
+4. **jq**, **ffmpeg**, **imagemagick**, **7zip**
 
 ### Safety Features
 

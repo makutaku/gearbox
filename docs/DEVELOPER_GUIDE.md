@@ -50,16 +50,16 @@ This separation keeps the scripts repository clean while organizing build artifa
 ### Dependency Management Philosophy
 
 **Shared Toolchains:** Install programming language toolchains once, use across multiple tools:
-- Go toolchain → fzf
-- Rust toolchain → ripgrep, fd, zoxide, yazi, fclones
-- Python toolchain → serena (virtual environment pattern)
-- C/C++ toolchain → jq, ffmpeg, 7zip, imagemagick
+- Go toolchain → fzf, lazygit, gh
+- Rust toolchain → ripgrep, fd, zoxide, yazi, fclones, bat, starship, eza, delta, bottom, procs, tokei, difftastic, bandwhich, xsv, hyperfine, dust, sd, tealdeer, choose
+- Python toolchain → serena, uv, ruff (virtual environment pattern)
+- C/C++ toolchain → jq, ffmpeg, imagemagick, 7zip
 
 **Optimal Installation Order:** 
-1. Go tools (fzf) - installs Go
-2. Rust tools (ripgrep, fd, zoxide, yazi, fclones) - installs Rust, reuses toolchain
-3. Python tools (serena) - installs Python 3.11 + uv, uses virtual environment pattern
-4. C/C++ tools (jq, ffmpeg, 7zip, imagemagick) - independent builds
+1. Go tools (fzf, lazygit, gh) - installs Go
+2. Rust tools (21 tools total) - installs Rust, reuses toolchain
+3. Python tools (serena, uv, ruff) - installs Python 3.11 + uv, uses virtual environment pattern
+4. C/C++ tools (jq, ffmpeg, imagemagick, 7zip) - independent builds
 
 ## Development Setup
 
@@ -292,7 +292,7 @@ Add your tool to `scripts/install-all-tools.sh`:
 
 ```bash
 # Add to AVAILABLE_TOOLS array
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "newtool")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "difftastic" "bandwhich" "xsv" "newtool")
 
 # Add build flag mapping in get_build_flag function
 get_build_flag() {
@@ -310,8 +310,9 @@ get_build_flag() {
 }
 
 # Add to installation order (consider dependencies)
+# Go tools first, then Rust tools, then Python tools, then C/C++ tools
 INSTALLATION_ORDER=()
-for tool in "fzf" "ripgrep" "fd" "jq" "ffmpeg" "7zip" "newtool"; do
+for tool in "fzf" "lazygit" "gh" "ripgrep" "fd" "zoxide" "yazi" "fclones" "bat" "starship" "eza" "delta" "bottom" "procs" "tokei" "difftastic" "bandwhich" "xsv" "hyperfine" "dust" "sd" "tealdeer" "choose" "serena" "uv" "ruff" "jq" "ffmpeg" "imagemagick" "7zip" "newtool"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi

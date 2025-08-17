@@ -9,12 +9,17 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ## Common Commands
 
 ### Installation Commands
-- `gearbox` - Install all tools with standard builds
-- `gearbox --minimal` - Install all tools with minimal/fast builds  
-- `gearbox --maximum` - Install all tools with full-featured builds
-- `gearbox fd ripgrep fzf` - Install only specified tools
-- `gearbox --skip-common-deps` - Skip common dependency installation
-- `gearbox --run-tests` - Run test suites for tools that support it
+- `gearbox install` - Show confirmation prompt and install all 30 tools
+- `gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
+- `gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
+- `gearbox install --maximum ffmpeg` - Install with full-featured builds
+- `gearbox list` - Show available tools with descriptions
+- `gearbox help` - Show detailed help and usage information
+
+### Advanced Options
+- `gearbox install --skip-common-deps` - Skip common dependency installation
+- `gearbox install --run-tests` - Run test suites for tools that support it
+- `gearbox install --no-shell` - Skip shell integration setup (fzf)
 
 ### Testing
 - `./tests/test-runner.sh` - Run basic validation tests for installation scripts
@@ -22,8 +27,8 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ### Individual Tool Installation
 Each tool has its own script in `scripts/`:
 - `scripts/install-fd.sh -r` - Install fd with release build
-- `scripts/install-ripgrep.sh -o` - Install ripgrep with optimized build
-- `scripts/install-fzf.sh -s --no-shell` - Install fzf with standard build, no shell integration
+- `scripts/install-ripgrep.sh --release` - Install ripgrep with optimized build
+- `scripts/install-fzf.sh --standard --no-shell` - Install fzf with standard build, no shell integration
 
 ## Architecture
 
@@ -43,10 +48,11 @@ Each tool has its own script in `scripts/`:
 - Contains utility functions for path management
 
 **Main Installation Script (`scripts/install-all-tools.sh`)**:
-- Orchestrates tool installation in optimal dependency order
+- Orchestrates tool installation in optimal dependency order for all 30 tools
 - Supports three build types: minimal, standard, maximum
 - Handles common dependency installation via `install-common-deps.sh`
 - Installation order optimized for shared toolchains: Go tools → Rust tools → C/C++ tools
+- Includes confirmation prompt when installing all tools (30-60 minute process)
 
 **Individual Tool Scripts (`scripts/install-*.sh`)**:
 - Each tool has a dedicated installation script following consistent patterns
@@ -54,13 +60,51 @@ Each tool has its own script in `scripts/`:
 - Support for --skip-deps, --run-tests, --force flags
 - Build from source with proper dependency validation
 
-### Available Tools
-- **ffmpeg** - Video/audio processing (build flags: -m minimal, -g standard, -x maximum)
-- **7zip** - Compression tool (build flags: -b basic, -o optimized, -a all-features)
-- **jq** - JSON processor (build flags: -m minimal, -s standard, -o optimized)
-- **fd** - Fast file finder (build flags: -m minimal, -r release)
-- **ripgrep** - Fast text search (build flags: --no-pcre2 minimal, -r release, -o optimized)
-- **fzf** - Fuzzy finder (build flags: -s standard, -p profiling)
+### Available Tools (30 total)
+
+**Core Development Tools:**
+- **fd** - Fast file finder (Rust) - build flags: -m minimal, -r release
+- **ripgrep** - Fast text search (Rust) - build flags: --no-pcre2 minimal, -r release  
+- **fzf** - Fuzzy finder (Go) - build flags: -s standard, -p profiling
+- **jq** - JSON processor (C) - build flags: -m minimal, -s standard, -o optimized
+
+**Navigation & File Management:**
+- **zoxide** - Smart cd command (Rust)
+- **yazi** - Terminal file manager (Rust) 
+- **fclones** - Duplicate file finder (Rust)
+- **bat** - Enhanced cat with syntax highlighting (Rust)
+- **eza** - Modern ls replacement (Rust)
+- **dust** - Better disk usage analyzer (Rust)
+
+**Development Tools:**
+- **serena** - Coding agent toolkit (Python)
+- **uv** - Python package manager (Rust)
+- **ruff** - Python linter & formatter (Rust)
+- **starship** - Customizable shell prompt (Rust)
+- **delta** - Syntax-highlighting pager (Rust)
+- **lazygit** - Terminal UI for Git (Go)
+- **gh** - GitHub CLI (Go)
+- **difftastic** - Structural diff tool (Rust)
+
+**System Monitoring:**
+- **bottom** - Cross-platform system monitor (Rust)
+- **procs** - Modern ps replacement (Rust)
+- **bandwhich** - Network bandwidth monitor (Rust)
+
+**Text Processing:**
+- **sd** - Find & replace CLI (Rust)
+- **xsv** - CSV data toolkit (Rust)
+- **choose** - Cut/awk alternative (Rust)
+- **tealdeer** - Fast tldr client (Rust)
+
+**Analysis Tools:**
+- **tokei** - Code statistics tool (Rust)
+- **hyperfine** - Command-line benchmarking (Rust)
+
+**Media Processing:**
+- **ffmpeg** - Video/audio processing (C/C++) - build flags: -m minimal, -g standard, -x maximum
+- **imagemagick** - Image manipulation (C/C++)
+- **7zip** - Compression tool (C/C++) - build flags: -b basic, -o optimized, -a all-features
 
 ### Dependency Management
 - `install-common-deps.sh` installs shared dependencies (Rust 1.88.0+, Go 1.23.4+, build tools)
@@ -76,5 +120,30 @@ The system supports three build types across all tools:
 
 ### Testing Strategy
 - `test-runner.sh` validates script executability and configuration loading
-- Individual tools support `--run-tests` flag for post-build validation
+- Individual tools support `--run-tests` flag for post-build validation  
 - Final verification checks that all installed tools are accessible via command line
+
+## Key Implementation Patterns
+
+### Script Structure
+All installation scripts follow consistent patterns:
+- Source `config.sh` for shared configuration and logging functions
+- Parse command-line arguments with standardized flags
+- Check for existing installations to avoid duplicates
+- Install dependencies (unless `--skip-deps` specified)
+- Clone source to `~/tools/build/[tool-name]/`
+- Configure build based on build type (minimal/standard/maximum)
+- Build and install to `/usr/local/bin/`
+- Optional post-install testing and shell integration
+
+### CLI Interface Design
+- **Safety first**: No command auto-executes without user awareness
+- **Confirmation prompts**: Installing all tools shows impact and requires confirmation  
+- **Specific over general**: `gearbox install fd ripgrep` recommended over `gearbox install`
+- **Clear help**: `gearbox list` shows all tools, `gearbox help` shows usage
+
+### Build System Integration
+- **Shared toolchains**: Common dependencies installed once (Rust 1.88.0+, Go 1.23.4+)
+- **Optimized order**: Go tools first, then Rust tools, then C/C++ tools
+- **Multiple build types**: Tools support different optimization levels via standardized flags
+- **Clean separation**: Source builds in `~/tools/build/`, final binaries in `/usr/local/bin/`
