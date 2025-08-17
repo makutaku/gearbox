@@ -20,11 +20,18 @@ fi
 
 # Note: Logging functions now provided by lib/common.sh
 
-# Default options
+# Default options (can be overridden by configuration)
 SKIP_COMMON_DEPS=false
-BUILD_TYPE="standard"  # minimal, standard, maximum
-RUN_TESTS=false
-SETUP_SHELL=true
+BUILD_TYPE="${GEARBOX_DEFAULT_BUILD_TYPE:-standard}"  # minimal, standard, maximum
+RUN_TESTS="${GEARBOX_SKIP_TESTS_BY_DEFAULT:-false}"
+SETUP_SHELL="${GEARBOX_SHELL_INTEGRATION:-true}"
+
+# Invert the skip tests logic (config is SKIP_TESTS_BY_DEFAULT, we use RUN_TESTS)
+if [[ "${GEARBOX_SKIP_TESTS_BY_DEFAULT:-false}" == "true" ]]; then
+    RUN_TESTS=false
+else
+    RUN_TESTS=false  # Default to false unless explicitly requested
+fi
 
 # Available tools (validated list)
 declare -A AVAILABLE_TOOLS_MAP=(

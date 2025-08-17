@@ -35,6 +35,13 @@ else
     exit 1
 fi
 
+# Load configuration management library
+if [[ -f "$GEARBOX_LIB_DIR/config.sh" ]]; then
+    source "$GEARBOX_LIB_DIR/config.sh"
+    # Initialize configuration system
+    init_config
+fi
+
 # =============================================================================
 # LOGGING AND OUTPUT FUNCTIONS
 # =============================================================================
@@ -395,6 +402,16 @@ run_with_timeout() {
 # @brief Calculate optimal number of parallel jobs for builds
 # @return Prints optimal job count
 get_optimal_jobs() {
+    # Check if user has configured a specific job limit
+    local config_jobs="${GEARBOX_MAX_PARALLEL_JOBS:-auto}"
+    
+    if [[ "$config_jobs" =~ ^[1-9][0-9]*$ ]]; then
+        # User specified a specific number
+        echo "$config_jobs"
+        return 0
+    fi
+    
+    # Auto-calculate based on system resources
     local cpu_cores
     cpu_cores=$(nproc)
     

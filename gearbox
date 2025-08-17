@@ -135,6 +135,7 @@ Usage: gearbox [COMMAND] [OPTIONS] [TOOLS...]
 Commands:
   install     Install tools (default command)
   list        Show available tools with descriptions
+  config      Manage configuration settings
   help        Show this help message
 
 Install Options:
@@ -178,6 +179,8 @@ Available Tools:
 
 Examples:
   gearbox list                         # Show available tools
+  gearbox config show                  # Show current configuration
+  gearbox config wizard                # Interactive configuration setup
   gearbox install fd ripgrep fzf       # Install specific tools (recommended)
   gearbox install                      # Install all tools (with confirmation)
   gearbox install --minimal fd ripgrep # Fast installation
@@ -201,6 +204,10 @@ if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
         list|ls)
             show_tools
             exit 0
+            ;;
+        config)
+            COMMAND="config"
+            shift
             ;;
         help|--help|-h)
             show_help
@@ -256,6 +263,89 @@ case "$COMMAND" in
         
         # Run the main installer
         exec "$SCRIPT_DIR/scripts/install-all-tools.sh" "$@"
+        ;;
+    config)
+        # Load the configuration management library
+        if [[ -f "$SCRIPT_DIR/lib/config.sh" ]]; then
+            source "$SCRIPT_DIR/lib/config.sh"
+            init_config
+        else
+            echo "Error: Configuration system not available"
+            exit 1
+        fi
+        
+        # Handle config subcommands
+        case "${1:-show}" in
+            show|display)
+                show_config
+                ;;
+            set)
+                if [[ $# -lt 3 ]]; then
+                    echo "Usage: gearbox config set KEY VALUE"
+                    echo "Example: gearbox config set DEFAULT_BUILD_TYPE maximum"
+                    exit 1
+                fi
+                set_config "$2" "$3" && save_config
+                ;;
+            get)
+                if [[ $# -lt 2 ]]; then
+                    echo "Usage: gearbox config get KEY"
+                    echo "Example: gearbox config get DEFAULT_BUILD_TYPE"
+                    exit 1
+                fi
+                get_config "$2"
+                ;;
+            wizard|interactive)
+                config_wizard
+                ;;
+            reset)
+                reset_config "${2:-}"
+                save_config
+                ;;
+            edit)
+                "${EDITOR:-nano}" "$GEARBOX_CONFIG_FILE"
+                ;;
+            path)
+                echo "$GEARBOX_CONFIG_FILE"
+                ;;
+            help)
+                cat << EOF
+Gearbox Configuration Commands:
+
+  gearbox config show              Show current configuration
+  gearbox config set KEY VALUE     Set a configuration value
+  gearbox config get KEY           Get a configuration value
+  gearbox config wizard            Interactive configuration wizard
+  gearbox config reset [--force]   Reset to default values
+  gearbox config edit              Edit configuration file directly
+  gearbox config path              Show configuration file path
+  gearbox config help              Show this help
+
+Available configuration keys:
+  DEFAULT_BUILD_TYPE       Default build type (minimal|standard|maximum)
+  MAX_PARALLEL_JOBS        Maximum parallel jobs (auto|number)
+  CACHE_ENABLED            Enable build caching (true|false)
+  CACHE_MAX_AGE_DAYS       Cache retention in days (number)
+  AUTO_UPDATE_REPOS        Auto-update Git repositories (true|false)
+  INSTALL_MISSING_DEPS     Auto-install missing dependencies (true|false)
+  SKIP_TESTS_BY_DEFAULT    Skip tests by default (true|false)
+  VERBOSE_OUTPUT           Enable verbose output (true|false)
+  SHELL_INTEGRATION        Enable shell integration for tools (true|false)
+  BACKUP_BEFORE_INSTALL    Backup existing tools before install (true|false)
+
+Examples:
+  gearbox config show
+  gearbox config set DEFAULT_BUILD_TYPE maximum
+  gearbox config wizard
+  gearbox config reset --force
+EOF
+                ;;
+            *)
+                echo "Unknown config command: $1"
+                echo "Use 'gearbox config help' for available commands"
+                exit 1
+                ;;
+        esac
         ;;
     *)
         error "Unknown command: $COMMAND. Use 'gearbox help' for usage information."

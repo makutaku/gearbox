@@ -1,0 +1,391 @@
+#!/bin/bash
+
+# Configuration Management Library for Gearbox
+# Handles user configuration file ~/.gearboxrc
+# This library provides functions to read, write, and manage user preferences
+
+# Simple logging functions for config (fallback if common.sh not available)
+if ! command -v log &>/dev/null; then
+    log() { echo "$1"; }
+fi
+
+if ! command -v error &>/dev/null; then
+    error() { echo "ERROR: $1" >&2; exit 1; }
+fi
+
+if ! command -v warning &>/dev/null; then
+    warning() { echo "WARNING: $1" >&2; }
+fi
+
+if ! command -v success &>/dev/null; then
+    success() { echo "SUCCESS: $1"; }
+fi
+
+# Default configuration file location
+GEARBOX_CONFIG_FILE="$HOME/.gearboxrc"
+
+# Default configuration values
+declare -A DEFAULT_CONFIG=(
+    ["DEFAULT_BUILD_TYPE"]="standard"
+    ["MAX_PARALLEL_JOBS"]="auto"
+    ["CACHE_ENABLED"]="true"
+    ["CACHE_MAX_AGE_DAYS"]="7"
+    ["AUTO_UPDATE_REPOS"]="true"
+    ["INSTALL_MISSING_DEPS"]="true"
+    ["SKIP_TESTS_BY_DEFAULT"]="false"
+    ["VERBOSE_OUTPUT"]="false"
+    ["SHELL_INTEGRATION"]="true"
+    ["BACKUP_BEFORE_INSTALL"]="true"
+)
+
+# Configuration descriptions for help
+declare -A CONFIG_DESCRIPTIONS=(
+    ["DEFAULT_BUILD_TYPE"]="Default build type (minimal|standard|maximum)"
+    ["MAX_PARALLEL_JOBS"]="Maximum parallel jobs (auto|number)"
+    ["CACHE_ENABLED"]="Enable build caching (true|false)"
+    ["CACHE_MAX_AGE_DAYS"]="Cache retention in days (number)"
+    ["AUTO_UPDATE_REPOS"]="Auto-update Git repositories (true|false)"
+    ["INSTALL_MISSING_DEPS"]="Auto-install missing dependencies (true|false)"
+    ["SKIP_TESTS_BY_DEFAULT"]="Skip tests by default (true|false)"
+    ["VERBOSE_OUTPUT"]="Enable verbose output (true|false)"
+    ["SHELL_INTEGRATION"]="Enable shell integration for tools (true|false)"
+    ["BACKUP_BEFORE_INSTALL"]="Backup existing tools before install (true|false)"
+)
+
+# Load configuration from file
+load_config() {
+    local config_file="${1:-$GEARBOX_CONFIG_FILE}"
+    
+    # Initialize with defaults
+    declare -gA GEARBOX_CONFIG
+    for key in "${!DEFAULT_CONFIG[@]}"; do
+        GEARBOX_CONFIG["$key"]="${DEFAULT_CONFIG[$key]}"
+    done
+    
+    # Load user configuration if it exists
+    if [[ -f "$config_file" ]]; then
+        # Silently load configuration
+        
+        # Validate config file format before sourcing
+        if ! validate_config_file "$config_file"; then
+            warning "Invalid configuration file format: $config_file"
+            warning "Using default configuration values"
+            return 1
+        fi
+        
+        # Source the validated config file
+        local temp_config
+        while IFS='=' read -r key value; do
+            # Skip empty lines and comments
+            [[ -z "$key" || "$key" =~ ^[[:space:]]*# ]] && continue
+            
+            # Remove quotes from value if present
+            value="${value%\"}"
+            value="${value#\"}"
+            value="${value%\'}"
+            value="${value#\'}"
+            
+            # Set the configuration value
+            if [[ -n "${DEFAULT_CONFIG[$key]:-}" ]]; then
+                GEARBOX_CONFIG["$key"]="$value"
+                # Config loaded silently
+            else
+                warning "Unknown configuration key: $key"
+            fi
+        done < <(grep -v '^[[:space:]]*#' "$config_file" | grep '=')
+        
+        # Configuration loaded successfully
+    else
+        # Using default configuration
+    fi
+    
+    return 0
+}
+
+# Validate configuration file format
+validate_config_file() {
+    local config_file="$1"
+    
+    [[ ! -f "$config_file" ]] && return 1
+    
+    # Check for dangerous content
+    if grep -qE '(\$\(|\`|;|\||&|>|<)' "$config_file"; then
+        error "Configuration file contains potentially dangerous content"
+        return 1
+    fi
+    
+    # Check for valid format (key=value pairs and comments only)
+    if ! grep -qE '^[[:space:]]*([[:alpha:]_][[:alnum:]_]*=[^=]*|#.*)?$' "$config_file"; then
+        error "Configuration file has invalid format"
+        return 1
+    fi
+    
+    return 0
+}
+
+# Get configuration value
+get_config() {
+    local key="$1"
+    local default_value="$2"
+    
+    if [[ -n "${GEARBOX_CONFIG[$key]:-}" ]]; then
+        echo "${GEARBOX_CONFIG[$key]}"
+    elif [[ -n "$default_value" ]]; then
+        echo "$default_value"
+    else
+        echo "${DEFAULT_CONFIG[$key]:-}"
+    fi
+}
+
+# Set configuration value
+set_config() {
+    local key="$1"
+    local value="$2"
+    
+    if [[ -z "${DEFAULT_CONFIG[$key]:-}" ]]; then
+        error "Unknown configuration key: $key"
+        return 1
+    fi
+    
+    # Validate the value based on the key
+    if ! validate_config_value "$key" "$value"; then
+        error "Invalid value '$value' for configuration key '$key'"
+        return 1
+    fi
+    
+    GEARBOX_CONFIG["$key"]="$value"
+    # Configuration updated
+    return 0
+}
+
+# Validate configuration value
+validate_config_value() {
+    local key="$1"
+    local value="$2"
+    
+    case "$key" in
+        DEFAULT_BUILD_TYPE)
+            [[ "$value" =~ ^(minimal|standard|maximum)$ ]]
+            ;;
+        MAX_PARALLEL_JOBS)
+            [[ "$value" == "auto" ]] || [[ "$value" =~ ^[1-9][0-9]*$ ]]
+            ;;
+        CACHE_ENABLED|AUTO_UPDATE_REPOS|INSTALL_MISSING_DEPS|SKIP_TESTS_BY_DEFAULT|VERBOSE_OUTPUT|SHELL_INTEGRATION|BACKUP_BEFORE_INSTALL)
+            [[ "$value" =~ ^(true|false)$ ]]
+            ;;
+        CACHE_MAX_AGE_DAYS)
+            [[ "$value" =~ ^[1-9][0-9]*$ ]]
+            ;;
+        *)
+            return 1
+            ;;
+    esac
+}
+
+# Save configuration to file
+save_config() {
+    local config_file="${1:-$GEARBOX_CONFIG_FILE}"
+    
+    echo "Saving configuration to $config_file"
+    
+    # Create backup if file exists
+    if [[ -f "$config_file" ]]; then
+        cp "$config_file" "${config_file}.backup-$(date +%Y%m%d-%H%M%S)" || {
+            warning "Failed to create backup of configuration file"
+        }
+    fi
+    
+    # Create directory if it doesn't exist
+    local config_dir
+    config_dir=$(dirname "$config_file")
+    [[ ! -d "$config_dir" ]] && mkdir -p "$config_dir"
+    
+    # Generate configuration file with comments
+    cat > "$config_file" << EOF
+# Gearbox Configuration File
+# Generated on $(date)
+# 
+# This file contains user preferences for the Gearbox Essential Tools Installer.
+# Edit this file to customize default behavior across all installation scripts.
+#
+# Format: KEY=value (no spaces around =)
+# Comments start with #
+
+EOF
+    
+    # Write configuration values with descriptions
+    for key in "${!DEFAULT_CONFIG[@]}"; do
+        local value="${GEARBOX_CONFIG[$key]:-${DEFAULT_CONFIG[$key]}}"
+        local description="${CONFIG_DESCRIPTIONS[$key]:-}"
+        
+        echo "# $description" >> "$config_file"
+        echo "$key=\"$value\"" >> "$config_file"
+        echo >> "$config_file"
+    done
+    
+    echo "Configuration saved to $config_file"
+    return 0
+}
+
+# Show current configuration
+show_config() {
+    echo
+    echo "Current Gearbox Configuration:"
+    echo
+    
+    for key in "${!DEFAULT_CONFIG[@]}"; do
+        local value="${GEARBOX_CONFIG[$key]:-${DEFAULT_CONFIG[$key]}}"
+        local description="${CONFIG_DESCRIPTIONS[$key]:-}"
+        local is_default=""
+        
+        if [[ "$value" == "${DEFAULT_CONFIG[$key]}" ]]; then
+            is_default=" (default)"
+        fi
+        
+        printf "  %-25s = %-10s %s\n" "$key" "$value" "$is_default"
+        if [[ -n "$description" ]]; then
+            printf "  %-25s   %s\n" "" "# $description"
+        fi
+        echo
+    done
+    
+    echo
+    echo "Configuration file: $GEARBOX_CONFIG_FILE"
+    if [[ -f "$GEARBOX_CONFIG_FILE" ]]; then
+        echo "File exists: $(ls -la "$GEARBOX_CONFIG_FILE" | awk '{print $5 " bytes, modified " $6 " " $7 " " $8}')"
+    else
+        echo "File does not exist (using defaults)"
+    fi
+}
+
+# Reset configuration to defaults
+reset_config() {
+    local confirm="${1:-}"
+    
+    if [[ "$confirm" != "--force" ]]; then
+        echo
+        warning "This will reset all configuration values to defaults."
+        if [[ -f "$GEARBOX_CONFIG_FILE" ]]; then
+            warning "Existing configuration file will be backed up."
+        fi
+        echo
+        
+        local response
+        read -p "Are you sure you want to continue? (y/N): " response
+        if [[ ! "$response" =~ ^[Yy]$ ]]; then
+            echo "Reset cancelled."
+            return 0
+        fi
+    fi
+    
+    # Initialize with defaults
+    for key in "${!DEFAULT_CONFIG[@]}"; do
+        GEARBOX_CONFIG["$key"]="${DEFAULT_CONFIG[$key]}"
+    done
+    
+    echo "Configuration reset to defaults"
+    return 0
+}
+
+# Interactive configuration editor
+config_wizard() {
+    echo
+    echo "==================================="
+    echo "Gearbox Configuration Wizard"
+    echo "==================================="
+    echo
+    echo "This wizard will help you configure Gearbox preferences."
+    echo "Press Enter to keep current values."
+    echo
+    
+    for key in "${!DEFAULT_CONFIG[@]}"; do
+        local current_value="${GEARBOX_CONFIG[$key]:-${DEFAULT_CONFIG[$key]}}"
+        local description="${CONFIG_DESCRIPTIONS[$key]:-}"
+        local new_value
+        
+        echo
+        echo "Setting: $key"
+        echo "Description: $description"
+        echo "Current value: $current_value"
+        
+        case "$key" in
+            DEFAULT_BUILD_TYPE)
+                echo "Valid options: minimal, standard, maximum"
+                ;;
+            MAX_PARALLEL_JOBS)
+                echo "Valid options: auto, or a positive number"
+                ;;
+            CACHE_ENABLED|AUTO_UPDATE_REPOS|INSTALL_MISSING_DEPS|SKIP_TESTS_BY_DEFAULT|VERBOSE_OUTPUT|SHELL_INTEGRATION|BACKUP_BEFORE_INSTALL)
+                echo "Valid options: true, false"
+                ;;
+            CACHE_MAX_AGE_DAYS)
+                echo "Valid options: positive number (days)"
+                ;;
+        esac
+        
+        read -p "New value [$current_value]: " new_value
+        
+        if [[ -n "$new_value" ]]; then
+            if validate_config_value "$key" "$new_value"; then
+                set_config "$key" "$new_value"
+                echo "Set $key = $new_value"
+            else
+                error "Invalid value: $new_value"
+                warning "Keeping current value: $current_value"
+            fi
+        fi
+    done
+    
+    echo
+    echo "Configuration wizard completed."
+    
+    local save_response
+    read -p "Save configuration to file? (Y/n): " save_response
+    if [[ ! "$save_response" =~ ^[Nn]$ ]]; then
+        save_config
+    fi
+}
+
+# Apply configuration to current environment
+apply_config() {
+    # Apply settings that affect current session
+    if [[ "$(get_config VERBOSE_OUTPUT)" == "true" ]]; then
+        export GEARBOX_VERBOSE=1
+    fi
+    
+    # Set other environment variables based on config
+    export GEARBOX_DEFAULT_BUILD_TYPE="$(get_config DEFAULT_BUILD_TYPE)"
+    export GEARBOX_MAX_PARALLEL_JOBS="$(get_config MAX_PARALLEL_JOBS)"
+    export GEARBOX_CACHE_ENABLED="$(get_config CACHE_ENABLED)"
+    export GEARBOX_AUTO_UPDATE_REPOS="$(get_config AUTO_UPDATE_REPOS)"
+    export GEARBOX_INSTALL_MISSING_DEPS="$(get_config INSTALL_MISSING_DEPS)"
+    export GEARBOX_SKIP_TESTS_BY_DEFAULT="$(get_config SKIP_TESTS_BY_DEFAULT)"
+    export GEARBOX_SHELL_INTEGRATION="$(get_config SHELL_INTEGRATION)"
+    export GEARBOX_BACKUP_BEFORE_INSTALL="$(get_config BACKUP_BEFORE_INSTALL)"
+    
+    # Configuration applied to environment
+}
+
+# Get configuration-aware defaults for scripts
+get_script_defaults() {
+    local build_type="${GEARBOX_DEFAULT_BUILD_TYPE:-$(get_config DEFAULT_BUILD_TYPE)}"
+    local max_jobs="${GEARBOX_MAX_PARALLEL_JOBS:-$(get_config MAX_PARALLEL_JOBS)}"
+    local skip_tests="${GEARBOX_SKIP_TESTS_BY_DEFAULT:-$(get_config SKIP_TESTS_BY_DEFAULT)}"
+    local shell_integration="${GEARBOX_SHELL_INTEGRATION:-$(get_config SHELL_INTEGRATION)}"
+    
+    echo "BUILD_TYPE=\"$build_type\""
+    echo "MAX_PARALLEL_JOBS=\"$max_jobs\""
+    echo "SKIP_TESTS=\"$skip_tests\""
+    echo "SHELL_INTEGRATION=\"$shell_integration\""
+}
+
+# Initialize configuration system
+init_config() {
+    # Load configuration
+    load_config
+    
+    # Apply to environment
+    apply_config
+    
+    # Configuration system initialized
+}
