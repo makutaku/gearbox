@@ -70,6 +70,9 @@ Navigation & File Management:
               
   bottom      Cross-platform system monitor (Rust)
               Beautiful terminal-based system resource monitoring
+              
+  procs       Modern ps replacement (Rust)
+              Enhanced process information with tree view and colors
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -128,6 +131,7 @@ Available Tools:
   delta       Syntax-highlighting pager (Rust)
   lazygit     Terminal UI for Git (Go)
   bottom      Cross-platform system monitor (Rust)
+  procs       Modern ps replacement (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -182,8 +186,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 19 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 20 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"

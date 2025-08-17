@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs")
 SELECTED_TOOLS=()
 
 # Show help
@@ -58,6 +58,7 @@ Tools (install all if none specified):
   delta               Syntax-highlighting pager for Git and diff output
   lazygit             Terminal UI for Git operations
   bottom              Cross-platform system monitor
+  procs               Modern ps replacement with tree view
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -98,7 +99,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -268,6 +269,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        procs)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -365,7 +373,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -539,6 +547,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ bottom: $(btm --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("bottom")
+            fi
+            ;;
+        procs)
+            if command -v procs &> /dev/null; then
+                log "✓ procs: $(procs --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("procs")
             fi
             ;;
     esac
