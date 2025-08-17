@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza")
 SELECTED_TOOLS=()
 
 # Show help
@@ -54,6 +54,7 @@ Tools (install all if none specified):
   ruff                Python linter and formatter
   bat                 Enhanced cat with syntax highlighting
   starship            Customizable shell prompt
+  eza                 Modern ls replacement with Git integration
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -94,7 +95,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -236,6 +237,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        eza)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -333,7 +341,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -479,6 +487,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ starship: $(starship --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("starship")
+            fi
+            ;;
+        eza)
+            if command -v eza &> /dev/null; then
+                log "✓ eza: $(eza --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("eza")
             fi
             ;;
     esac

@@ -41,6 +41,7 @@ gearbox install --minimal fd ripgrep
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |
 | **starship** | Customizable shell prompt | Fast, contextual info, Nerd Font support |
+| **eza** | Modern ls replacement | Git integration, tree view, enhanced colors |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
