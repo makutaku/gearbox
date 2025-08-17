@@ -42,6 +42,7 @@ gearbox install --minimal fd ripgrep
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |
 | **starship** | Customizable shell prompt | Fast, contextual info, Nerd Font support |
 | **eza** | Modern ls replacement | Git integration, tree view, enhanced colors |
+| **delta** | Syntax-highlighting pager | Git diff enhancement, word-level highlighting |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |

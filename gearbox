@@ -61,6 +61,9 @@ Navigation & File Management:
               
   eza         Modern ls replacement (Rust)
               Enhanced file listings with Git integration and tree view
+              
+  delta       Syntax-highlighting pager (Rust)
+              Enhanced Git diff and output with word-level highlighting
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -116,6 +119,7 @@ Available Tools:
   bat         Enhanced cat with syntax highlighting (Rust)
   starship    Customizable shell prompt (Rust)
   eza         Modern ls replacement (Rust)
+  delta       Syntax-highlighting pager (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -170,8 +174,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 16 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 17 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"
