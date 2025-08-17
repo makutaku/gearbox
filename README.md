@@ -49,6 +49,7 @@ gearbox install --minimal fd ripgrep
 | **tokei** | Code statistics tool | Fast line counting for 200+ languages |
 | **difftastic** | Structural diff tool | Syntax-aware code change analysis |
 | **bandwhich** | Network bandwidth monitor | Terminal bandwidth utilization by process |
+| **xsv** | CSV data toolkit | Fast CSV processing and analysis |
 | **hyperfine** | Command-line benchmarking | Statistical command execution analysis |
 | **gh** | GitHub CLI | Repository management, PRs, issues, workflows |
 | **dust** | Better disk usage analyzer | Intuitive directory size visualization |

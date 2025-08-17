@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "difftastic" "bandwhich")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "difftastic" "bandwhich" "xsv")
 SELECTED_TOOLS=()
 
 # Show help
@@ -62,6 +62,7 @@ Tools (install all if none specified):
   tokei               Code statistics and line counting tool
   difftastic          Structural diff tool for code analysis
   bandwhich           Network bandwidth monitor by process
+  xsv                 Fast CSV data toolkit
   hyperfine           Command-line benchmarking tool
   gh                  GitHub CLI for repository management
   dust                Better disk usage analyzer
@@ -108,7 +109,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose|difftastic|bandwhich)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose|difftastic|bandwhich|xsv)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -320,6 +321,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        xsv)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
         dust|sd|tealdeer|choose)
             # These tools use simple installation, no build flags needed
             echo ""
@@ -421,7 +429,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "difftastic" "bandwhich" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "difftastic" "bandwhich" "xsv" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -665,6 +673,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ bandwhich: $(bandwhich --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("bandwhich")
+            fi
+            ;;
+        xsv)
+            if command -v xsv &> /dev/null; then
+                log "✓ xsv: $(xsv --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("xsv")
             fi
             ;;
     esac
