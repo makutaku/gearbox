@@ -6,6 +6,9 @@
 
 set -e  # Exit on any error
 
+# Find the script directory
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -193,7 +196,7 @@ get_build_flag() {
 # Check if script exists
 check_script() {
     local tool=$1
-    local script="./install-${tool}.sh"
+    local script="$SCRIPT_DIR/install-${tool}.sh"
     if [[ ! -f "$script" ]]; then
         error "Installation script not found: $script"
     fi
@@ -205,7 +208,7 @@ check_script() {
 # Install a single tool
 install_tool() {
     local tool=$1
-    local script="./install-${tool}.sh"
+    local script="$SCRIPT_DIR/install-${tool}.sh"
     local build_flag=$(get_build_flag "$tool")
     local extra_flags=""
     
@@ -266,8 +269,8 @@ success "All installation scripts found and executable"
 # Install common dependencies first (unless skipped)
 if [[ "$SKIP_COMMON_DEPS" == false ]]; then
     log "Installing common dependencies..."
-    if [[ -f "./install-common-deps.sh" ]] && [[ -x "./install-common-deps.sh" ]]; then
-        ./install-common-deps.sh || error "Failed to install common dependencies"
+    if [[ -f "$SCRIPT_DIR/install-common-deps.sh" ]] && [[ -x "$SCRIPT_DIR/install-common-deps.sh" ]]; then
+        "$SCRIPT_DIR/install-common-deps.sh" || error "Failed to install common dependencies"
         success "Common dependencies installed"
         echo
         log "Sourcing environment for subsequent installations..."

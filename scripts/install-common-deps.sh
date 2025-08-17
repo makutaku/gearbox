@@ -100,7 +100,7 @@ success "Common build tools installed successfully"
 # Install/Update Rust to satisfy highest requirement
 log "Installing/updating Rust to version >= $RUST_MIN_VERSION..."
 if command -v rustc &> /dev/null; then
-    local current_version=$(rustc --version | cut -d' ' -f2)
+    current_version=$(rustc --version | cut -d' ' -f2)
     log "Found Rust version: $current_version"
     
     if version_compare $current_version $RUST_MIN_VERSION; then
@@ -129,7 +129,7 @@ rustup target add x86_64-unknown-linux-musl || warning "Failed to add MUSL targe
 # Install/Update Go
 log "Installing/updating Go to version $GO_VERSION..."
 if command -v go &> /dev/null; then
-    local current_version=$(go version | sed 's/go version go\([0-9.]*\).*/\1/')
+    current_version=$(go version | sed 's/go version go\([0-9.]*\).*/\1/')
     log "Found Go version: $current_version"
     
     if version_compare $current_version "1.20"; then
@@ -144,8 +144,8 @@ fi
 
 # Install Go if needed
 if ! command -v go &> /dev/null || ! version_compare $(go version | sed 's/go version go\([0-9.]*\).*/\1/') "1.20"; then
-    local GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
-    local GO_URL="https://golang.org/dl/${GO_TARBALL}"
+    GO_TARBALL="go${GO_VERSION}.linux-amd64.tar.gz"
+    GO_URL="https://golang.org/dl/${GO_TARBALL}"
     
     cd /tmp
     wget -q "$GO_URL" || error "Failed to download Go"

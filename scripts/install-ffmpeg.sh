@@ -290,7 +290,10 @@ install_dependencies
 # Clean previous build
 log "Cleaning previous build files..."
 if [[ -f "Makefile" ]]; then
-    make clean || warning "Failed to clean, continuing..."
+    make distclean 2>/dev/null || make clean 2>/dev/null || {
+        warning "Failed to clean with make, removing build files manually..."
+        rm -rf config.h config.mak libavcodec libavdevice libavfilter libavformat libavutil libpostproc libswresample libswscale 2>/dev/null || true
+    }
 fi
 
 # Configure FFmpeg
