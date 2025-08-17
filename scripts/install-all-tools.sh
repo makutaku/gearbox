@@ -497,7 +497,7 @@ echo
 log "Installing ${#INSTALLATION_ORDER[@]} tools..."
 echo
 
-local current_tool=0
+current_tool=0
 for tool in "${INSTALLATION_ORDER[@]}"; do
     current_tool=$((current_tool + 1))
     
