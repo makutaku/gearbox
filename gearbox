@@ -133,8 +133,10 @@ Gearbox - Essential Tools Installer
 Usage: gearbox [COMMAND] [OPTIONS] [TOOLS...]
 
 Commands:
-  install     Install tools (default command)
-  list        Show available tools with descriptions
+  install     Install tools (uses advanced orchestrator if available)
+  list        Show available tools with descriptions  
+  status      Show installation status of tools (requires orchestrator)
+  verify      Verify tool installations (requires orchestrator)
   config      Manage configuration settings
   doctor      Run health checks and diagnostics
   help        Show this help message
@@ -203,7 +205,12 @@ if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
             shift
             ;;
         list|ls)
-            show_tools
+            # Use orchestrator if available for enhanced listing
+            if [[ -f "$SCRIPT_DIR/bin/orchestrator" ]]; then
+                exec "$SCRIPT_DIR/bin/orchestrator" list "$@"
+            else
+                show_tools
+            fi
             exit 0
             ;;
         config)
@@ -213,6 +220,26 @@ if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
         doctor)
             COMMAND="doctor"
             shift
+            ;;
+        status)
+            # New orchestrator-based status command
+            if [[ -f "$SCRIPT_DIR/bin/orchestrator" ]]; then
+                exec "$SCRIPT_DIR/bin/orchestrator" status "${@:2}"
+            else
+                echo "Error: Status command requires the advanced orchestrator"
+                echo "Please rebuild the project or use 'gearbox doctor' for health checks"
+                exit 1
+            fi
+            ;;
+        verify)
+            # New orchestrator-based verify command  
+            if [[ -f "$SCRIPT_DIR/bin/orchestrator" ]]; then
+                exec "$SCRIPT_DIR/bin/orchestrator" verify "${@:2}"
+            else
+                echo "Error: Verify command requires the advanced orchestrator"
+                echo "Please rebuild the project or use 'gearbox doctor' for health checks"
+                exit 1
+            fi
             ;;
         help|--help|-h)
             show_help
@@ -235,39 +262,105 @@ fi
 # Handle commands
 case "$COMMAND" in
     install)
-        # Check if no tools specified (just "gearbox install" with no tool names)
-        if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
-            # Installing all tools - show confirmation
-            echo "You're about to install ALL 30 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, tokei, difftastic, bandwhich, xsv, hyperfine, gh, dust, sd, tealdeer, choose, serena, ffmpeg, imagemagick, 7zip"
-            echo ""
-            echo "This will:"
-            echo "  • Take 30-60 minutes depending on your system"
-            echo "  • Download and compile source code"
-            echo "  • Install to /usr/local/bin/"
-            echo "  • Require ~2GB of temporary build space"
-            echo ""
-            echo "Tip: Use 'gearbox list' to see available tools"
-            echo "     Use 'gearbox install fd ripgrep fzf' for specific tools"
-            echo ""
-            read -p "Continue with full installation? [y/N]: " -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-                echo "Installation cancelled."
-                echo "Run 'gearbox list' to see available tools."
-                exit 0
+        # Check if orchestrator is available
+        if [[ -f "$SCRIPT_DIR/bin/orchestrator" ]]; then
+            # Use new Go orchestrator for better performance and features
+            
+            # Check if there are any tool names (non-flag arguments)
+            has_tools=false
+            for arg in "$@"; do
+                if [[ ! "$arg" =~ ^-- ]]; then
+                    has_tools=true
+                    break
+                fi
+            done
+            
+            if [[ $# -eq 0 ]] || [[ "$has_tools" == "false" ]]; then
+                # Installing all tools - show confirmation with orchestrator info
+                echo "You're about to install ALL 30 tools using the advanced orchestrator:"
+                echo ""
+                echo "Features:"
+                echo "  • Parallel installation with dependency resolution"
+                echo "  • Real-time progress tracking and error reporting"
+                echo "  • Optimized build order by language (Go → Rust → Python → C)"
+                echo "  • Comprehensive verification and health checks"
+                echo ""
+                echo "This will:"
+                echo "  • Take 30-60 minutes depending on your system"
+                echo "  • Download and compile source code"
+                echo "  • Install to /usr/local/bin/"
+                echo "  • Require ~2GB of temporary build space"
+                echo ""
+                echo "Tip: Use 'gearbox list' to see available tools"
+                echo "     Use 'gearbox install fd ripgrep fzf' for specific tools"
+                echo ""
+                read -p "Continue with advanced orchestrator installation? [y/N]: " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    echo "Installation cancelled."
+                    echo "Run 'gearbox list' to see available tools."
+                    exit 0
+                fi
+                echo "Starting orchestrated installation..."
+                echo
             fi
-            echo "Starting full installation..."
-            echo
+            
+            # Map gearbox flags to orchestrator flags for backward compatibility
+            mapped_args=()
+            for arg in "$@"; do
+                case "$arg" in
+                    --minimal)
+                        mapped_args+=("--build-type" "minimal")
+                        ;;
+                    --maximum)
+                        mapped_args+=("--build-type" "maximum")
+                        ;;
+                    *)
+                        mapped_args+=("$arg")
+                        ;;
+                esac
+            done
+            
+            # Use the Go orchestrator with mapped arguments
+            exec "$SCRIPT_DIR/bin/orchestrator" install "${mapped_args[@]}"
+        else
+            # Fallback to shell script (legacy mode)
+            echo "Warning: Advanced orchestrator not available, using legacy installer"
+            
+            # Check if no tools specified (just "gearbox install" with no tool names)
+            if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
+                # Installing all tools - show confirmation
+                echo "You're about to install ALL 30 tools from source:"
+                echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, tokei, difftastic, bandwhich, xsv, hyperfine, gh, dust, sd, tealdeer, choose, serena, ffmpeg, imagemagick, 7zip"
+                echo ""
+                echo "This will:"
+                echo "  • Take 30-60 minutes depending on your system"
+                echo "  • Download and compile source code"
+                echo "  • Install to /usr/local/bin/"
+                echo "  • Require ~2GB of temporary build space"
+                echo ""
+                echo "Tip: Use 'gearbox list' to see available tools"
+                echo "     Use 'gearbox install fd ripgrep fzf' for specific tools"
+                echo ""
+                read -p "Continue with full installation? [y/N]: " -n 1 -r
+                echo
+                if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+                    echo "Installation cancelled."
+                    echo "Run 'gearbox list' to see available tools."
+                    exit 0
+                fi
+                echo "Starting full installation..."
+                echo
+            fi
+            
+            # Ensure we're in the build directory
+            cd "$BUILD_DIR" || {
+                error "Could not access build directory: $BUILD_DIR"
+            }
+            
+            # Run the legacy shell installer
+            exec "$SCRIPT_DIR/scripts/install-all-tools.sh" "$@"
         fi
-        
-        # Ensure we're in the build directory
-        cd "$BUILD_DIR" || {
-            error "Could not access build directory: $BUILD_DIR"
-        }
-        
-        # Run the main installer
-        exec "$SCRIPT_DIR/scripts/install-all-tools.sh" "$@"
         ;;
     config)
         # Load the configuration management library
