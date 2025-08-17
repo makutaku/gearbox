@@ -136,6 +136,7 @@ Commands:
   install     Install tools (default command)
   list        Show available tools with descriptions
   config      Manage configuration settings
+  doctor      Run health checks and diagnostics
   help        Show this help message
 
 Install Options:
@@ -207,6 +208,10 @@ if [[ $# -gt 0 ]] && [[ ! "$1" =~ ^-- ]]; then
             ;;
         config)
             COMMAND="config"
+            shift
+            ;;
+        doctor)
+            COMMAND="doctor"
             shift
             ;;
         help|--help|-h)
@@ -343,6 +348,76 @@ EOF
             *)
                 echo "Unknown config command: $1"
                 echo "Use 'gearbox config help' for available commands"
+                exit 1
+                ;;
+        esac
+        ;;
+    doctor)
+        # Load the health check system
+        if [[ -f "$SCRIPT_DIR/lib/doctor.sh" ]]; then
+            source "$SCRIPT_DIR/lib/doctor.sh"
+        else
+            echo "Error: Health check system not available"
+            exit 1
+        fi
+        
+        # Handle doctor subcommands
+        case "${1:-all}" in
+            all|check)
+                run_health_check "all"
+                ;;
+            system)
+                run_health_check "system"
+                ;;
+            tools)
+                run_health_check "tools"
+                ;;
+            environment|env)
+                run_health_check "environment"
+                ;;
+            permissions|perms)
+                run_health_check "permissions"
+                ;;
+            configuration|config)
+                run_health_check "configuration"
+                ;;
+            cache)
+                run_health_check "cache"
+                ;;
+            dependencies|deps)
+                run_health_check "dependencies"
+                ;;
+            help)
+                cat << EOF
+Gearbox Doctor - Health Check & Diagnostics
+
+Usage: gearbox doctor [CATEGORY]
+
+Categories:
+  all             Run all health checks (default)
+  system          Check system requirements
+  tools           Check installed tools
+  environment     Check environment variables
+  permissions     Check file permissions
+  configuration   Check configuration files
+  cache           Check build cache status
+  dependencies    Check system dependencies
+
+Examples:
+  gearbox doctor              # Run all checks
+  gearbox doctor system       # Check only system requirements
+  gearbox doctor tools        # Check only installed tools
+  gearbox doctor env          # Check environment variables
+
+Exit codes:
+  0 - All checks passed (healthy)
+  1 - Some warnings found
+  2 - Critical issues found
+EOF
+                ;;
+            *)
+                echo "Unknown doctor command: $1"
+                echo "Use 'gearbox doctor help' for available commands"
                 exit 1
                 ;;
         esac
