@@ -34,9 +34,19 @@ Core Development Tools:
   jq          JSON processor (C)
               Command-line JSON processor with powerful query capabilities
 
-Media & Compression:
+Navigation & File Management:
+  zoxide      Smart cd command (Rust)
+              Smarter directory navigation with frecency (frequency + recency)
+              
+  yazi        Terminal file manager (Rust)
+              Fast terminal file manager with vim-like keybindings and preview
+
+Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
               Comprehensive media processing suite with extensive codec support
+              
+  imagemagick Image manipulation (C/C++)
+              Powerful image processing and manipulation toolkit
               
   7zip        Compression tool (C/C++)
               High-ratio compression tool with multiple format support
@@ -76,7 +86,10 @@ Available Tools:
   ripgrep     Fast text search (Rust) 
   fzf         Fuzzy finder (Go)
   jq          JSON processor (C)
+  zoxide      Smart cd command (Rust)
+  yazi        Terminal file manager (Rust)
   ffmpeg      Video/audio processing (C/C++)
+  imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
 
 Examples:
@@ -129,8 +142,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 6 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, ffmpeg, 7zip"
+            echo "You're about to install ALL 9 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"

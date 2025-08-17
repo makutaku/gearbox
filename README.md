@@ -33,7 +33,10 @@ gearbox install --minimal fd ripgrep
 | **ripgrep** | Fast text search | PCRE2 support, multi-line search |
 | **fzf** | Fuzzy finder | Shell integration, preview support |
 | **jq** | JSON processor | JSONPath queries, streaming |
+| **zoxide** | Smart cd command | Frecency-based navigation |
+| **yazi** | Terminal file manager | Vim-like keys, preview support |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
+| **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
 
 ## Documentation

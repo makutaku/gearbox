@@ -20,7 +20,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide")
 SELECTED_TOOLS=()
 
 # Show help
@@ -39,12 +39,15 @@ Options:
   -h, --help          Show this help message
 
 Tools (install all if none specified):
-  ffmpeg              Video/audio processing suite
-  7zip                Compression tool
-  jq                  JSON processor
   fd                  Fast file finder
   ripgrep             Fast text search
   fzf                 Fuzzy finder
+  jq                  JSON processor
+  zoxide              Smart cd command
+  yazi                Terminal file manager
+  ffmpeg              Video/audio processing suite
+  imagemagick         Image manipulation toolkit
+  7zip                Compression tool
 
 Examples:
   $0                              # Install all tools with standard builds
@@ -82,7 +85,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -161,6 +164,27 @@ get_build_flag() {
                 minimal) echo "-s" ;;
                 standard) echo "-s" ;;
                 maximum) echo "-p" ;;  # profiling build
+            esac
+            ;;
+        imagemagick)
+            case $BUILD_TYPE in
+                minimal) echo "-m" ;;
+                standard) echo "-s" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
+        yazi)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
+        zoxide)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
             esac
             ;;
     esac
@@ -260,7 +284,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "jq" "ffmpeg" "7zip"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -343,6 +367,27 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ fzf: $(fzf --version)"
             else
                 FAILED_TOOLS+=("fzf")
+            fi
+            ;;
+        imagemagick)
+            if command -v magick &> /dev/null; then
+                log "✓ imagemagick: $(magick --version | head -n1)"
+            else
+                FAILED_TOOLS+=("imagemagick")
+            fi
+            ;;
+        yazi)
+            if command -v yazi &> /dev/null; then
+                log "✓ yazi: $(yazi --version)"
+            else
+                FAILED_TOOLS+=("yazi")
+            fi
+            ;;
+        zoxide)
+            if command -v zoxide &> /dev/null; then
+                log "✓ zoxide: $(zoxide --version)"
+            else
+                FAILED_TOOLS+=("zoxide")
             fi
             ;;
     esac
