@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship")
 SELECTED_TOOLS=()
 
 # Show help
@@ -53,6 +53,7 @@ Tools (install all if none specified):
   uv                  Python package manager
   ruff                Python linter and formatter
   bat                 Enhanced cat with syntax highlighting
+  starship            Customizable shell prompt
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -93,7 +94,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -228,6 +229,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        starship)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -325,7 +333,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -464,6 +472,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ bat: $(bat --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("bat")
+            fi
+            ;;
+        starship)
+            if command -v starship &> /dev/null; then
+                log "✓ starship: $(starship --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("starship")
             fi
             ;;
     esac
