@@ -80,7 +80,9 @@ warning() {
 # @brief Debug logging (only shown if DEBUG=true)
 # @param $1 Debug message
 debug() {
-    [[ "${DEBUG:-false}" == "true" ]] && echo -e "${BLUE}[DEBUG]${NC} $1" >&2
+    if [[ "${DEBUG:-false}" == "true" ]]; then
+        echo -e "${BLUE}[DEBUG]${NC} $1" >&2
+    fi
 }
 
 # =============================================================================
@@ -1141,8 +1143,16 @@ clean_old_cache() {
     
     if [[ -d "$cache_builds_dir" ]]; then
         log "Cleaning cache entries older than $max_age_days days..."
-        find "$cache_builds_dir" -type d -name "*-*-*" -mtime +$max_age_days -exec rm -rf {} \; 2>/dev/null || true
+        # Use a more robust approach to avoid exit code issues
+        local old_files
+        old_files=$(find "$cache_builds_dir" -type d -name "*-*-*" -mtime +$max_age_days 2>/dev/null || true)
+        if [[ -n "$old_files" ]]; then
+            echo "$old_files" | while read -r dir; do
+                [[ -d "$dir" ]] && rm -rf "$dir" 2>/dev/null || true
+            done
+        fi
     fi
+    return 0
 }
 
 # =============================================================================
@@ -1154,8 +1164,10 @@ ensure_directory "$BUILD_DIR"
 ensure_directory "$CACHE_DIR"
 ensure_directory "$CACHE_DIR/builds"
 
-# Clean old cache entries on startup (older than 30 days)
-clean_old_cache 30
+# Clean old cache entries on startup (older than 30 days) - disabled for now to prevent startup issues
+# if [[ "${GEARBOX_SKIP_CACHE_CLEANUP:-}" != "true" ]]; then
+#     clean_old_cache 30 2>/dev/null || true
+# fi
 
 # Export important variables for use by calling scripts
 export GEARBOX_COMMON_LOADED GEARBOX_LIB_DIR GEARBOX_REPO_DIR
