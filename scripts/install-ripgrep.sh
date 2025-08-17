@@ -456,24 +456,69 @@ fi
 # Install ripgrep
 log "Installing ripgrep..."
 
-if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
-    build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+# Check if we can use cached binary
+if is_cached "ripgrep" "$BUILD_TYPE"; then
+    log "Found cached ripgrep build, using cached version..."
+    if get_cached_binary "rg" "$BUILD_TYPE" "$HOME/.cargo/bin/rg"; then
+        # Add cargo bin to PATH if not already there
+        if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+            log "Adding ~/.cargo/bin to PATH..."
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+            export PATH="$HOME/.cargo/bin:$PATH"
+            warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+        fi
+        
+        # Create system-wide symlink to ensure our version takes precedence
+        log "Creating system-wide symlink..."
+        sudo ln -sf "$HOME/.cargo/bin/rg" /usr/local/bin/rg || warning "Failed to create rg symlink"
+        success "ripgrep installed from cache successfully"
+    else
+        warning "Failed to use cached binary, proceeding with fresh installation"
+        if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
+            build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+        else
+            execute_command_safely cargo install --path . --locked
+        fi
+        
+        # Add cargo bin to PATH if not already there
+        if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+            log "Adding ~/.cargo/bin to PATH..."
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+            export PATH="$HOME/.cargo/bin:$PATH"
+            warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+        fi
+        
+        # Create system-wide symlink to ensure our version takes precedence
+        log "Creating system-wide symlink..."
+        sudo ln -sf "$HOME/.cargo/bin/rg" /usr/local/bin/rg || warning "Failed to create rg symlink"
+        success "Symlink created for rg command"
+        
+        # Cache the new build
+        cache_build "ripgrep" "$BUILD_TYPE" "$HOME/.cargo/bin/rg"
+    fi
 else
-    execute_command_safely cargo install --path . --locked
+    if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
+        build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+    else
+        execute_command_safely cargo install --path . --locked
+    fi
+    
+    # Add cargo bin to PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+        log "Adding ~/.cargo/bin to PATH..."
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+        export PATH="$HOME/.cargo/bin:$PATH"
+        warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+    fi
+    
+    # Create system-wide symlink to ensure our version takes precedence
+    log "Creating system-wide symlink..."
+    sudo ln -sf "$HOME/.cargo/bin/rg" /usr/local/bin/rg || warning "Failed to create rg symlink"
+    success "Symlink created for rg command"
+    
+    # Cache the new build
+    cache_build "ripgrep" "$BUILD_TYPE" "$HOME/.cargo/bin/rg"
 fi
-
-# Add cargo bin to PATH if not already there
-if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
-    log "Adding ~/.cargo/bin to PATH..."
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-    export PATH="$HOME/.cargo/bin:$PATH"
-    warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
-fi
-
-# Create system-wide symlink to ensure our version takes precedence
-log "Creating system-wide symlink..."
-sudo ln -sf "$HOME/.cargo/bin/rg" /usr/local/bin/rg || warning "Failed to create rg symlink"
-success "Symlink created for rg command"
 
 # Verify installation
 log "Verifying installation..."

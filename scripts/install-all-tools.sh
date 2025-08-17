@@ -485,18 +485,27 @@ done
 log "Installation order: ${INSTALLATION_ORDER[*]}"
 echo
 
-# Install each tool
+# Install each tool with progress tracking
+echo
+log "Installing ${#INSTALLATION_ORDER[@]} tools..."
+echo
+
+local current_tool=0
 for tool in "${INSTALLATION_ORDER[@]}"; do
+    current_tool=$((current_tool + 1))
+    
     echo
-    log "================================================"
-    log "Installing $tool..."
-    log "================================================"
+    show_progress "$current_tool" "${#INSTALLATION_ORDER[@]}" "Installing $tool..."
+    echo
+    log_step "$current_tool" "${#INSTALLATION_ORDER[@]}" "Starting $tool installation"
     
     install_tool "$tool"
     
-    echo
     success "$tool installation completed successfully!"
 done
+
+echo
+show_progress "${#INSTALLATION_ORDER[@]}" "${#INSTALLATION_ORDER[@]}" "All tools installed successfully!"
 
 # Final setup
 echo

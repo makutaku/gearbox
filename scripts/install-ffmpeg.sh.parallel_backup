@@ -309,10 +309,10 @@ fi
 
 # Build FFmpeg
 log "Building FFmpeg (this may take a while)..."
-CORES=$(get_optimal_jobs)
-log "Using $CORES CPU cores for parallel build"
+NPROC=$(nproc)
+log "Using $NPROC CPU cores for parallel build"
 
-make -j$CORES || error "Build failed"
+make -j$NPROC || error "Build failed"
 
 success "Build completed successfully"
 
@@ -324,25 +324,7 @@ fi
 
 # Install FFmpeg
 log "Installing FFmpeg..."
-
-# Check if we can use cached binary
-if is_cached "ffmpeg" "$BUILD_TYPE"; then
-    log "Found cached ffmpeg build, using cached version..."
-    if get_cached_binary "ffmpeg" "$BUILD_TYPE" "/usr/local/bin/ffmpeg" && \
-       get_cached_binary "ffprobe" "$BUILD_TYPE" "/usr/local/bin/ffprobe"; then
-        sudo chmod +x /usr/local/bin/ffmpeg /usr/local/bin/ffprobe || error "Failed to set executable permissions"
-        success "ffmpeg installed from cache successfully"
-    else
-        warning "Failed to use cached binary, proceeding with fresh installation"
-        sudo make install || error "Installation failed"
-        # Cache the new build
-        cache_build "ffmpeg" "$BUILD_TYPE" "/usr/local/bin/ffmpeg" "/usr/local/bin/ffprobe"
-    fi
-else
-    sudo make install || error "Installation failed"
-    # Cache the new build
-    cache_build "ffmpeg" "$BUILD_TYPE" "/usr/local/bin/ffmpeg" "/usr/local/bin/ffprobe"
-fi
+sudo make install || error "Installation failed"
 
 # Update library cache
 log "Updating library cache..."

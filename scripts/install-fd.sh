@@ -377,25 +377,72 @@ fi
 # Install fd
 log "Installing fd..."
 
-if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
-    build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+# Check if we can use cached binary
+if is_cached "fd" "$BUILD_TYPE"; then
+    log "Found cached fd build, using cached version..."
+    if get_cached_binary "fd" "$BUILD_TYPE" "$HOME/.cargo/bin/fd"; then
+        # Add cargo bin to PATH if not already there
+        if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+            log "Adding ~/.cargo/bin to PATH..."
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+            export PATH="$HOME/.cargo/bin:$PATH"
+            warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+        fi
+        
+        # Create system-wide symlinks to ensure our version takes precedence
+        log "Creating system-wide symlinks..."
+        sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fd || warning "Failed to create fd symlink"
+        sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fdfind || warning "Failed to create fdfind symlink"
+        success "fd installed from cache successfully"
+    else
+        warning "Failed to use cached binary, proceeding with fresh installation"
+        if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
+            build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+        else
+            execute_command_safely cargo install --path . --locked
+        fi
+        
+        # Add cargo bin to PATH if not already there
+        if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+            log "Adding ~/.cargo/bin to PATH..."
+            echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+            export PATH="$HOME/.cargo/bin:$PATH"
+            warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+        fi
+        
+        # Create system-wide symlinks to ensure our version takes precedence
+        log "Creating system-wide symlinks..."
+        sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fd || warning "Failed to create fd symlink"
+        sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fdfind || warning "Failed to create fdfind symlink"
+        success "Symlinks created for both fd and fdfind commands"
+        
+        # Cache the new build
+        cache_build "fd" "$BUILD_TYPE" "$HOME/.cargo/bin/fd"
+    fi
 else
-    execute_command_safely cargo install --path . --locked
+    if [[ -n "$CARGO_INSTALL_OPTIONS" ]]; then
+        build_with_options cargo install "$CARGO_INSTALL_OPTIONS"
+    else
+        execute_command_safely cargo install --path . --locked
+    fi
+    
+    # Add cargo bin to PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
+        log "Adding ~/.cargo/bin to PATH..."
+        echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
+        export PATH="$HOME/.cargo/bin:$PATH"
+        warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+    fi
+    
+    # Create system-wide symlinks to ensure our version takes precedence
+    log "Creating system-wide symlinks..."
+    sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fd || warning "Failed to create fd symlink"
+    sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fdfind || warning "Failed to create fdfind symlink"
+    success "Symlinks created for both fd and fdfind commands"
+    
+    # Cache the new build
+    cache_build "fd" "$BUILD_TYPE" "$HOME/.cargo/bin/fd"
 fi
-
-# Add cargo bin to PATH if not already there
-if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then
-    log "Adding ~/.cargo/bin to PATH..."
-    echo 'export PATH="$HOME/.cargo/bin:$PATH"' >> ~/.bashrc
-    export PATH="$HOME/.cargo/bin:$PATH"
-    warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
-fi
-
-# Create system-wide symlinks to ensure our version takes precedence
-log "Creating system-wide symlinks..."
-sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fd || warning "Failed to create fd symlink"
-sudo ln -sf "$HOME/.cargo/bin/fd" /usr/local/bin/fdfind || warning "Failed to create fdfind symlink"
-success "Symlinks created for both fd and fdfind commands"
 
 # Verify installation
 log "Verifying installation..."

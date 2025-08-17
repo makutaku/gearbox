@@ -318,16 +318,16 @@ success "Configuration completed successfully"
 # Exit if config-only mode
 if [[ "$MODE" == "config" ]]; then
     success "Configuration completed. Run with --build-only or --install to continue."
-    success "Build command would be: make -j$(get_optimal_jobs)"
+    success "Build command would be: make -j$(nproc)"
     exit 0
 fi
 
 # Build ImageMagick
 log "Building ImageMagick (this may take a while)..."
-CORES=$(get_optimal_jobs)
-log "Using $CORES CPU cores for parallel build"
+NPROC=$(nproc)
+log "Using $NPROC CPU cores for parallel build"
 
-make -j$CORES || error "Build failed"
+make -j$NPROC || error "Build failed"
 
 # Verify build output
 if [[ ! -f "utilities/magick" ]] && [[ ! -f "utilities/.libs/magick" ]]; then

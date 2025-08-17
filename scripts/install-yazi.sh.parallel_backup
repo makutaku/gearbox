@@ -498,30 +498,10 @@ fi
 # Install yazi
 log "Installing yazi..."
 
-# Check if we can use cached binary
-if is_cached "yazi" "$BUILD_TYPE"; then
-    log "Found cached yazi build, using cached version..."
-    if get_cached_binary "yazi" "$BUILD_TYPE" "/usr/local/bin/yazi" && \
-       get_cached_binary "ya" "$BUILD_TYPE" "/usr/local/bin/ya"; then
-        sudo chmod +x /usr/local/bin/yazi /usr/local/bin/ya || error "Failed to set executable permissions"
-        success "yazi installed from cache successfully"
-    else
-        warning "Failed to use cached binary, proceeding with fresh installation"
-        # Install the binaries to system location
-        sudo cp "$BUILD_DIR/yazi" /usr/local/bin/ || error "Installation of yazi failed"
-        sudo cp "$BUILD_DIR/ya" /usr/local/bin/ || error "Installation of ya failed"
-        sudo chmod +x /usr/local/bin/yazi /usr/local/bin/ya || error "Failed to set executable permissions"
-        # Cache the new build
-        cache_build "yazi" "$BUILD_TYPE" "$BUILD_DIR/yazi" "$BUILD_DIR/ya"
-    fi
-else
-    # Install the binaries to system location
-    sudo cp "$BUILD_DIR/yazi" /usr/local/bin/ || error "Installation of yazi failed"
-    sudo cp "$BUILD_DIR/ya" /usr/local/bin/ || error "Installation of ya failed"
-    sudo chmod +x /usr/local/bin/yazi /usr/local/bin/ya || error "Failed to set executable permissions"
-    # Cache the new build
-    cache_build "yazi" "$BUILD_TYPE" "$BUILD_DIR/yazi" "$BUILD_DIR/ya"
-fi
+# Install the binaries to system location
+sudo cp "$BUILD_DIR/yazi" /usr/local/bin/ || error "Installation of yazi failed"
+sudo cp "$BUILD_DIR/ya" /usr/local/bin/ || error "Installation of ya failed"
+sudo chmod +x /usr/local/bin/yazi /usr/local/bin/ya || error "Failed to set executable permissions"
 
 # Add cargo bin to PATH if not already there
 if [[ ":$PATH:" != *":$HOME/.cargo/bin:"* ]]; then

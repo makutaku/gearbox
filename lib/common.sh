@@ -740,6 +740,32 @@ safe_sudo_copy() {
 }
 
 # =============================================================================
+# SECURITY FUNCTIONS
+# =============================================================================
+
+# @function ensure_not_root
+# @brief Ensure script is not running as root for security
+ensure_not_root() {
+    if [[ $EUID -eq 0 ]]; then
+        error "This script should not be run as root for security reasons"
+    fi
+}
+
+# @function check_tool_installed
+# @brief Check if tool is already installed and handle force flag
+# @param $1 Tool name
+# @param $2 Force install flag (default: false)
+check_tool_installed() {
+    local tool_name="$1"
+    local force_install="${2:-false}"
+    
+    if command -v "$tool_name" &> /dev/null && [[ "$force_install" != "true" ]]; then
+        log "$tool_name already installed. Use --force to reinstall."
+        exit 0
+    fi
+}
+
+# =============================================================================
 # SAFE COMMAND EXECUTION
 # =============================================================================
 
@@ -806,14 +832,314 @@ configure_with_options() {
 }
 
 # =============================================================================
+# CLEANUP AND ERROR HANDLING
+# =============================================================================
+
+# Global variables for cleanup tracking
+declare -a CLEANUP_DIRS=()
+declare -a CLEANUP_FILES=()
+declare -a CLEANUP_COMMANDS=()
+
+# @function cleanup_on_exit
+# @brief Main cleanup function called on script exit
+cleanup_on_exit() {
+    local exit_code=$?
+    
+    if [[ $exit_code -ne 0 ]]; then
+        warning "Script exited with error code $exit_code, performing cleanup..."
+    else
+        debug "Script completed successfully, performing cleanup..."
+    fi
+    
+    # Execute cleanup commands
+    for cmd in "${CLEANUP_COMMANDS[@]}"; do
+        debug "Executing cleanup command: $cmd"
+        eval "$cmd" || warning "Cleanup command failed: $cmd"
+    done
+    
+    # Remove temporary files
+    for file in "${CLEANUP_FILES[@]}"; do
+        if [[ -f "$file" ]]; then
+            debug "Removing temporary file: $file"
+            rm -f "$file" || warning "Failed to remove file: $file"
+        fi
+    done
+    
+    # Remove temporary directories
+    for dir in "${CLEANUP_DIRS[@]}"; do
+        if [[ -d "$dir" ]]; then
+            debug "Removing temporary directory: $dir"
+            rm -rf "$dir" || warning "Failed to remove directory: $dir"
+        fi
+    done
+    
+    # Reset arrays
+    CLEANUP_DIRS=()
+    CLEANUP_FILES=()
+    CLEANUP_COMMANDS=()
+}
+
+# @function register_cleanup_dir
+# @brief Register a directory for cleanup on exit
+# @param $1 Directory path to clean up
+register_cleanup_dir() {
+    local dir="$1"
+    CLEANUP_DIRS+=("$dir")
+    debug "Registered directory for cleanup: $dir"
+}
+
+# @function register_cleanup_file
+# @brief Register a file for cleanup on exit
+# @param $1 File path to clean up
+register_cleanup_file() {
+    local file="$1"
+    CLEANUP_FILES+=("$file")
+    debug "Registered file for cleanup: $file"
+}
+
+# @function register_cleanup_command
+# @brief Register a command to run during cleanup
+# @param $1 Command to execute during cleanup
+register_cleanup_command() {
+    local cmd="$1"
+    CLEANUP_COMMANDS+=("$cmd")
+    debug "Registered cleanup command: $cmd"
+}
+
+# @function setup_cleanup_trap
+# @brief Set up the cleanup trap for the current script
+setup_cleanup_trap() {
+    trap cleanup_on_exit EXIT INT TERM
+    debug "Cleanup trap set up successfully"
+}
+
+# @function create_temp_dir
+# @brief Create a temporary directory and register for cleanup
+# @param $1 Optional prefix for directory name
+# @return Prints the temporary directory path
+create_temp_dir() {
+    local prefix="${1:-gearbox}"
+    local temp_dir
+    temp_dir=$(mktemp -d -t "${prefix}.XXXXXX")
+    register_cleanup_dir "$temp_dir"
+    echo "$temp_dir"
+}
+
+# @function create_temp_file
+# @brief Create a temporary file and register for cleanup
+# @param $1 Optional prefix for file name
+# @return Prints the temporary file path
+create_temp_file() {
+    local prefix="${1:-gearbox}"
+    local temp_file
+    temp_file=$(mktemp -t "${prefix}.XXXXXX")
+    register_cleanup_file "$temp_file"
+    echo "$temp_file"
+}
+
+# =============================================================================
+# PROGRESS INDICATORS
+# =============================================================================
+
+# @function show_progress
+# @brief Show progress indicator during long operations
+# @param $1 Current step number
+# @param $2 Total steps
+# @param $3 Description of current step
+show_progress() {
+    local current="$1"
+    local total="$2"
+    local description="$3"
+    
+    local percentage=$((current * 100 / total))
+    local completed=$((current * 50 / total))
+    local remaining=$((50 - completed))
+    
+    # Build progress bar
+    local bar=""
+    for ((i=0; i<completed; i++)); do bar+="█"; done
+    for ((i=0; i<remaining; i++)); do bar+="░"; done
+    
+    printf "\r${BLUE}[%3d%%]${NC} ${bar} ${YELLOW}(%d/%d)${NC} %s" \
+           "$percentage" "$current" "$total" "$description"
+    
+    # Add newline when complete
+    if [[ $current -eq $total ]]; then
+        echo
+    fi
+}
+
+# @function start_spinner
+# @brief Start a spinner for indefinite operations
+# @param $1 Message to display with spinner
+start_spinner() {
+    local message="$1"
+    local spinner_chars="⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏"
+    local i=0
+    
+    while true; do
+        printf "\r${BLUE}${spinner_chars:$i:1}${NC} %s" "$message"
+        sleep 0.1
+        i=$(( (i + 1) % ${#spinner_chars} ))
+    done
+}
+
+# @function stop_spinner
+# @brief Stop the spinner and clear the line
+stop_spinner() {
+    printf "\r\033[K"  # Clear the line
+}
+
+# @function log_step
+# @brief Log a step with step number for tracking progress
+# @param $1 Step number
+# @param $2 Total steps
+# @param $3 Step description
+log_step() {
+    local step="$1"
+    local total="$2"
+    local description="$3"
+    
+    log "${YELLOW}[Step $step/$total]${NC} $description"
+}
+
+# =============================================================================
+# BUILD CACHE SYSTEM
+# =============================================================================
+
+# @function get_cache_key
+# @brief Generate a cache key for a tool build
+# @param $1 Tool name
+# @param $2 Build type
+# @param $3 Version/commit hash
+get_cache_key() {
+    local tool_name="$1"
+    local build_type="$2"
+    local version="$3"
+    
+    echo "${tool_name}-${build_type}-${version}"
+}
+
+# @function is_cached
+# @brief Check if a build is already cached
+# @param $1 Tool name
+# @param $2 Build type
+# @param $3 Version/commit hash
+is_cached() {
+    local cache_key
+    cache_key=$(get_cache_key "$1" "$2" "$3")
+    local cache_path="$CACHE_DIR/builds/$cache_key"
+    
+    [[ -d "$cache_path" && -f "$cache_path/.build_complete" ]]
+}
+
+# @function get_cached_binary
+# @brief Retrieve cached binary if available
+# @param $1 Tool name
+# @param $2 Build type
+# @param $3 Version/commit hash
+# @param $4 Binary name (optional, defaults to tool name)
+get_cached_binary() {
+    local tool_name="$1"
+    local build_type="$2"
+    local version="$3"
+    local binary_name="${4:-$tool_name}"
+    
+    local cache_key
+    cache_key=$(get_cache_key "$tool_name" "$build_type" "$version")
+    local cache_path="$CACHE_DIR/builds/$cache_key"
+    
+    if is_cached "$tool_name" "$build_type" "$version"; then
+        local cached_binary="$cache_path/bin/$binary_name"
+        if [[ -f "$cached_binary" ]]; then
+            log "Using cached binary for $tool_name"
+            sudo cp "$cached_binary" "/usr/local/bin/"
+            return 0
+        fi
+    fi
+    
+    return 1
+}
+
+# @function cache_build
+# @brief Cache a successful build
+# @param $1 Tool name
+# @param $2 Build type
+# @param $3 Version/commit hash
+# @param $4 Path to built binary
+cache_build() {
+    local tool_name="$1"
+    local build_type="$2"
+    local version="$3"
+    local binary_path="$4"
+    
+    local cache_key
+    cache_key=$(get_cache_key "$tool_name" "$build_type" "$version")
+    local cache_path="$CACHE_DIR/builds/$cache_key"
+    
+    # Create cache directory structure
+    ensure_directory "$cache_path/bin"
+    
+    # Copy binary to cache
+    if [[ -f "$binary_path" ]]; then
+        cp "$binary_path" "$cache_path/bin/"
+        
+        # Mark build as complete
+        echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$cache_path/.build_complete"
+        echo "tool=$tool_name" >> "$cache_path/.build_complete"
+        echo "build_type=$build_type" >> "$cache_path/.build_complete"
+        echo "version=$version" >> "$cache_path/.build_complete"
+        
+        log "Cached build for $tool_name ($build_type, $version)"
+        return 0
+    else
+        warning "Binary not found for caching: $binary_path"
+        return 1
+    fi
+}
+
+# @function get_tool_version
+# @brief Get version/commit hash for a tool from its repository
+# @param $1 Repository directory path
+get_tool_version() {
+    local repo_dir="$1"
+    
+    if [[ -d "$repo_dir/.git" ]]; then
+        cd "$repo_dir" && git rev-parse --short HEAD
+    else
+        echo "unknown"
+    fi
+}
+
+# @function clean_old_cache
+# @brief Clean cache entries older than specified days
+# @param $1 Maximum age in days (default: 30)
+clean_old_cache() {
+    local max_age_days="${1:-30}"
+    local cache_builds_dir="$CACHE_DIR/builds"
+    
+    if [[ -d "$cache_builds_dir" ]]; then
+        log "Cleaning cache entries older than $max_age_days days..."
+        find "$cache_builds_dir" -type d -name "*-*-*" -mtime +$max_age_days -exec rm -rf {} \; 2>/dev/null || true
+    fi
+}
+
+# =============================================================================
 # INITIALIZATION
 # =============================================================================
 
 # Ensure required directories exist
 ensure_directory "$BUILD_DIR"
 ensure_directory "$CACHE_DIR"
+ensure_directory "$CACHE_DIR/builds"
+
+# Clean old cache entries on startup (older than 30 days)
+clean_old_cache 30
 
 # Export important variables for use by calling scripts
 export GEARBOX_COMMON_LOADED GEARBOX_LIB_DIR GEARBOX_REPO_DIR
 
-debug "Common library loaded successfully"
+# Automatically set up cleanup traps for any script that sources this library
+setup_cleanup_trap
+
+debug "Common library loaded successfully with cleanup traps enabled"
