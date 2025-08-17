@@ -52,6 +52,9 @@ Navigation & File Management:
               
   ruff        Python linter & formatter (Rust)
               10-100x faster than Flake8/Black, 800+ lint rules
+              
+  bat         Enhanced cat with syntax highlighting (Rust)
+              Cat clone with wings - Git integration, themes, paging
 
 Media & Image Processing:
   ffmpeg      Video/audio processing (C/C++)
@@ -104,6 +107,7 @@ Available Tools:
   serena      Coding agent toolkit (Python)
   uv          Python package manager (Rust)
   ruff        Python linter & formatter (Rust)
+  bat         Enhanced cat with syntax highlighting (Rust)
   ffmpeg      Video/audio processing (C/C++)
   imagemagick Image manipulation (C/C++)
   7zip        Compression tool (C/C++)
@@ -158,8 +162,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 13 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 14 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"

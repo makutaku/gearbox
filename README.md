@@ -39,6 +39,7 @@ gearbox install --minimal fd ripgrep
 | **serena** | Coding agent toolkit | Semantic retrieval, IDE-like analysis |
 | **uv** | Python package manager | 10-100x faster than pip, unified tooling |
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
+| **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |
 | **ffmpeg** | Video/audio processing | Comprehensive codec support |
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |

@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat")
 SELECTED_TOOLS=()
 
 # Show help
@@ -52,6 +52,7 @@ Tools (install all if none specified):
   serena              Coding agent toolkit
   uv                  Python package manager
   ruff                Python linter and formatter
+  bat                 Enhanced cat with syntax highlighting
   ffmpeg              Video/audio processing suite
   imagemagick         Image manipulation toolkit
   7zip                Compression tool
@@ -92,7 +93,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -220,6 +221,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        bat)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
     esac
 }
 
@@ -317,7 +325,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -449,6 +457,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ ruff: $(ruff --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("ruff")
+            fi
+            ;;
+        bat)
+            if command -v bat &> /dev/null; then
+                log "✓ bat: $(bat --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("bat")
             fi
             ;;
     esac
