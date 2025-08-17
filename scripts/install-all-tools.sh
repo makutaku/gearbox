@@ -6,33 +6,19 @@
 
 set -e  # Exit on any error
 
-# Find the script directory
+# Find the script directory and load common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Colors for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-BLUE='\033[0;34m'
-NC='\033[0m' # No Color
-
-# Shared logging functions
-log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
+# Source common library for shared functions
+if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
+    source "$REPO_DIR/lib/common.sh"
+else
+    echo "ERROR: common.sh not found in $REPO_DIR/lib/" >&2
     exit 1
-}
+fi
 
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+# Note: Logging functions now provided by lib/common.sh
 
 # Default options
 SKIP_COMMON_DEPS=false
@@ -183,22 +169,7 @@ if [[ ${#SELECTED_TOOLS[@]} -eq 0 ]]; then
 fi
 
 # Logging function
-log() {
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
-}
-
-error() {
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-    exit 1
-}
-
-success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+# Note: Logging functions provided by lib/common.sh above
 
 # Get build type flag for each tool
 get_build_flag() {

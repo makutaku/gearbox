@@ -14,18 +14,6 @@
 
 set -e  # Exit on any error
 
-# Find the script directory and load common library
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Source common library for shared functions
-if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
-    source "$REPO_DIR/lib/common.sh"
-else
-    echo "ERROR: common.sh not found in $REPO_DIR/lib/" >&2
-    exit 1
-fi
-
 # Load shared library and configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
@@ -34,13 +22,22 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 source "$REPO_DIR/config.sh"
 
 # Define simplified shared functions
-# Note: Logging functions now provided by lib/common.sh
+log() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+    exit 1
+}
 
-# Note: Logging functions now provided by lib/common.sh
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
 check_existing_installation() {
     local tool_name="$1"

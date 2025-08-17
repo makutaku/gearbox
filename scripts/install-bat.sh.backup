@@ -1,28 +1,22 @@
 #!/bin/bash
 
-# eza Installation Script for Debian Linux
+# bat Installation Script for Debian Linux
 # Automated dependency installation, build, and install
-# Usage: ./install-eza.sh [OPTIONS]
+# Usage: ./install-bat.sh [OPTIONS]
 
 set -e  # Exit on any error
 
-# Find the script directory and load common library
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Source common library for shared functions
-if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
-    source "$REPO_DIR/lib/common.sh"
-else
-    echo "ERROR: common.sh not found in $REPO_DIR/lib/" >&2
-    exit 1
-fi
-
+# Colors for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+BLUE='\033[0;34m'
+NC='\033[0m' # No Color
 
 # Configuration
-EZA_DIR="eza"
-EZA_REPO="https://github.com/eza-community/eza.git"
-RUST_MIN_VERSION="1.82.0"
+BAT_DIR="bat"
+BAT_REPO="https://github.com/sharkdp/bat.git"
+RUST_MIN_VERSION="1.74.0"
 
 # Default options
 BUILD_TYPE="release"      # debug, release, optimized
@@ -30,12 +24,11 @@ MODE="install"            # config, build, install
 SKIP_DEPS=false
 RUN_TESTS=false
 FORCE_INSTALL=false
-DISABLE_GIT=false
 
 # Show help
 show_help() {
     cat << EOF
-eza Installation Script for Debian Linux
+bat Installation Script for Debian Linux
 
 Usage: $0 [OPTIONS]
 
@@ -52,7 +45,6 @@ Modes:
 Options:
   --skip-deps          Skip dependency installation
   --run-tests          Run test suite after building
-  --disable-git        Build without Git integration
   --force              Force reinstallation if already installed
   -h, --help           Show this help message
 
@@ -60,14 +52,12 @@ Examples:
   $0                   # Default: release build with install
   $0 -d -c             # Debug build, config only
   $0 -o --run-tests    # Optimized build with tests
-  $0 --disable-git     # Build without Git integration
   $0 --skip-deps       # Skip dependency installation
 
-About eza:
-  A modern, enhanced replacement for the traditional 'ls' command.
-  Features colorful output, Git integration, tree view, extended attributes
-  support, and intelligent file type recognition. Perfect for developers
-  who want more informative directory listings.
+About bat:
+  A cat(1) clone with wings - enhanced file viewer with syntax highlighting,
+  Git integration, line numbers, and automatic paging. Perfect replacement
+  for cat with intelligent features for developers and sysadmins.
 
 EOF
 }
@@ -107,10 +97,6 @@ while [[ $# -gt 0 ]]; do
             RUN_TESTS=true
             shift
             ;;
-        --disable-git)
-            DISABLE_GIT=true
-            shift
-            ;;
         --force)
             FORCE_INSTALL=true
             shift
@@ -127,13 +113,23 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
-# Note: Logging functions now provided by lib/common.sh
+# Logging function
+log() {
+    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+error() {
+    echo -e "${RED}[ERROR]${NC} $1" >&2
+    exit 1
+}
 
-# Note: Logging functions now provided by lib/common.sh
+success() {
+    echo -e "${GREEN}[SUCCESS]${NC} $1"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+warning() {
+    echo -e "${YELLOW}[WARNING]${NC} $1"
+}
 
 # Version comparison function
 version_compare() {
@@ -149,8 +145,6 @@ version_compare() {
         if [[ -z ${ver2[i]} ]]; then
             ver2[i]=0
         fi
-    done
-    for ((i=0; i<${#ver1[@]}; i++)); do
         if ((10#${ver1[i]} > 10#${ver2[i]})); then
             return 0
         fi
@@ -168,26 +162,25 @@ fi
 
 # Header
 echo
-log "===================================="
-log "eza Installation Script"
-log "===================================="
+log "==================================="
+log "bat Installation Script"
+log "==================================="
 log "Build type: $BUILD_TYPE"
 log "Mode: $MODE"
 log "Skip dependencies: $SKIP_DEPS"
 log "Run tests: $RUN_TESTS"
-log "Git integration: $([ $DISABLE_GIT = true ] && echo 'disabled' || echo 'enabled')"
 echo
 
-# Check if eza is already installed
-if command -v eza &> /dev/null && [[ "$FORCE_INSTALL" != true ]]; then
-    CURRENT_VERSION=$(eza --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
-    log "Found existing eza installation (version: $CURRENT_VERSION)"
+# Check if bat is already installed
+if command -v bat &> /dev/null && [[ "$FORCE_INSTALL" != true ]]; then
+    CURRENT_VERSION=$(bat --version 2>/dev/null | grep -oP '\d+\.\d+\.\d+' || echo "unknown")
+    log "Found existing bat installation (version: $CURRENT_VERSION)"
     log "Building latest version from source (gearbox builds from latest main branch)"
 fi
 
 # Install dependencies
 if [[ "$SKIP_DEPS" != true ]]; then
-    log "Installing dependencies for eza..."
+    log "Installing dependencies for bat..."
     
     # Update package list
     log "Updating package list..."
@@ -238,31 +231,31 @@ BUILD_DIR="${BUILD_DIR:-$HOME/tools/build}"
 mkdir -p "$BUILD_DIR"
 cd "$BUILD_DIR"
 
-# Get eza source directory
-EZA_SOURCE_DIR="$BUILD_DIR/$EZA_DIR"
+# Get bat source directory
+BAT_SOURCE_DIR="$BUILD_DIR/$BAT_DIR"
 
 # Clone or update repository
-if [[ ! -d "$EZA_SOURCE_DIR" ]]; then
-    log "Cloning eza repository..."
-    git clone "$EZA_REPO" "$EZA_SOURCE_DIR"
+if [[ ! -d "$BAT_SOURCE_DIR" ]]; then
+    log "Cloning bat repository..."
+    git clone "$BAT_REPO" "$BAT_SOURCE_DIR"
 else
-    log "Updating eza repository..."
-    cd "$EZA_SOURCE_DIR"
+    log "Updating bat repository..."
+    cd "$BAT_SOURCE_DIR"
     git fetch origin
-    git reset --hard origin/main
+    git reset --hard origin/master
 fi
 
-cd "$EZA_SOURCE_DIR"
+cd "$BAT_SOURCE_DIR"
 
 # Configure build
-log "Configuring eza build..."
+log "Configuring bat build..."
 
 # Verify we have Cargo.toml
 if [[ ! -f "Cargo.toml" ]]; then
     error "Cargo.toml not found. This doesn't appear to be a valid Rust project."
 fi
 
-log "eza source configured successfully"
+log "bat source configured successfully"
 
 if [[ "$MODE" == "config" ]]; then
     success "Configuration completed!"
@@ -270,60 +263,42 @@ if [[ "$MODE" == "config" ]]; then
 fi
 
 # Build
-log "Building eza..."
-
-# Set build features
-BUILD_FEATURES=""
-if [[ "$DISABLE_GIT" != true ]]; then
-    BUILD_FEATURES="--features git"
-fi
+log "Building bat..."
 
 case $BUILD_TYPE in
     debug)
         log "Building debug version..."
-        if [[ -n "$BUILD_FEATURES" ]]; then
-            cargo build $BUILD_FEATURES
-        else
-            cargo build --no-default-features
-        fi
+        cargo build --bins
         TARGET_DIR="target/debug"
         ;;
     release)
         log "Building release version..."
-        if [[ -n "$BUILD_FEATURES" ]]; then
-            cargo build --release $BUILD_FEATURES
-        else
-            cargo build --release --no-default-features
-        fi
-        TARGET_DIR="target/release"
+        cargo install --path . --locked --root . --quiet
+        TARGET_DIR="bin"
         ;;
     optimized)
         log "Building optimized version with target-cpu=native..."
-        if [[ -n "$BUILD_FEATURES" ]]; then
-            RUSTFLAGS="-C target-cpu=native" cargo build --release $BUILD_FEATURES
-        else
-            RUSTFLAGS="-C target-cpu=native" cargo build --release --no-default-features
-        fi
-        TARGET_DIR="target/release"
+        RUSTFLAGS="-C target-cpu=native" cargo install --path . --locked --root . --quiet
+        TARGET_DIR="bin"
         ;;
 esac
 
 # Verify build
-if [[ ! -f "$TARGET_DIR/eza" ]]; then
-    error "Build failed - eza binary not found in $TARGET_DIR"
+if [[ ! -f "$TARGET_DIR/bat" ]]; then
+    error "Build failed - bat binary not found in $TARGET_DIR"
 fi
 
-success "eza build completed successfully!"
+success "bat build completed successfully!"
 
 if [[ "$MODE" == "build" ]]; then
     success "Build completed!"
-    log "Binary location: $EZA_SOURCE_DIR/$TARGET_DIR/eza"
+    log "Binary location: $BAT_SOURCE_DIR/$TARGET_DIR/bat"
     exit 0
 fi
 
 # Run tests
 if [[ "$RUN_TESTS" == true ]]; then
-    log "Running eza tests..."
+    log "Running bat tests..."
     if cargo test; then
         success "All tests passed!"
     else
@@ -332,42 +307,39 @@ if [[ "$RUN_TESTS" == true ]]; then
 fi
 
 # Install
-log "Installing eza..."
+log "Installing bat..."
 
 # Copy binary to /usr/local/bin
-sudo cp "$TARGET_DIR/eza" /usr/local/bin/
-sudo chmod +x /usr/local/bin/eza
+sudo cp "$TARGET_DIR/bat" /usr/local/bin/
+sudo chmod +x /usr/local/bin/bat
 
 # Verify installation
-if command -v eza &> /dev/null; then
-    INSTALLED_VERSION=$(eza --version 2>/dev/null | head -n1)
-    success "eza installation completed successfully!"
+if command -v bat &> /dev/null; then
+    INSTALLED_VERSION=$(bat --version 2>/dev/null | head -n1)
+    success "bat installation completed successfully!"
     log "Installed version: $INSTALLED_VERSION"
     log "Installation method: Source build ($BUILD_TYPE)"
-    log "Binary location: /usr/local/bin/eza"
+    log "Binary location: /usr/local/bin/bat"
     
     # Show basic usage
     echo
     log "Basic usage examples:"
-    log "  eza                              # List files in current directory"
-    log "  eza -l                           # Long format listing"
-    log "  eza -la                          # Long format with hidden files"
-    log "  eza --tree                       # Tree view of directory structure"
-    log "  eza --tree --level=2             # Tree view with depth limit"
-    log "  eza --git                        # Show git status for files"
+    log "  bat filename.txt                 # View file with syntax highlighting"
+    log "  bat src/*.rs                     # View multiple files"
+    log "  bat -n filename.py               # Show line numbers"
+    log "  bat -A filename.js               # Show non-printable characters"
+    log "  bat --style=numbers,grid file.md # Custom styling"
     echo
     log "Advanced features:"
-    log "  eza -lh --sort=size              # Sort by file size"
-    log "  eza -lh --sort=modified          # Sort by modification time"
-    log "  eza --long --header              # Show column headers"
-    log "  eza --long --no-time             # Hide time information"
-    log "  eza --grid --across              # Grid layout"
+    log "  bat -d                           # Show git diff"
+    log "  bat --theme=Dracula file.py      # Use specific theme"
+    log "  bat --list-themes                # List available themes"
+    log "  bat --generate-config-file       # Create config file"
     echo
-    log "Integration tips:"
-    log "  alias ls='eza'                   # Replace ls with eza"
-    log "  alias ll='eza -l'                # Long listing"
-    log "  alias la='eza -la'               # All files, long format"
-    log "  alias tree='eza --tree'          # Tree view"
+    log "Integration with other tools:"
+    log "  alias cat='bat --paging=never'   # Replace cat"
+    log "  export PAGER='bat'               # Use as pager"
+    log "  git log --oneline | bat          # Syntax highlight git output"
     echo
     log "Build type: $BUILD_TYPE"
     case $BUILD_TYPE in
@@ -383,26 +355,20 @@ if command -v eza &> /dev/null; then
     esac
     echo
     log "Key features enabled:"
-    log "  ✓ Colorful file listings with intelligent type detection"
-    if [[ "$DISABLE_GIT" != true ]]; then
-        log "  ✓ Git integration (shows repository status)"
-    else
-        log "  ✗ Git integration disabled"
-    fi
-    log "  ✓ Tree view for directory structure"
-    log "  ✓ Extended attributes and metadata display"
-    log "  ✓ Human-readable file sizes and dates"
-    log "  ✓ Symlink and mount point detection"
+    log "  ✓ Syntax highlighting for 200+ languages"
+    log "  ✓ Git integration (shows modifications)"
+    log "  ✓ Automatic paging for long files"
+    log "  ✓ Line numbering and grid display"
+    log "  ✓ Theme support and customization"
     echo
-    log "Configuration: Create ~/.config/eza/theme.yml for custom themes"
-    log "Environment: Set EZA_COLORS for custom color schemes"
-    log "For more information: eza --help"
+    log "Configuration: Run 'bat --generate-config-file' to create ~/.config/bat/config"
+    log "For more information: bat --help"
 else
-    error "eza installation verification failed - eza not found in PATH"
+    error "bat installation verification failed - bat not found in PATH"
 fi
 
 # Update library cache
 sudo ldconfig
 
-success "eza installation completed!"
+success "bat installation completed!"
 log "You may need to restart your shell or run 'source ~/.bashrc' to ensure PATH changes are active"

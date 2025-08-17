@@ -117,30 +117,8 @@ export MAKEFLAGS="-j${DEFAULT_PARALLEL_JOBS}"
 # DEPRECATED FUNCTIONS WARNING
 # =============================================================================
 
-# Legacy logging functions - DEPRECATED
-# These are kept for backward compatibility but should not be used.
-# Scripts should source lib/common.sh instead for proper shared functionality.
-
-log() {
-    echo "WARNING: Using deprecated log() from config.sh. Source lib/common.sh instead." >&2
-    echo -e "${BLUE}[$(date '+%Y-%m-%d %H:%M:%S')]${NC} $1"
-}
-
-error() {
-    echo "WARNING: Using deprecated error() from config.sh. Source lib/common.sh instead." >&2
-    echo -e "${RED}[ERROR]${NC} $1" >&2
-    exit 1
-}
-
-success() {
-    echo "WARNING: Using deprecated success() from config.sh. Source lib/common.sh instead." >&2
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-warning() {
-    echo "WARNING: Using deprecated warning() from config.sh. Source lib/common.sh instead." >&2
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
+# NOTE: Logging functions are now provided by lib/common.sh
+# Scripts should source lib/common.sh for proper logging and shared functionality.
 
 # =============================================================================
 # INITIALIZATION COMPLETE
