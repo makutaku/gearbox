@@ -601,7 +601,9 @@ secure_execute_script() {
     # Validate all arguments
     for arg in "${args[@]}"; do
         # Check for command injection attempts
-        [[ "$arg" =~ [;\|&\$\`] ]] && error "Invalid argument detected: $arg"
+        case "$arg" in
+            *\;*|*\|*|*\&*|*\$*|*\`*) error "Invalid argument detected: $arg" ;;
+        esac
         
         # Validate flag format
         if [[ "$arg" =~ ^-- ]]; then
@@ -631,7 +633,9 @@ validate_url() {
     [[ "$url" =~ ^https?:// ]] || error "Invalid URL format: $url"
     
     # Check for suspicious patterns
-    [[ "$url" =~ [[:space:]\|&\;] ]] && error "Invalid characters in URL: $url"
+    case "$url" in
+        *[[:space:]]*|*\|*|*\&*|*\;*) error "Invalid characters in URL: $url" ;;
+    esac
     
     # Limit URL length
     [[ ${#url} -gt 500 ]] && error "URL too long: $url"
