@@ -16,6 +16,20 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox list` - Show available tools with descriptions
 - `gearbox help` - Show detailed help and usage information
 
+### Configuration Management
+- `gearbox config show` - Display current configuration settings
+- `gearbox config set DEFAULT_BUILD_TYPE maximum` - Set configuration values
+- `gearbox config wizard` - Interactive configuration setup
+- `gearbox config reset` - Reset to default configuration
+- `gearbox config help` - Show configuration help
+
+### Health Checks & Diagnostics
+- `gearbox doctor` - Run comprehensive health checks
+- `gearbox doctor system` - Check system requirements only
+- `gearbox doctor tools` - Check installed tools status
+- `gearbox doctor env` - Check environment variables
+- `gearbox doctor help` - Show diagnostic help
+
 ### Advanced Options
 - `gearbox install --skip-common-deps` - Skip common dependency installation
 - `gearbox install --run-tests` - Run test suites for tools that support it
@@ -33,32 +47,54 @@ Each tool has its own script in `scripts/`:
 ## Architecture
 
 ### Directory Structure
-- `scripts/` - Individual installation scripts for each tool
-- `config.sh` - Shared configuration and utility functions
-- `gearbox` - Main CLI script that delegates to `scripts/install-all-tools.sh`
+- `scripts/` - Individual installation scripts for each tool (30+ scripts)
+- `lib/` - Shared library modules:
+  * `common.sh` - Core shared functions, logging, and utilities
+  * `config.sh` - Configuration management system (~/.gearboxrc)
+  * `doctor.sh` - Health check and diagnostic system
+- `config.sh` - Legacy configuration (migrated to lib/common.sh)
+- `gearbox` - Main CLI script with commands: install, list, config, doctor, help
 - `docs/` - Documentation files
 - `examples/` - Example usage scripts
 - `tests/` - Basic validation tests
 
 ### Build System Architecture
 
-**Configuration Layer (`config.sh`)**:
-- Defines build directories (`~/tools/build/`), cache (`~/tools/cache/`), and install prefix (`/usr/local`)
-- Provides shared logging functions and color definitions
-- Contains utility functions for path management
+**Shared Library System (`lib/`)**:
+- `lib/common.sh` - Central shared library for all scripts:
+  * Unified logging functions (log, error, warning, success)
+  * Build utilities (get_optimal_jobs, parallel execution)
+  * Progress indicators and status reporting
+  * Build cache system for performance optimization
+  * Safe command execution (prevents injection attacks)
+  * Cleanup and error handling with traps
+- `lib/config.sh` - Configuration management system:
+  * User preferences in ~/.gearboxrc (10 configurable settings)
+  * Default build types, parallel job limits, caching options
+  * Interactive configuration wizard and CLI management
+- `lib/doctor.sh` - Health check and diagnostic system:
+  * Comprehensive system validation (OS, memory, disk, internet)
+  * Installed tool verification and coverage analysis
+  * Environment and permission checks
 
 **Main Installation Script (`scripts/install-all-tools.sh`)**:
 - Orchestrates tool installation in optimal dependency order for all 30 tools
-- Supports three build types: minimal, standard, maximum
+- Supports three build types: minimal, standard, maximum (configurable via ~/.gearboxrc)
 - Handles common dependency installation via `install-common-deps.sh`
 - Installation order optimized for shared toolchains: Go tools → Rust tools → C/C++ tools
+- Progress indicators for multi-tool installations
 - Includes confirmation prompt when installing all tools (30-60 minute process)
+- Configuration-aware defaults (respects user preferences)
 
 **Individual Tool Scripts (`scripts/install-*.sh`)**:
 - Each tool has a dedicated installation script following consistent patterns
+- All scripts migrated to use lib/common.sh (eliminated code duplication)
 - Common command-line interface with build type flags (-m, -r, -o, etc.)
 - Support for --skip-deps, --run-tests, --force flags
 - Build from source with proper dependency validation
+- Integrated build cache system for faster reinstallations
+- Safe command execution (no eval usage, array-based commands)
+- Root prevention checks for security
 
 ### Available Tools (30 total)
 
@@ -115,25 +151,68 @@ Each tool has its own script in `scripts/`:
 ### Build Configuration
 The system supports three build types across all tools:
 - **minimal**: Fast builds with basic features
-- **standard**: Balanced builds with reasonable features (default)
+- **standard**: Balanced builds with reasonable features (default, configurable)
 - **maximum**: Full-featured builds with all optimizations
+
+Default build type can be configured via:
+- `gearbox config set DEFAULT_BUILD_TYPE maximum`
+- Interactive wizard: `gearbox config wizard`
+- Configuration file: `~/.gearboxrc`
+
+### Performance Optimizations
+- **Build Cache System**: Automated caching of compiled binaries by tool and build type
+  * Cache stored in `~/tools/cache/` with automatic cleanup (configurable retention)
+  * Significant speed improvement for reinstallations and testing
+  * Supports multiple build types per tool
+- **Parallel Builds**: Optimal CPU core usage with memory-aware job limits
+  * Auto-detection of system resources (CPU cores, available memory)
+  * Configurable via `MAX_PARALLEL_JOBS` setting
+  * Safety limits prevent system overload
+- **Progress Indicators**: Real-time progress tracking for multi-tool installations
+  * Step-by-step progress reporting (e.g., "Installing 3/30 tools...")
+  * Time estimates and status updates during long builds
+
+### Security Enhancements
+- **Command Injection Prevention**: All dangerous eval usage eliminated
+  * Migrated to safe array-based command execution
+  * Input validation and sanitization
+- **Root Prevention**: Scripts refuse to run as root for security
+- **Safe Configuration**: Input validation for all user configuration values
+
+### User Experience Improvements
+- **Configuration Management**: Comprehensive user preference system
+  * 10 configurable settings (build types, caching, dependencies, etc.)
+  * Interactive configuration wizard
+  * Command-line configuration management
+- **Health Check System**: Comprehensive diagnostic capabilities
+  * System requirements validation (OS, memory, disk, internet)
+  * Tool installation verification with coverage analysis
+  * Environment and permission checks
+  * Actionable recommendations for issues
 
 ### Testing Strategy
 - `test-runner.sh` validates script executability and configuration loading
 - Individual tools support `--run-tests` flag for post-build validation  
 - Final verification checks that all installed tools are accessible via command line
+- Health check system provides ongoing validation: `gearbox doctor`
 
 ## Key Implementation Patterns
 
 ### Script Structure
 All installation scripts follow consistent patterns:
-- Source `config.sh` for shared configuration and logging functions
-- Parse command-line arguments with standardized flags
-- Check for existing installations to avoid duplicates
+- Source `lib/common.sh` for shared functions, logging, and utilities
+- Standardized command-line argument parsing with build type flags
+- Root user prevention checks for security
+- Build cache integration for performance optimization
+- Safe command execution (no eval, array-based commands)
+- Parallel build support with optimal CPU utilization
+- Progress indicators for user feedback
+- Error handling with cleanup traps
 - Install dependencies (unless `--skip-deps` specified)
-- Clone source to `~/tools/build/[tool-name]/`
-- Configure build based on build type (minimal/standard/maximum)
-- Build and install to `/usr/local/bin/`
+- Clone source to build directories outside script directory
+- Configure build based on build type (minimal/standard/maximum, configurable)
+- Build and install to `/usr/local/bin/` or `~/.cargo/bin/`
+- Cache successful builds for future use
 - Optional post-install testing and shell integration
 
 ### CLI Interface Design
@@ -141,6 +220,9 @@ All installation scripts follow consistent patterns:
 - **Confirmation prompts**: Installing all tools shows impact and requires confirmation  
 - **Specific over general**: `gearbox install fd ripgrep` recommended over `gearbox install`
 - **Clear help**: `gearbox list` shows all tools, `gearbox help` shows usage
+- **Configuration-aware**: Respects user preferences from `~/.gearboxrc`
+- **Comprehensive diagnostics**: `gearbox doctor` provides health checks and recommendations
+- **User-friendly configuration**: Interactive wizard and CLI management via `gearbox config`
 
 ### Build System Integration
 - **Shared toolchains**: Common dependencies installed once (Rust 1.88.0+, Go 1.23.4+)
