@@ -172,23 +172,21 @@ get_build_flag() {
         imagemagick)
             case $BUILD_TYPE in
                 minimal) echo "-m" ;;
-                standard) echo "-s" ;;
-                maximum) echo "-o" ;;
+                standard) echo "-f" ;;
+                maximum) echo "-p" ;;
             esac
             ;;
         yazi)
             case $BUILD_TYPE in
                 minimal) echo "-d" ;;
                 standard) echo "-r" ;;
-                maximum) echo "-o" ;;
+                maximum) echo "-r" ;;  # release is highest for yazi
             esac
             ;;
         zoxide)
-            case $BUILD_TYPE in
-                minimal) echo "-d" ;;
-                standard) echo "-r" ;;
-                maximum) echo "-o" ;;
-            esac
+            # zoxide doesn't have build types, just installation modes
+            # Return empty string to use default behavior
+            echo ""
             ;;
     esac
 }
