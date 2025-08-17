@@ -193,18 +193,22 @@ log "gh source configured"
 [[ "$MODE" == "config" ]] && { success "Config done!"; exit 0; }
 
 log "Building gh..."
+mkdir -p bin
 case $BUILD_TYPE in
-    debug) make build ;;
-    release) make build ;;
-    optimized) CGO_ENABLED=0 go build -ldflags "-s -w" -o bin/gh ./cmd/gh ;;
+    debug) 
+        go build -o bin/gh ./cmd/gh ;;
+    release) 
+        go build -ldflags "-s -w" -o bin/gh ./cmd/gh ;;
+    optimized) 
+        CGO_ENABLED=0 go build -ldflags "-s -w" -o bin/gh ./cmd/gh ;;
 esac
 
-GH_BINARY=$(find . -name "gh" -type f -executable | head -1)
-[[ -z "$GH_BINARY" ]] && error "Build failed - gh binary not found"
+GH_BINARY="bin/gh"
+[[ ! -f "$GH_BINARY" ]] && error "Build failed - gh binary not found at $GH_BINARY"
 success "gh build completed!"
 [[ "$MODE" == "build" ]] && { success "Build done!"; log "Binary: $PWD/$GH_BINARY"; exit 0; }
 
-[[ "$RUN_TESTS" == true ]] && { log "Running tests..."; make test || warning "Some tests failed"; }
+[[ "$RUN_TESTS" == true ]] && { log "Running tests..."; go test ./... || warning "Some tests failed"; }
 
 log "Installing gh..."
 sudo cp "$GH_BINARY" /usr/local/bin/; sudo chmod +x /usr/local/bin/gh
