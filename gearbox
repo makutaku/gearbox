@@ -77,6 +77,9 @@ Navigation & File Management:
   tokei       Code statistics tool (Rust)
               Fast line counting for 200+ programming languages
               
+  difftastic  Structural diff tool (Rust)
+              Syntax-aware diffing for better code change analysis
+              
   hyperfine   Command-line benchmarking (Rust)
               Statistical analysis of command execution times
               
@@ -154,6 +157,7 @@ Available Tools:
   bottom      Cross-platform system monitor (Rust)
   procs       Modern ps replacement (Rust)
   tokei       Code statistics tool (Rust)
+  difftastic  Structural diff tool (Rust)
   hyperfine   Command-line benchmarking (Rust)
   gh          GitHub CLI (Go)
   dust        Better disk usage analyzer (Rust)
@@ -214,8 +218,8 @@ case "$COMMAND" in
         # Check if no tools specified (just "gearbox install" with no tool names)
         if [[ $# -eq 0 ]] || [[ "$1" =~ ^-- ]]; then
             # Installing all tools - show confirmation
-            echo "You're about to install ALL 27 tools from source:"
-            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, tokei, hyperfine, gh, dust, sd, tealdeer, choose, serena, ffmpeg, imagemagick, 7zip"
+            echo "You're about to install ALL 28 tools from source:"
+            echo "  fd, ripgrep, fzf, jq, zoxide, yazi, fclones, uv, ruff, bat, starship, eza, delta, lazygit, bottom, procs, tokei, difftastic, hyperfine, gh, dust, sd, tealdeer, choose, serena, ffmpeg, imagemagick, 7zip"
             echo ""
             echo "This will:"
             echo "  • Take 30-60 minutes depending on your system"

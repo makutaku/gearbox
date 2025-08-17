@@ -23,7 +23,7 @@ RUN_TESTS=false
 SETUP_SHELL=true
 
 # Available tools
-AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose")
+AVAILABLE_TOOLS=("ffmpeg" "7zip" "jq" "fd" "ripgrep" "fzf" "imagemagick" "yazi" "zoxide" "fclones" "serena" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "difftastic")
 SELECTED_TOOLS=()
 
 # Show help
@@ -60,6 +60,7 @@ Tools (install all if none specified):
   bottom              Cross-platform system monitor
   procs               Modern ps replacement with tree view
   tokei               Code statistics and line counting tool
+  difftastic          Structural diff tool for code analysis
   hyperfine           Command-line benchmarking tool
   gh                  GitHub CLI for repository management
   dust                Better disk usage analyzer
@@ -106,7 +107,7 @@ while [[ $# -gt 0 ]]; do
             show_help
             exit 0
             ;;
-        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose)
+        ffmpeg|7zip|jq|fd|ripgrep|fzf|imagemagick|yazi|zoxide|fclones|serena|uv|ruff|bat|starship|eza|delta|lazygit|bottom|procs|tokei|hyperfine|gh|dust|sd|tealdeer|choose|difftastic)
             SELECTED_TOOLS+=("$1")
             shift
             ;;
@@ -304,6 +305,13 @@ get_build_flag() {
                 maximum) echo "-o" ;;
             esac
             ;;
+        difftastic)
+            case $BUILD_TYPE in
+                minimal) echo "-d" ;;
+                standard) echo "-r" ;;
+                maximum) echo "-o" ;;
+            esac
+            ;;
         dust|sd|tealdeer|choose)
             # These tools use simple installation, no build flags needed
             echo ""
@@ -405,7 +413,7 @@ fi
 INSTALLATION_ORDER=()
 
 # Add selected tools in optimal order
-for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
+for tool in "fzf" "ripgrep" "fd" "zoxide" "yazi" "fclones" "uv" "ruff" "bat" "starship" "eza" "delta" "lazygit" "bottom" "procs" "tokei" "difftastic" "hyperfine" "gh" "dust" "sd" "tealdeer" "choose" "serena" "jq" "ffmpeg" "7zip" "imagemagick"; do
     if [[ " ${SELECTED_TOOLS[*]} " =~ " ${tool} " ]]; then
         INSTALLATION_ORDER+=("$tool")
     fi
@@ -635,6 +643,13 @@ for tool in "${SELECTED_TOOLS[@]}"; do
                 log "✓ choose: $(choose --version 2>/dev/null | head -n1)"
             else
                 FAILED_TOOLS+=("choose")
+            fi
+            ;;
+        difftastic)
+            if command -v difft &> /dev/null; then
+                log "✓ difftastic: $(difft --version 2>/dev/null | head -n1)"
+            else
+                FAILED_TOOLS+=("difftastic")
             fi
             ;;
     esac

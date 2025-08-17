@@ -47,6 +47,7 @@ gearbox install --minimal fd ripgrep
 | **bottom** | Cross-platform system monitor | Beautiful terminal resource monitoring |
 | **procs** | Modern ps replacement | Enhanced process info, tree view, colors |
 | **tokei** | Code statistics tool | Fast line counting for 200+ languages |
+| **difftastic** | Structural diff tool | Syntax-aware code change analysis |
 | **hyperfine** | Command-line benchmarking | Statistical command execution analysis |
 | **gh** | GitHub CLI | Repository management, PRs, issues, workflows |
 | **dust** | Better disk usage analyzer | Intuitive directory size visualization |
