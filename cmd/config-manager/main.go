@@ -1,9 +1,9 @@
 package main
 
 import (
-	"gearbox/internal/config-manager"
+	"gearbox/internal/config"
 )
 
 func main() {
-	config_manager.Main()
+	config.Main()
 }

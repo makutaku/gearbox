@@ -1,9 +1,9 @@
 package main
 
 import (
-	"gearbox/internal/script-generator"
+	"gearbox/internal/generator"
 )
 
 func main() {
-	script_generator.Main()
+	generator.Main()
 }

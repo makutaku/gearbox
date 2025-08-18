@@ -5,8 +5,11 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"time"
 
 	"github.com/spf13/cobra"
+	"gearbox/pkg/errors"
+	"gearbox/pkg/logger"
 )
 
 // NewInstallCmd creates the install command
@@ -46,10 +49,15 @@ comprehensive progress tracking.`,
 }
 
 func runInstall(cmd *cobra.Command, args []string) error {
+	start := time.Now()
+	log := logger.GetGlobalLogger().Operation("install")
+	
+	log.Infof("Starting installation of %d tools", len(args))
+	
 	// Get the directory where the gearbox binary is located
 	execPath, err := os.Executable()
 	if err != nil {
-		return fmt.Errorf("failed to get executable path: %w", err)
+		return errors.NewSystemError("get executable path", err)
 	}
 	
 	repoDir := filepath.Dir(execPath)
@@ -57,13 +65,21 @@ func runInstall(cmd *cobra.Command, args []string) error {
 
 	// Check if the orchestrator is available
 	if _, err := os.Stat(orchestratorPath); err != nil {
-		return fmt.Errorf("orchestrator not found at %s: please run 'make build' to compile all components", orchestratorPath)
+		return errors.NewDependencyError("check orchestrator", "orchestrator binary", err).
+			WithMessage("Orchestrator not found. Please run 'make build' to compile all components.").
+			WithContext("path", orchestratorPath)
 	}
 
-	return runWithOrchestrator(orchestratorPath, cmd, args)
+	result := runWithOrchestrator(orchestratorPath, cmd, args)
+	log.Duration("install", time.Since(start))
+	return result
 }
 
 func runWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args []string) error {
+	log := logger.GetGlobalLogger().Operation("orchestrator")
+	
+	log.Debug("Delegating to orchestrator")
+	
 	// Build the orchestrator command
 	orchestratorCmd := exec.Command(orchestratorPath, "install")
 	

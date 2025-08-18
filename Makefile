@@ -28,11 +28,11 @@ bin/orchestrator: cmd/orchestrator/main.go internal/orchestrator/main.go
 	@mkdir -p bin
 	@go build -o bin/orchestrator ./cmd/orchestrator
 
-bin/script-generator: cmd/script-generator/main.go internal/script-generator/main.go
+bin/script-generator: cmd/script-generator/main.go internal/generator/main.go
 	@echo "Building script-generator..."
 	@go build -o bin/script-generator ./cmd/script-generator
 
-bin/config-manager: cmd/config-manager/main.go internal/config-manager/main.go
+bin/config-manager: cmd/config-manager/main.go internal/config/main.go
 	@echo "Building config-manager..."
 	@go build -o bin/config-manager ./cmd/config-manager
 
