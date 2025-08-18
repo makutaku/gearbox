@@ -913,12 +913,41 @@ func extractVersionFromOutput(output string) string {
 			for i, part := range parts {
 				// Check if this part looks like a version (starts with digit, contains dots)
 				if len(part) > 0 && part[0] >= '0' && part[0] <= '9' && strings.Contains(part, ".") {
-					// Return this part and any following parts that might be version info
-					versionParts := parts[i:]
-					if len(versionParts) > 3 {
-						versionParts = versionParts[:3] // Limit to avoid too much info
+					// For most cases, just return the version number itself
+					version := part
+					
+					// Check if next part might be version-related (like build info, not random words)
+					if i+1 < len(parts) {
+						nextPart := parts[i+1]
+						// Include next part only if it looks like version metadata
+						// Exclude common non-version words
+						excludeWords := []string{"compiled", "built", "with", "using", "for", "on", "at", "from", "by"}
+						isExcluded := false
+						for _, exclude := range excludeWords {
+							if strings.EqualFold(nextPart, exclude) {
+								isExcluded = true
+								break
+							}
+						}
+						
+						if !isExcluded && (strings.HasPrefix(nextPart, "(") || strings.HasPrefix(nextPart, "[") || 
+						   strings.Contains(nextPart, "+") || strings.Contains(nextPart, "-") ||
+						   strings.Contains(nextPart, "alpha") || strings.Contains(nextPart, "beta") ||
+						   strings.Contains(nextPart, "rc") || strings.Contains(nextPart, "dev") ||
+						   (len(nextPart) < 8 && !strings.Contains(nextPart, " "))) { // Short version-like additions
+							version += " " + nextPart
+							
+							// Check for third part only if it's clearly version-related
+							if i+2 < len(parts) {
+								thirdPart := parts[i+2]
+								if strings.HasSuffix(nextPart, "-") || strings.HasSuffix(thirdPart, ")") ||
+								   strings.HasSuffix(thirdPart, "]") {
+									version += " " + thirdPart
+								}
+							}
+						}
 					}
-					return strings.Join(versionParts, " ")
+					return version
 				}
 			}
 		}
@@ -932,7 +961,18 @@ func extractVersionFromOutput(output string) string {
 		}
 	}
 
-	// Strategy 4: Fall back to first line if it contains meaningful version info
+	// Strategy 4: Extract version from verbose outputs (e.g., lazygit)
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) > 50 { // Long line, likely verbose output
+			extractedVersion := extractVersionFromVerboseOutput(line)
+			if extractedVersion != "" {
+				return extractedVersion
+			}
+		}
+	}
+
+	// Strategy 5: Fall back to first line if it contains meaningful version info
 	firstLine := strings.TrimSpace(lines[0])
 	if len(firstLine) > 0 {
 		// If first line looks like it contains version info, use it
@@ -943,6 +983,28 @@ func extractVersionFromOutput(output string) string {
 		}
 	}
 
-	// Strategy 5: Default fallback
+	// Strategy 6: Default fallback
 	return "installed"
+}
+
+// extractVersionFromVerboseOutput extracts clean version info from verbose tool outputs
+func extractVersionFromVerboseOutput(line string) string {
+	// Look for "version=X.Y.Z" pattern (lazygit style)
+	if strings.Contains(line, "version=") {
+		parts := strings.Split(line, ",")
+		for _, part := range parts {
+			part = strings.TrimSpace(part)
+			if strings.HasPrefix(part, "version=") {
+				version := strings.TrimPrefix(part, "version=")
+				if version != "" {
+					return "v" + version
+				}
+			}
+		}
+	}
+	
+	// Look for other verbose patterns and extract key version info
+	// Could add more patterns here as needed for other tools
+	
+	return ""
 }
