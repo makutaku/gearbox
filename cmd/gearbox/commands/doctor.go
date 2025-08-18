@@ -2,9 +2,13 @@ package commands
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/cobra"
 )
@@ -324,13 +328,57 @@ func runShellCleanup(repoDir, tool, mode string) int64 {
 	`, repoDir, tool, mode)
 
 	cmd := exec.Command("bash", "-c", script)
-	cmd.Stdout = os.Stdout
+	
+	// Capture output to parse freed space while still showing it to user
+	var output strings.Builder
+	cmd.Stdout = io.MultiWriter(os.Stdout, &output)
 	cmd.Stderr = os.Stderr
 	
-	// Capture any size information from the output
 	cmd.Run()
 	
-	// Return 0 for now - the shell function will report the actual savings
+	// Parse the output to extract freed space
+	return parseFreedSpace(output.String())
+}
+
+// parseFreedSpace extracts the freed space from shell cleanup output
+func parseFreedSpace(output string) int64 {
+	// Look for patterns like "Cleaned 363MB from bottom" or "freed 363MB"
+	patterns := []string{
+		`Cleaned (\d+(?:\.\d+)?)([KMGTPE]?)B`,
+		`freed (\d+(?:\.\d+)?)([KMGTPE]?)B`,
+		`Freed (\d+(?:\.\d+)?)([KMGTPE]?)B`,
+	}
+	
+	for _, pattern := range patterns {
+		re := regexp.MustCompile(pattern)
+		matches := re.FindStringSubmatch(output)
+		if len(matches) >= 3 {
+			size, err := strconv.ParseFloat(matches[1], 64)
+			if err != nil {
+				continue
+			}
+			
+			// Convert to bytes based on unit
+			unit := matches[2]
+			switch unit {
+			case "K":
+				size *= 1024
+			case "M":
+				size *= 1024 * 1024
+			case "G":
+				size *= 1024 * 1024 * 1024
+			case "T":
+				size *= 1024 * 1024 * 1024 * 1024
+			case "P":
+				size *= 1024 * 1024 * 1024 * 1024 * 1024
+			case "E":
+				size *= 1024 * 1024 * 1024 * 1024 * 1024 * 1024
+			}
+			
+			return int64(size)
+		}
+	}
+	
 	return 0
 }
 
