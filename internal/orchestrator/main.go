@@ -835,7 +835,17 @@ func verifyTool(tool ToolConfig) bool {
 		return true
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
+	// Use binary_name instead of the first part of test_command for tools with different binary names
+	binaryName := tool.BinaryName
+	if binaryName == "" {
+		binaryName = tool.Name // Fallback to tool name if binary_name not specified
+	}
+	
+	// For test commands, use ALL parts as arguments (don't skip the first one)
+	// Most test commands are just "--version", not "tool_name --version"
+	cmdArgs := parts
+
+	cmd := exec.Command(binaryName, cmdArgs...)
 	err := cmd.Run()
 	return err == nil
 }
@@ -851,7 +861,18 @@ func getToolVersion(tool ToolConfig) string {
 		return "installed"
 	}
 
-	cmd := exec.Command(parts[0], parts[1:]...)
+	// Use binary_name instead of the first part of test_command for tools with different binary names
+	// This handles cases like bottom (binary: btm), ripgrep (binary: rg), etc.
+	binaryName := tool.BinaryName
+	if binaryName == "" {
+		binaryName = tool.Name // Fallback to tool name if binary_name not specified
+	}
+	
+	// For test commands, use ALL parts as arguments (don't skip the first one)
+	// Most test commands are just "--version", not "tool_name --version"
+	cmdArgs := parts
+	
+	cmd := exec.Command(binaryName, cmdArgs...)
 	output, err := cmd.Output()
 	if err != nil {
 		return "installed"
