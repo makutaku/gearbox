@@ -1644,23 +1644,32 @@ cleanup_standard_artifacts() {
     # Remove common build artifacts while preserving source and important files
     
     # Rust cleanup: remove target directory build artifacts
-    # Note: Final binaries are installed to ~/.cargo/bin/ via 'cargo install'
-    # The target/release/ binaries are just intermediate build artifacts
+    # Handle two installation patterns:
+    # 1. cargo install -> ~/.cargo/bin/tool + symlink /usr/local/bin/tool
+    # 2. Direct copy -> /usr/local/bin/tool (e.g., uv)
     if [[ -d "$build_dir/target" ]]; then
-        # Check if tool is properly installed before cleaning build artifacts
-        local installed_binary="$HOME/.cargo/bin/$tool_name"
-        local has_symlink="false"
+        # Check if tool is properly installed using either pattern
+        local cargo_binary="$HOME/.cargo/bin/$tool_name"
+        local system_binary="/usr/local/bin/$tool_name"
+        local is_properly_installed="false"
+        local installation_type=""
         
-        if [[ -L "/usr/local/bin/$tool_name" ]]; then
-            has_symlink="true"
+        # Pattern 1: cargo install (symlink from /usr/local/bin to ~/.cargo/bin)
+        if [[ -f "$cargo_binary" && -L "$system_binary" ]]; then
+            is_properly_installed="true"
+            installation_type="cargo_install"
+        # Pattern 2: direct copy (binary directly in /usr/local/bin)
+        elif [[ -f "$system_binary" && ! -L "$system_binary" ]]; then
+            is_properly_installed="true"
+            installation_type="direct_copy"
         fi
         
         # Only clean if the tool is properly installed
-        if [[ -f "$installed_binary" && "$has_symlink" == "true" ]]; then
-            log "Tool $tool_name is properly installed, cleaning build artifacts from target/"
+        if [[ "$is_properly_installed" == "true" ]]; then
+            log "Tool $tool_name is properly installed ($installation_type), cleaning build artifacts from target/"
             
-            # Clean all build artifacts - no need to preserve target/release binaries
-            # since the real binary is in ~/.cargo/bin/
+            # Clean all build artifacts - target/release binaries are no longer needed
+            # since the final binary is in /usr/local/bin/ (either via symlink or direct copy)
             rm -rf "$build_dir/target/release/build" 2>/dev/null || true
             rm -rf "$build_dir/target/release/deps" 2>/dev/null || true 
             rm -rf "$build_dir/target/release/incremental" 2>/dev/null || true
@@ -1670,11 +1679,11 @@ cleanup_standard_artifacts() {
             rm -f "$build_dir/target/.rustc_info.json" 2>/dev/null || true
             rm -f "$build_dir/target/CACHEDIR.TAG" 2>/dev/null || true
             
-            # Remove the intermediate binary since it's not used after cargo install
+            # Remove the intermediate binary since it's no longer used
             rm -f "$build_dir/target/release/$tool_name" 2>/dev/null || true
         else
             warning "Tool $tool_name not properly installed, preserving build artifacts"
-            log "Expected: $installed_binary and symlink at /usr/local/bin/$tool_name"
+            log "Expected: $system_binary (either direct binary or symlink to $cargo_binary)"
         fi
     fi
     
