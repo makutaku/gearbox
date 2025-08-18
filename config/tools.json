@@ -246,6 +246,27 @@
       "test_command": "--version"
     },
     {
+      "name": "nerd-fonts",
+      "description": "Patched fonts with icons and glyphs for developers",
+      "category": "development",
+      "repository": "https://github.com/ryanoasis/nerd-fonts.git",
+      "binary_name": "fc-list",
+      "language": "c",
+      "build_types": {
+        "minimal": "--minimal",
+        "standard": "--standard",
+        "maximum": "--maximum"
+      },
+      "dependencies": [
+        "fontconfig",
+        "curl",
+        "unzip"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "| grep -i 'nerd font' | head -1"
+    },
+    {
       "name": "eza",
       "description": "Modern ls replacement (Rust)",
       "category": "development",

@@ -819,6 +819,11 @@ func (o *Orchestrator) VerifyTools(toolNames []string) error {
 
 // isToolInstalled checks if a tool is installed
 func isToolInstalled(tool ToolConfig) bool {
+	// Special handling for nerd-fonts
+	if tool.Name == "nerd-fonts" {
+		return isNerdFontsInstalled()
+	}
+	
 	_, err := exec.LookPath(tool.BinaryName)
 	return err == nil
 }
@@ -827,6 +832,11 @@ func isToolInstalled(tool ToolConfig) bool {
 func verifyTool(tool ToolConfig) bool {
 	if !isToolInstalled(tool) {
 		return false
+	}
+
+	// Special handling for nerd-fonts
+	if tool.Name == "nerd-fonts" {
+		return isNerdFontsInstalled()
 	}
 
 	if tool.TestCommand == "" {
@@ -856,6 +866,10 @@ func verifyTool(tool ToolConfig) bool {
 
 // getToolVersion gets the version of an installed tool
 func getToolVersion(tool ToolConfig) string {
+	// Special handling for nerd-fonts
+	if tool.Name == "nerd-fonts" {
+		return getNerdFontsVersion()
+	}
 	if tool.TestCommand == "" {
 		return "installed"
 	}
@@ -1011,4 +1025,65 @@ func extractVersionFromVerboseOutput(line string) string {
 	// Could add more patterns here as needed for other tools
 	
 	return ""
+}
+
+// isNerdFontsInstalled checks if any Nerd Fonts are installed
+func isNerdFontsInstalled() bool {
+	// Check if fc-list command is available
+	if _, err := exec.LookPath("fc-list"); err != nil {
+		return false
+	}
+	
+	// Check if any Nerd Fonts are installed
+	cmd := exec.Command("fc-list")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	
+	outputStr := strings.ToLower(string(output))
+	return strings.Contains(outputStr, "nerd font") || strings.Contains(outputStr, "nerd")
+}
+
+// getNerdFontsVersion returns information about installed Nerd Fonts
+func getNerdFontsVersion() string {
+	if _, err := exec.LookPath("fc-list"); err != nil {
+		return "fc-list not available"
+	}
+	
+	// Get list of installed Nerd Fonts
+	cmd := exec.Command("sh", "-c", "fc-list | grep -i 'nerd font' | wc -l")
+	output, err := cmd.Output()
+	if err != nil {
+		return "Error checking fonts"
+	}
+	
+	count := strings.TrimSpace(string(output))
+	if count == "0" {
+		return "No Nerd Fonts installed"
+	}
+	
+	// Get some example fonts
+	cmd = exec.Command("sh", "-c", "fc-list | grep -i 'nerd font' | head -3 | cut -d: -f2 | cut -d, -f1 | sort | uniq")
+	examples, err := cmd.Output()
+	if err != nil {
+		return fmt.Sprintf("%s Nerd Fonts installed", count)
+	}
+	
+	exampleList := strings.TrimSpace(string(examples))
+	if exampleList != "" {
+		lines := strings.Split(exampleList, "\n")
+		cleanLines := make([]string, 0, len(lines))
+		for _, line := range lines {
+			line = strings.TrimSpace(line)
+			if line != "" {
+				cleanLines = append(cleanLines, line)
+			}
+		}
+		if len(cleanLines) > 0 {
+			return fmt.Sprintf("%s fonts (%s)", count, strings.Join(cleanLines, ", "))
+		}
+	}
+	
+	return fmt.Sprintf("%s Nerd Fonts installed", count)
 }

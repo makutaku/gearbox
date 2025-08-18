@@ -9,7 +9,7 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ## Common Commands
 
 ### Installation Commands
-- `gearbox install` - Show confirmation prompt and install all 30 tools
+- `gearbox install` - Show confirmation prompt and install all 31 tools
 - `gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
 - `gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
 - `gearbox install --maximum ffmpeg` - Install with full-featured builds
@@ -57,11 +57,14 @@ Each tool has its own script in `scripts/`:
 - `scripts/install-fd.sh -r` - Install fd with release build
 - `scripts/install-ripgrep.sh --release` - Install ripgrep with optimized build
 - `scripts/install-fzf.sh --standard --no-shell` - Install fzf with standard build, no shell integration
+- `scripts/install-nerd-fonts.sh --minimal` - Install essential fonts (FiraCode, JetBrains Mono, Hack)
+- `scripts/install-nerd-fonts.sh --interactive` - Choose fonts interactively
+- `scripts/install-nerd-fonts.sh --configure-apps` - Install fonts and configure VS Code, terminals
 
 ## Architecture
 
 ### Directory Structure
-- `scripts/` - Individual installation scripts for each tool (30+ scripts)
+- `scripts/` - Individual installation scripts for each tool (31+ scripts)
 - `lib/` - Shared library modules:
   * `common.sh` - Core shared functions, logging, and utilities
   * `config.sh` - Configuration management system (~/.gearboxrc)
@@ -145,6 +148,7 @@ Each tool has its own script in `scripts/`:
 - **uv** - Python package manager (Rust)
 - **ruff** - Python linter & formatter (Rust)
 - **starship** - Customizable shell prompt (Rust)
+- **nerd-fonts** - Patched fonts with icons and glyphs for developers (C)
 - **delta** - Syntax-highlighting pager (Rust)
 - **lazygit** - Terminal UI for Git (Go)
 - **gh** - GitHub CLI (Go)
