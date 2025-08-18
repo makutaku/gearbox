@@ -134,6 +134,16 @@ The cleanup system automatically detects the correct binary name for each tool u
 - ✅ **Fallback-safe**: Works even without `jq` or metadata
 - ✅ **Maintainable**: Single source of truth for tool configurations
 
+**Examples of Different Binary Names**:
+| Tool Name | Binary Name | Reason |
+|-----------|-------------|---------|
+| `bottom` | `btm` | Shorter command name |
+| `difftastic` | `difft` | Abbreviated form |
+| `7zip` | `7zz` | Tool-specific naming |
+| `ripgrep` | `rg` | Convenience alias |
+| `tealdeer` | `tldr` | Standard tldr command |
+| `imagemagick` | `magick` | Modern ImageMagick command |
+
 ## Migration Guidelines
 
 When changing installation methods:

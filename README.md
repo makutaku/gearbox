@@ -23,6 +23,12 @@ gearbox install
 
 # Fast builds for quick setup
 gearbox install --minimal fd ripgrep
+
+# Check system health and disk usage
+gearbox doctor
+
+# Clean up build artifacts to save space
+gearbox doctor cleanup --all --mode standard
 ```
 
 ## Available Tools
@@ -60,22 +66,77 @@ gearbox install --minimal fd ripgrep
 | **imagemagick** | Image manipulation | Powerful processing toolkit |
 | **7zip** | Compression tool | High compression ratios |
 
+## Disk Space Management
+
+Building 30+ tools from source can consume 8GB+ of disk space. Gearbox provides intelligent cleanup:
+
+```bash
+# Show disk usage report
+gearbox doctor cleanup
+
+# Clean specific tools (recommended)
+gearbox doctor cleanup ruff yazi bottom
+
+# Clean all tools with standard cleanup
+gearbox doctor cleanup --all --mode standard
+
+# Aggressive cleanup for maximum space savings
+gearbox doctor cleanup --all --mode aggressive --dry-run  # Preview first
+gearbox doctor cleanup --all --mode aggressive           # Execute
+
+# Enable automatic cleanup after installations
+gearbox doctor cleanup --auto-cleanup
+```
+
+**Cleanup Modes:**
+- **Minimal**: Remove temp files only (~5% space savings)
+- **Standard**: Remove build artifacts, keep source (~50% space savings) 
+- **Aggressive**: Remove everything except source code (~90% space savings)
+
+**Smart Detection**: Automatically detects installation patterns and preserves essential files while removing build waste.
+
 ## Documentation
 
 ### For Users
 📖 **[User Guide](docs/USER_GUIDE.md)** - Complete installation guide, usage examples, and troubleshooting
 
-### For Contributors  
-🛠 **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture, adding tools, and development guidelines
+💾 **[Disk Space Management](docs/DISK_SPACE_MANAGEMENT.md)** - Comprehensive cleanup and optimization guide
+
+🔧 **[Troubleshooting](docs/TROUBLESHOOTING.md)** - Solutions for common issues and error diagnostics
+
+### For Developers
+🛠 **[Installation Methods](docs/INSTALLATION_METHODS.md)** - Technical details on installation patterns and design decisions
+
+🏗 **[Developer Guide](docs/DEVELOPER_GUIDE.md)** - Architecture, adding tools, and development guidelines
 
 👥 **[Contributing](CONTRIBUTING.md)** - Quick start for contributors
 
 ## Key Features
 
+### Installation & Build System
 - **Three build types**: Minimal (fast) → Standard (balanced) → Maximum (full-featured)
 - **Optimal installation order**: Shared toolchains (Go → Rust → C/C++)
-- **Safety first**: Non-root execution, existing installation detection
-- **Shell integration**: Automatic setup for fzf key bindings
+- **Multiple installation patterns**: Cargo install, direct copy, official installers
+- **Build cache system**: Faster reinstallations with SHA256 integrity verification
+- **Fail-fast approach**: Clear error messages, no hidden fallback failures
+
+### Safety & Reliability  
+- **Non-root execution**: Secure user-space installations
+- **Existing installation detection**: Smart handling of pre-installed tools
+- **Binary name resolution**: Metadata-driven detection (bottom→btm, ripgrep→rg)
+- **Installation verification**: Comprehensive health checks and diagnostics
+
+### Disk Space Management
+- **Intelligent cleanup**: Three modes from minimal to aggressive cleanup
+- **Smart detection**: Preserves installed binaries while removing build waste
+- **Automatic cleanup**: Optional post-installation artifact removal
+- **Space monitoring**: Real-time disk usage reports and recommendations
+
+### User Experience
+- **Shell integration**: Automatic setup for enhanced tools (fzf, starship, zoxide)
+- **Progress tracking**: Real-time installation progress and status updates
+- **Comprehensive CLI**: Unified interface for installation, health checks, and cleanup
+- **Extensive documentation**: Guides for users, troubleshooting, and developers
 - **Clean architecture**: Source builds in `~/tools/build/`, binaries in `/usr/local/bin/`
 
 ## Requirements
