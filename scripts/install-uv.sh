@@ -27,7 +27,7 @@ RUST_MIN_VERSION="1.70.0"
 # Default options
 BUILD_TYPE="release"      # debug, release, optimized
 MODE="install"            # config, build, install
-INSTALL_METHOD="source"   # source, official
+INSTALL_METHOD="official" # official (recommended), source
 SKIP_DEPS=false
 RUN_TESTS=false
 FORCE_INSTALL=false
@@ -50,8 +50,8 @@ Modes:
   -i, --install         Configure, build, and install (default)
 
 Installation Methods:
-  --source             Build from source (default, follows gearbox patterns)
-  --official           Use official installer (faster, prebuilt binary)
+  --official           Use official installer (default, faster, prebuilt binary)
+  --source             Build from source (follows gearbox patterns, slower)
 
 Options:
   --skip-deps          Skip dependency installation
@@ -60,10 +60,10 @@ Options:
   -h, --help           Show this help message
 
 Examples:
-  $0                   # Default: source build with install
-  $0 --official        # Use official installer (recommended for most users)
-  $0 -d -c             # Debug build, config only
-  $0 -o --run-tests    # Optimized build with tests
+  $0                   # Default: official installer (recommended)
+  $0 --source          # Build from source (for development/customization)
+  $0 --source -d -c    # Source build: debug mode, config only
+  $0 --source -o --run-tests  # Source build: optimized with tests
   $0 --skip-deps       # Skip dependency installation
 
 About uv:
@@ -211,11 +211,19 @@ if [[ "$INSTALL_METHOD" == "official" ]]; then
     log "Downloading and installing uv via official installer..."
     curl -LsSf https://astral.sh/uv/install.sh | sh || error "Official uv installation failed"
     
-    # Add to PATH if not already there
-    if [[ -f "$HOME/.cargo/env" ]]; then
-        source "$HOME/.cargo/env"
+    # Add ~/.local/bin to PATH if not already there (official installer uses ~/.local/bin)
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        export PATH="$HOME/.local/bin:$PATH"
+        log "Added ~/.local/bin to PATH for this session"
+        
+        # Update shell profiles for persistent PATH
+        for profile in ~/.bashrc ~/.zshrc ~/.profile; do
+            if [[ -f "$profile" ]] && ! grep -q ".local/bin" "$profile"; then
+                echo 'export PATH="$HOME/.local/bin:$PATH"' >> "$profile"
+                log "Updated $profile to include ~/.local/bin in PATH"
+            fi
+        done
     fi
-    export PATH="$HOME/.cargo/bin:$PATH"
     
     # Verify installation
     if command -v uv &> /dev/null; then

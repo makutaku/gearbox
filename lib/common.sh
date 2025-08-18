@@ -1644,13 +1644,15 @@ cleanup_standard_artifacts() {
     # Remove common build artifacts while preserving source and important files
     
     # Rust cleanup: remove target directory build artifacts
-    # Handle two installation patterns:
+    # Handle three installation patterns:
     # 1. cargo install -> ~/.cargo/bin/tool + symlink /usr/local/bin/tool
-    # 2. Direct copy -> /usr/local/bin/tool (e.g., uv)
+    # 2. Direct copy -> /usr/local/bin/tool (e.g., uv source build)
+    # 3. Official installer -> ~/.local/bin/tool (e.g., uv official installer)
     if [[ -d "$build_dir/target" ]]; then
-        # Check if tool is properly installed using either pattern
+        # Check if tool is properly installed using any pattern
         local cargo_binary="$HOME/.cargo/bin/$tool_name"
         local system_binary="/usr/local/bin/$tool_name"
+        local local_binary="$HOME/.local/bin/$tool_name"
         local is_properly_installed="false"
         local installation_type=""
         
@@ -1662,6 +1664,10 @@ cleanup_standard_artifacts() {
         elif [[ -f "$system_binary" && ! -L "$system_binary" ]]; then
             is_properly_installed="true"
             installation_type="direct_copy"
+        # Pattern 3: official installer (binary in ~/.local/bin)
+        elif [[ -f "$local_binary" ]]; then
+            is_properly_installed="true"
+            installation_type="official_installer"
         fi
         
         # Only clean if the tool is properly installed
@@ -1683,7 +1689,10 @@ cleanup_standard_artifacts() {
             rm -f "$build_dir/target/release/$tool_name" 2>/dev/null || true
         else
             warning "Tool $tool_name not properly installed, preserving build artifacts"
-            log "Expected: $system_binary (either direct binary or symlink to $cargo_binary)"
+            log "Expected one of:"
+            log "  - $cargo_binary + symlink $system_binary (cargo install)"
+            log "  - $system_binary (direct copy)"
+            log "  - $local_binary (official installer)"
         fi
     fi
     
