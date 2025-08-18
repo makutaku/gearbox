@@ -16,7 +16,7 @@ var testGeneratorConfig = Config{
 		{
 			Name:        "test-rust-tool",
 			Description: "Test Rust tool for generation",
-			Category:    "test",
+			Category:    "development",
 			Repository:  "https://github.com/test/rust-tool.git",
 			BinaryName:  "rust-tool",
 			Language:    "rust",
@@ -33,7 +33,7 @@ var testGeneratorConfig = Config{
 		{
 			Name:        "test-go-tool",
 			Description: "Test Go tool for generation",
-			Category:    "test",
+			Category:    "development",
 			Repository:  "https://github.com/test/go-tool.git",
 			BinaryName:  "go-tool",
 			Language:    "go",
@@ -90,10 +90,23 @@ func setupTestGeneratorEnv(t *testing.T) (string, string, string) {
 	
 	// Create basic rust template
 	rustTemplate := `#!/bin/bash
+
 # {{.Tool.Name}} Installation Script
 # {{.Tool.Description}}
 
+set -e  # Exit on any error
+
 BUILD_TYPE="{{if .Tool.BuildTypes.standard}}standard{{else}}{{index .BuildTypes 0}}{{end}}"
+
+# Logging functions
+log() {
+    echo "[INFO] $1"
+}
+
+error() {
+    echo "[ERROR] $1" >&2
+    exit 1
+}
 
 show_help() {
     echo "{{.Tool.Description}}"
@@ -117,10 +130,23 @@ success "{{.Tool.Name}} installation completed"
 	
 	// Create basic go template
 	goTemplate := `#!/bin/bash
+
 # {{.Tool.Name}} Installation Script for Go
 # {{.Tool.Description}}
 
+set -e  # Exit on any error
+
 BUILD_TYPE="{{if .Tool.BuildTypes.standard}}standard{{else}}{{index .BuildTypes 0}}{{end}}"
+
+# Logging functions
+log() {
+    echo "[INFO] $1"
+}
+
+error() {
+    echo "[ERROR] $1" >&2
+    exit 1
+}
 
 show_help() {
     echo "{{.Tool.Description}}"
@@ -214,14 +240,15 @@ func TestNewGenerator(t *testing.T) {
 
 // TestFindTool tests tool finding functionality
 func TestGeneratorFindTool(t *testing.T) {
-	repoDir, configPath, templatesDir := setupTestGeneratorEnv(t)
+	testRepoDir, testConfigPath, testTemplatesDir := setupTestGeneratorEnv(t)
 	
-	configPath = configPath
-	outputDir = filepath.Join(repoDir, "scripts")
-	templateDir = templatesDir
-	repoDir = repoDir
+	options := GeneratorOptions{
+		ConfigPath:  testConfigPath,
+		OutputDir:   filepath.Join(testRepoDir, "scripts"),
+		TemplateDir: testTemplatesDir,
+	}
 	
-	generator, err := NewGenerator(GeneratorOptions{})
+	generator, err := NewGenerator(options)
 	if err != nil {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
@@ -249,14 +276,15 @@ func TestGeneratorFindTool(t *testing.T) {
 
 // TestPrepareTemplateData tests template data preparation
 func TestPrepareTemplateData(t *testing.T) {
-	repoDir, configPath, templatesDir := setupTestGeneratorEnv(t)
+	testRepoDir, testConfigPath, testTemplatesDir := setupTestGeneratorEnv(t)
 	
-	configPath = configPath
-	outputDir = filepath.Join(repoDir, "scripts")
-	templateDir = templatesDir
-	repoDir = repoDir
+	options := GeneratorOptions{
+		ConfigPath:  testConfigPath,
+		OutputDir:   filepath.Join(testRepoDir, "scripts"),
+		TemplateDir: testTemplatesDir,
+	}
 	
-	generator, err := NewGenerator(GeneratorOptions{})
+	generator, err := NewGenerator(options)
 	if err != nil {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
@@ -298,14 +326,17 @@ func TestPrepareTemplateData(t *testing.T) {
 
 // TestGenerateScript tests script generation
 func TestGenerateScript(t *testing.T) {
-	repoDir, configPath, templatesDir := setupTestGeneratorEnv(t)
+	testRepoDir, testConfigPath, testTemplatesDir := setupTestGeneratorEnv(t)
 	
-	configPath = configPath
-	outputDir = filepath.Join(repoDir, "scripts")
-	templateDir = templatesDir
-	repoDir = repoDir
+	options := GeneratorOptions{
+		ConfigPath:  testConfigPath,
+		OutputDir:   filepath.Join(testRepoDir, "scripts"),
+		TemplateDir: testTemplatesDir,
+		Force:       true,
+		Validate:    false,
+	}
 	
-	generator, err := NewGenerator(GeneratorOptions{Force: true, Validate: false})
+	generator, err := NewGenerator(options)
 	if err != nil {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
@@ -317,7 +348,7 @@ func TestGenerateScript(t *testing.T) {
 	}
 	
 	// Check that script was created
-	scriptPath := filepath.Join(outputDir, "install-test-rust-tool.sh")
+	scriptPath := filepath.Join(options.OutputDir, "install-test-rust-tool.sh")
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 		t.Error("Generated script does not exist")
 	}
@@ -355,14 +386,17 @@ func TestGenerateScript(t *testing.T) {
 
 // TestGenerateTools tests generating multiple tools
 func TestGenerateTools(t *testing.T) {
-	repoDir, configPath, templatesDir := setupTestGeneratorEnv(t)
+	testRepoDir, testConfigPath, testTemplatesDir := setupTestGeneratorEnv(t)
 	
-	configPath = configPath
-	outputDir = filepath.Join(repoDir, "scripts")
-	templateDir = templatesDir
-	repoDir = repoDir
+	options := GeneratorOptions{
+		ConfigPath:  testConfigPath,
+		OutputDir:   filepath.Join(testRepoDir, "scripts"),
+		TemplateDir: testTemplatesDir,
+		Force:       true,
+		Validate:    false,
+	}
 	
-	generator, err := NewGenerator(GeneratorOptions{Force: true, Validate: false})
+	generator, err := NewGenerator(options)
 	if err != nil {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
@@ -375,7 +409,7 @@ func TestGenerateTools(t *testing.T) {
 	
 	// Check that both scripts were created
 	for _, toolName := range toolNames {
-		scriptPath := filepath.Join(outputDir, "install-"+toolName+".sh")
+		scriptPath := filepath.Join(options.OutputDir, "install-"+toolName+".sh")
 		if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
 			t.Errorf("Generated script does not exist for %s", toolName)
 		}
@@ -394,14 +428,17 @@ func TestGenerateTools(t *testing.T) {
 
 // TestValidateScript tests script validation
 func TestValidateScript(t *testing.T) {
-	repoDir, configPath, templatesDir := setupTestGeneratorEnv(t)
+	testRepoDir, testConfigPath, testTemplatesDir := setupTestGeneratorEnv(t)
 	
-	configPath = configPath
-	outputDir = filepath.Join(repoDir, "scripts")
-	templateDir = templatesDir
-	repoDir = repoDir
+	options := GeneratorOptions{
+		ConfigPath:  testConfigPath,
+		OutputDir:   filepath.Join(testRepoDir, "scripts"),
+		TemplateDir: testTemplatesDir,
+		Force:       true,
+		Validate:    false,
+	}
 	
-	generator, err := NewGenerator(GeneratorOptions{Force: true, Validate: false})
+	generator, err := NewGenerator(options)
 	if err != nil {
 		t.Fatalf("Failed to create generator: %v", err)
 	}
@@ -413,7 +450,7 @@ func TestValidateScript(t *testing.T) {
 		t.Fatalf("Failed to generate script: %v", err)
 	}
 	
-	scriptPath := filepath.Join(outputDir, "install-test-rust-tool.sh")
+	scriptPath := filepath.Join(options.OutputDir, "install-test-rust-tool.sh")
 	
 	// Test validation
 	err = generator.validateScript(scriptPath)
@@ -428,7 +465,7 @@ func TestValidateScript(t *testing.T) {
 	}
 	
 	// Test with non-executable script
-	nonExecScript := filepath.Join(outputDir, "non-exec.sh")
+	nonExecScript := filepath.Join(options.OutputDir, "non-exec.sh")
 	if err := os.WriteFile(nonExecScript, []byte("#!/bin/bash\necho test"), 0644); err != nil {
 		t.Fatalf("Failed to create non-executable script: %v", err)
 	}

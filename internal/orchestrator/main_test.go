@@ -16,7 +16,7 @@ var testConfig = Config{
 		{
 			Name:        "test-tool",
 			Description: "Test tool for unit testing",
-			Category:    "test",
+			Category:    "development",
 			Repository:  "https://github.com/test/test-tool.git",
 			BinaryName:  "test-tool",
 			Language:    "rust",
@@ -33,7 +33,7 @@ var testConfig = Config{
 		{
 			Name:        "test-go-tool",
 			Description: "Test Go tool",
-			Category:    "test",
+			Category:    "development",
 			Repository:  "https://github.com/test/go-tool.git",
 			BinaryName:  "go-tool",
 			Language:    "go",
@@ -66,7 +66,12 @@ var testConfig = Config{
 // setupTestConfig creates a temporary config file for testing
 func setupTestConfig(t *testing.T) string {
 	tempDir := t.TempDir()
-	configPath := filepath.Join(tempDir, "tools.json")
+	configDir := filepath.Join(tempDir, "config")
+	if err := os.MkdirAll(configDir, 0755); err != nil {
+		t.Fatalf("Failed to create config directory: %v", err)
+	}
+	
+	configPath := filepath.Join(configDir, "tools.json")
 	
 	configData, err := json.MarshalIndent(testConfig, "", "  ")
 	if err != nil {
@@ -111,12 +116,12 @@ func TestLoadConfig(t *testing.T) {
 
 // TestNewOrchestrator tests orchestrator initialization
 func TestNewOrchestrator(t *testing.T) {
-	configPath := setupTestConfig(t)
-	tempDir := filepath.Dir(configPath)
+	testConfigPath := setupTestConfig(t)
+	tempDir := filepath.Dir(filepath.Dir(testConfigPath)) // Go up one level from config/tools.json
 	
 	// Set global variables for test
 	repoDir = tempDir
-	configPath = configPath
+	configPath = testConfigPath
 	
 	options := InstallationOptions{
 		BuildType:       "standard",
@@ -149,11 +154,11 @@ func TestNewOrchestrator(t *testing.T) {
 
 // TestFindTool tests tool lookup functionality
 func TestFindTool(t *testing.T) {
-	configPath := setupTestConfig(t)
-	tempDir := filepath.Dir(configPath)
+	testConfigPath := setupTestConfig(t)
+	tempDir := filepath.Dir(filepath.Dir(testConfigPath))
 	
 	repoDir = tempDir
-	configPath = configPath
+	configPath = testConfigPath
 	
 	orchestrator, err := NewOrchestrator(InstallationOptions{})
 	if err != nil {
@@ -183,11 +188,11 @@ func TestFindTool(t *testing.T) {
 
 // TestResolveDependencies tests dependency resolution
 func TestResolveDependencies(t *testing.T) {
-	configPath := setupTestConfig(t)
-	tempDir := filepath.Dir(configPath)
+	testConfigPath := setupTestConfig(t)
+	tempDir := filepath.Dir(filepath.Dir(testConfigPath))
 	
 	repoDir = tempDir
-	configPath = configPath
+	configPath = testConfigPath
 	
 	orchestrator, err := NewOrchestrator(InstallationOptions{})
 	if err != nil {
@@ -221,11 +226,11 @@ func TestResolveDependencies(t *testing.T) {
 
 // TestInstallationOptions tests option validation and defaults
 func TestInstallationOptions(t *testing.T) {
-	configPath := setupTestConfig(t)
-	tempDir := filepath.Dir(configPath)
+	testConfigPath := setupTestConfig(t)
+	tempDir := filepath.Dir(filepath.Dir(testConfigPath))
 	
 	repoDir = tempDir
-	configPath = configPath
+	configPath = testConfigPath
 	
 	// Test with empty options (should use defaults)
 	orchestrator, err := NewOrchestrator(InstallationOptions{})
@@ -304,11 +309,11 @@ func (e *InstallationError) Error() string {
 
 // TestTemplateData tests template data preparation
 func TestTemplateData(t *testing.T) {
-	configPath := setupTestConfig(t)
-	tempDir := filepath.Dir(configPath)
+	testConfigPath := setupTestConfig(t)
+	tempDir := filepath.Dir(filepath.Dir(testConfigPath))
 	
 	repoDir = tempDir
-	configPath = configPath
+	configPath = testConfigPath
 	
 	orchestrator, err := NewOrchestrator(InstallationOptions{})
 	if err != nil {

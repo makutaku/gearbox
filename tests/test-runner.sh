@@ -19,10 +19,10 @@ for script in "$REPO_DIR/scripts"/install-*.sh; do
 done
 
 # Test configuration loading
-if source "$REPO_DIR/config.sh"; then
-    echo "✓ config.sh loads successfully"
+if source "$REPO_DIR/lib/config.sh"; then
+    echo "✓ lib/config.sh loads successfully"
 else
-    echo "✗ config.sh failed to load"
+    echo "✗ lib/config.sh failed to load"
     exit 1
 fi
 

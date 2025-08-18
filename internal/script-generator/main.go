@@ -215,28 +215,34 @@ type Generator struct {
 
 // NewGenerator creates a new generator instance
 func NewGenerator(options GeneratorOptions) (*Generator, error) {
-	// Auto-detect repository directory if not provided
-	if repoDir == "" {
+	// Set up repository directory
+	localRepoDir := repoDir
+	if localRepoDir == "" {
 		if wd, err := os.Getwd(); err == nil {
-			repoDir = wd
+			localRepoDir = wd
 		} else {
 			return nil, fmt.Errorf("failed to get working directory: %w", err)
 		}
 	}
 
-	// Auto-detect paths if not provided
-	if configPath == "" {
-		configPath = filepath.Join(repoDir, "config", "tools.json")
+	// Use provided paths or auto-detect
+	localConfigPath := options.ConfigPath
+	if localConfigPath == "" {
+		localConfigPath = filepath.Join(localRepoDir, "config", "tools.json")
 	}
-	if outputDir == "" {
-		outputDir = filepath.Join(repoDir, "scripts")
+	
+	localOutputDir := options.OutputDir
+	if localOutputDir == "" {
+		localOutputDir = filepath.Join(localRepoDir, "scripts")
 	}
-	if templateDir == "" {
-		templateDir = filepath.Join(repoDir, "templates")
+	
+	localTemplateDir := options.TemplateDir
+	if localTemplateDir == "" {
+		localTemplateDir = filepath.Join(localRepoDir, "templates")
 	}
 
 	// Load configuration
-	config, err := loadConfig(configPath)
+	config, err := loadConfig(localConfigPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to load configuration: %w", err)
 	}
@@ -244,9 +250,9 @@ func NewGenerator(options GeneratorOptions) (*Generator, error) {
 	generator := &Generator{
 		config:      config,
 		options:     options,
-		repoDir:     repoDir,
-		outputDir:   outputDir,
-		templateDir: templateDir,
+		repoDir:     localRepoDir,
+		outputDir:   localOutputDir,
+		templateDir: localTemplateDir,
 		templates:   make(map[string]*template.Template),
 	}
 
