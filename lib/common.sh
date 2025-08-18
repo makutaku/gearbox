@@ -1519,6 +1519,329 @@ clean_old_cache() {
 }
 
 # =============================================================================
+# DISK SPACE OPTIMIZATION AND BUILD ARTIFACT CLEANUP
+# =============================================================================
+
+# @function cleanup_build_artifacts
+# @brief Clean build artifacts while preserving installed binaries and essential files
+# @param $1 Tool name
+# @param $2 Optional: cleanup mode (standard|aggressive|minimal) - default: standard
+cleanup_build_artifacts() {
+    local tool_name="$1"
+    local cleanup_mode="${2:-standard}"
+    local tool_build_dir="$BUILD_DIR"
+    
+    if [[ -z "$tool_name" ]]; then
+        warning "Tool name required for build artifact cleanup"
+        return 1
+    fi
+    
+    # Validate cleanup mode
+    case "$cleanup_mode" in
+        minimal|standard|aggressive)
+            ;;
+        *)
+            warning "Invalid cleanup mode '$cleanup_mode'. Using 'standard'"
+            cleanup_mode="standard"
+            ;;
+    esac
+    
+    log "Starting $cleanup_mode cleanup of build artifacts for $tool_name..."
+    
+    # Find potential build directories for this tool
+    local build_dirs=(
+        "$tool_build_dir/$tool_name"
+        "$tool_build_dir/${tool_name}-*"
+    )
+    
+    local cleaned_size=0
+    local preserved_count=0
+    
+    for pattern in "${build_dirs[@]}"; do
+        # Use shell expansion to find matching directories
+        for build_dir in $(ls -d $pattern 2>/dev/null || true); do
+            if [[ -d "$build_dir" ]]; then
+                local dir_size_before
+                dir_size_before=$(du -sb "$build_dir" 2>/dev/null | cut -f1 || echo 0)
+                
+                case "$cleanup_mode" in
+                    minimal)
+                        # Only clean obvious temporary files
+                        cleanup_minimal_artifacts "$build_dir" "$tool_name"
+                        ;;
+                    standard)
+                        # Clean intermediate build files but preserve source and key files
+                        cleanup_standard_artifacts "$build_dir" "$tool_name"
+                        ;;
+                    aggressive)
+                        # Remove everything except preserved source files if configured
+                        cleanup_aggressive_artifacts "$build_dir" "$tool_name"
+                        ;;
+                esac
+                
+                # Calculate space saved
+                local dir_size_after
+                dir_size_after=$(du -sb "$build_dir" 2>/dev/null | cut -f1 || echo 0)
+                local space_saved=$((dir_size_before - dir_size_after))
+                cleaned_size=$((cleaned_size + space_saved))
+                
+                if [[ $space_saved -gt 0 ]]; then
+                    log "Cleaned $(human_readable_size $space_saved) from $(basename "$build_dir")"
+                else
+                    preserved_count=$((preserved_count + 1))
+                fi
+            fi
+        done
+    done
+    
+    if [[ $cleaned_size -gt 0 ]]; then
+        success "Build cleanup complete: freed $(human_readable_size $cleaned_size) for $tool_name"
+    else
+        log "No build artifacts found to clean for $tool_name"
+    fi
+    
+    return 0
+}
+
+# @function cleanup_minimal_artifacts
+# @brief Minimal cleanup - only obvious temporary files
+# @param $1 Build directory path
+# @param $2 Tool name
+cleanup_minimal_artifacts() {
+    local build_dir="$1"
+    local tool_name="$2"
+    
+    # Only remove clearly temporary files and directories
+    local temp_patterns=(
+        "*.tmp"
+        "*.temp"
+        ".tmp*"
+        "tmp"
+        "temp"
+        "*.log"
+        "*.pid"
+        "core.*"
+        "*.core"
+    )
+    
+    for pattern in "${temp_patterns[@]}"; do
+        find "$build_dir" -name "$pattern" -type f -delete 2>/dev/null || true
+        find "$build_dir" -name "$pattern" -type d -exec rm -rf {} + 2>/dev/null || true
+    done
+}
+
+# @function cleanup_standard_artifacts
+# @brief Standard cleanup - remove intermediate build files but preserve source
+# @param $1 Build directory path  
+# @param $2 Tool name
+cleanup_standard_artifacts() {
+    local build_dir="$1"
+    local tool_name="$2"
+    
+    # Start with minimal cleanup
+    cleanup_minimal_artifacts "$build_dir" "$tool_name"
+    
+    # Remove common build artifacts while preserving source and important files
+    
+    # Rust cleanup: remove most of target directory but preserve final binaries
+    if [[ -d "$build_dir/target" ]]; then
+        # Keep final binaries temporarily
+        local temp_dir
+        temp_dir=$(mktemp -d)
+        
+        # Preserve final binaries if they exist
+        for binary_location in "$build_dir/target/release/$tool_name" "$build_dir/target/debug/$tool_name"; do
+            if [[ -f "$binary_location" ]]; then
+                cp "$binary_location" "$temp_dir/" 2>/dev/null || true
+            fi
+        done
+        
+        # Clean intermediate build artifacts
+        find "$build_dir/target" -name "*.rlib" -delete 2>/dev/null || true
+        find "$build_dir/target" -name "*.rmeta" -delete 2>/dev/null || true
+        find "$build_dir/target" -path "*/build/*" -delete 2>/dev/null || true
+        find "$build_dir/target" -path "*/deps/*" -delete 2>/dev/null || true
+        find "$build_dir/target" -path "*/incremental/*" -delete 2>/dev/null || true
+        rm -f "$build_dir/target/.rustc_info.json" 2>/dev/null || true
+        rm -f "$build_dir/target/CACHEDIR.TAG" 2>/dev/null || true
+        
+        # Restore final binary if it existed
+        if [[ -f "$temp_dir/$tool_name" ]]; then
+            mkdir -p "$build_dir/target/release"
+            cp "$temp_dir/$tool_name" "$build_dir/target/release/" 2>/dev/null || true
+        fi
+        
+        rm -rf "$temp_dir"
+    fi
+    
+    # Go cleanup
+    find "$build_dir" -name "*.o" -type f -delete 2>/dev/null || true
+    find "$build_dir" -name "*.a" -type f -delete 2>/dev/null || true
+    rm -rf "$build_dir/pkg" 2>/dev/null || true
+    
+    # C/C++ cleanup
+    find "$build_dir" -name "*.o" -type f -delete 2>/dev/null || true
+    find "$build_dir" -name "*.lo" -type f -delete 2>/dev/null || true
+    find "$build_dir" -name "*.la" -type f -delete 2>/dev/null || true
+    rm -rf "$build_dir/.libs" 2>/dev/null || true
+    rm -rf "$build_dir/autom4te.cache" 2>/dev/null || true
+    rm -f "$build_dir/config.log" "$build_dir/config.status" 2>/dev/null || true
+    
+    # Python cleanup
+    find "$build_dir" -name "__pycache__" -type d -exec rm -rf {} + 2>/dev/null || true
+    find "$build_dir" -name "*.pyc" -type f -delete 2>/dev/null || true
+    find "$build_dir" -name "*.pyo" -type f -delete 2>/dev/null || true
+    rm -rf "$build_dir/build/lib" "$build_dir/build/temp" 2>/dev/null || true
+    rm -rf "$build_dir/dist" 2>/dev/null || true
+    find "$build_dir" -name "*.egg-info" -type d -exec rm -rf {} + 2>/dev/null || true
+    
+    # Git cleanup: remove large pack files but keep repository for version tracking
+    rm -rf "$build_dir/.git/objects/pack" 2>/dev/null || true
+    
+    # General cleanup
+    rm -rf "$build_dir/node_modules" 2>/dev/null || true
+}
+
+# @function cleanup_aggressive_artifacts
+# @brief Aggressive cleanup - remove everything except source if configured to preserve
+# @param $1 Build directory path
+# @param $2 Tool name  
+cleanup_aggressive_artifacts() {
+    local build_dir="$1"
+    local tool_name="$2"
+    
+    # Check configuration for source preservation
+    local preserve_source="${GEARBOX_PRESERVE_SOURCE:-true}"
+    
+    if [[ "$preserve_source" == "false" ]]; then
+        # Remove entire build directory
+        log "Aggressive cleanup: removing entire build directory for $tool_name"
+        rm -rf "$build_dir" 2>/dev/null || true
+        return 0
+    fi
+    
+    # Create temporary directory to hold preserved files
+    local temp_preserve_dir
+    temp_preserve_dir=$(mktemp -d)
+    
+    # Copy essential source files and configuration  
+    find "$build_dir" -name "*.rs" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "*.go" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "*.c" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "*.cpp" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "*.h" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "Cargo.toml" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "go.mod" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "Makefile" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "README*" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    find "$build_dir" -name "LICENSE*" -type f -exec cp --parents {} "$temp_preserve_dir/" \; 2>/dev/null || true
+    
+    # Remove original and recreate with preserved files
+    rm -rf "$build_dir" 2>/dev/null || true
+    mkdir -p "$build_dir"
+    
+    # Restore preserved files  
+    if [[ -d "$temp_preserve_dir$build_dir" ]]; then
+        cp -r "$temp_preserve_dir$build_dir"/* "$build_dir/" 2>/dev/null || true
+    fi
+    
+    rm -rf "$temp_preserve_dir"
+    
+    log "Aggressive cleanup: preserved only source files for $tool_name"
+}
+
+# @function human_readable_size
+# @brief Convert bytes to human readable format
+# @param $1 Size in bytes
+human_readable_size() {
+    local bytes="$1"
+    local units=("B" "KB" "MB" "GB" "TB")
+    local unit=0
+    
+    while [[ $bytes -ge 1024 && $unit -lt 4 ]]; do
+        bytes=$((bytes / 1024))
+        unit=$((unit + 1))
+    done
+    
+    echo "${bytes}${units[$unit]}"
+}
+
+# @function show_disk_usage
+# @brief Display disk usage information for build and cache directories
+show_disk_usage() {
+    log "Disk Usage Report for Gearbox"
+    log "============================="
+    
+    # Build directory usage
+    if [[ -d "$BUILD_DIR" ]]; then
+        local build_size
+        build_size=$(du -sh "$BUILD_DIR" 2>/dev/null | cut -f1 || echo "unknown")
+        local build_count
+        build_count=$(find "$BUILD_DIR" -maxdepth 1 -type d | wc -l)
+        build_count=$((build_count - 1))  # Subtract 1 for the directory itself
+        
+        log "Build Directory ($BUILD_DIR):"
+        log "  - Total size: $build_size"
+        log "  - Tool directories: $build_count"
+        
+        # Show largest build directories
+        if [[ $build_count -gt 0 ]]; then
+            log "  - Largest builds:"
+            du -sh "$BUILD_DIR"/*/ 2>/dev/null | sort -hr | head -5 | while read size dir; do
+                log "    $(basename "$dir"): $size"
+            done
+        fi
+    else
+        log "Build Directory: not found"
+    fi
+    
+    echo
+    
+    # Cache directory usage (from existing function)
+    show_cache_stats
+    
+    echo
+    
+    # Cleanup recommendations
+    local total_build_size_bytes
+    total_build_size_bytes=$(du -sb "$BUILD_DIR" 2>/dev/null | cut -f1 || echo 0)
+    
+    if [[ $total_build_size_bytes -gt $((1024 * 1024 * 1024)) ]]; then  # > 1GB
+        log "🧹 Cleanup Recommendations:"
+        log "  - Build directory is large (>1GB)"
+        log "  - Run cleanup_build_artifacts <tool_name> to clean specific tools"
+        log "  - Consider setting GEARBOX_AUTO_CLEANUP=true for automatic cleanup"
+        log "  - Set GEARBOX_CLEANUP_MODE=aggressive for maximum space savings"
+    fi
+}
+
+# @function auto_cleanup_after_install
+# @brief Automatically cleanup build artifacts after successful installation
+# @param $1 Tool name
+# @param $2 Installation success (true/false)
+auto_cleanup_after_install() {
+    local tool_name="$1"
+    local install_success="${2:-false}"
+    
+    # Only cleanup if installation was successful
+    if [[ "$install_success" != "true" ]]; then
+        debug "Skipping auto-cleanup for $tool_name: installation not successful"
+        return 0
+    fi
+    
+    # Check if auto-cleanup is enabled
+    local auto_cleanup="${GEARBOX_AUTO_CLEANUP:-false}"
+    local cleanup_mode="${GEARBOX_CLEANUP_MODE:-standard}"
+    
+    if [[ "$auto_cleanup" == "true" ]]; then
+        log "Auto-cleanup enabled: cleaning build artifacts for $tool_name"
+        cleanup_build_artifacts "$tool_name" "$cleanup_mode"
+    else
+        debug "Auto-cleanup disabled for $tool_name. Set GEARBOX_AUTO_CLEANUP=true to enable"
+    fi
+}
+
+# =============================================================================
 # DIRECTORY CONFIGURATION
 # =============================================================================
 
