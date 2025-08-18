@@ -111,11 +111,35 @@ cargo install tool || error "Installation failed - check network connectivity an
 3. **Clear error messages**: Failures should provide actionable guidance
 4. **Documentation**: Method choice should be documented and justified
 
+## Binary Name Mapping
+
+The cleanup system automatically detects the correct binary name for each tool using metadata from `config/tools.json`:
+
+```json
+{
+  "name": "bottom",
+  "binary_name": "btm",
+  ...
+}
+```
+
+**Smart Detection Process**:
+1. **Primary**: Parse `tools.json` using `jq` for accurate JSON parsing
+2. **Fallback**: Use `grep/sed` when `jq` is unavailable  
+3. **Default**: Use tool name as binary name if no metadata found
+
+**Benefits**:
+- ✅ **No hardcoded mappings**: All mappings defined in centralized metadata
+- ✅ **Automatic discovery**: New tools automatically supported
+- ✅ **Fallback-safe**: Works even without `jq` or metadata
+- ✅ **Maintainable**: Single source of truth for tool configurations
+
 ## Migration Guidelines
 
 When changing installation methods:
 
 1. **Update cleanup detection**: Ensure cleanup system recognizes the new pattern
-2. **Test installation**: Verify the new method works reliably
-3. **Update documentation**: Document the change and rationale
-4. **Consider existing users**: Provide migration path if needed
+2. **Update tools.json**: Set correct `binary_name` in metadata
+3. **Test installation**: Verify the new method works reliably
+4. **Update documentation**: Document the change and rationale
+5. **Consider existing users**: Provide migration path if needed

@@ -1522,6 +1522,51 @@ clean_old_cache() {
 # DISK SPACE OPTIMIZATION AND BUILD ARTIFACT CLEANUP
 # =============================================================================
 
+# @function get_binary_name_for_tool
+# @brief Get the actual binary name for a tool from metadata (tools.json)
+# @param $1 Tool name
+# @return Binary name (stdout)
+get_binary_name_for_tool() {
+    local tool_name="$1"
+    local config_file
+    
+    # Try to find tools.json configuration
+    if [[ -f "$REPO_DIR/config/tools.json" ]]; then
+        config_file="$REPO_DIR/config/tools.json"
+    elif [[ -f "config/tools.json" ]]; then
+        config_file="config/tools.json"
+    elif [[ -f "../config/tools.json" ]]; then
+        config_file="../config/tools.json"
+    else
+        # Fallback: return tool name if no config found
+        debug "No tools.json found, using tool name as binary name for $tool_name"
+        echo "$tool_name"
+        return 0
+    fi
+    
+    # Extract binary_name from JSON using jq if available, otherwise use simple grep/sed
+    if command -v jq &> /dev/null; then
+        local binary_name
+        binary_name=$(jq -r ".tools[] | select(.name == \"$tool_name\") | .binary_name" "$config_file" 2>/dev/null)
+        if [[ -n "$binary_name" && "$binary_name" != "null" ]]; then
+            echo "$binary_name"
+        else
+            debug "No binary_name found for $tool_name in tools.json, using tool name"
+            echo "$tool_name"
+        fi
+    else
+        # Fallback: simple text parsing when jq is not available
+        local binary_name
+        binary_name=$(grep -A 20 "\"name\": \"$tool_name\"" "$config_file" | grep "\"binary_name\":" | head -1 | sed 's/.*"binary_name": *"\([^"]*\)".*/\1/')
+        if [[ -n "$binary_name" ]]; then
+            echo "$binary_name"
+        else
+            debug "No binary_name found for $tool_name in tools.json (fallback parsing), using tool name"
+            echo "$tool_name"
+        fi
+    fi
+}
+
 # @function cleanup_build_artifacts
 # @brief Clean build artifacts while preserving installed binaries and essential files
 # @param $1 Tool name
@@ -1649,10 +1694,14 @@ cleanup_standard_artifacts() {
     # 2. Direct copy -> /usr/local/bin/tool (e.g., uv source build)
     # 3. Official installer -> ~/.local/bin/tool (e.g., uv official installer)
     if [[ -d "$build_dir/target" ]]; then
+        # Get the actual binary name for this tool
+        local binary_name
+        binary_name=$(get_binary_name_for_tool "$tool_name")
+        
         # Check if tool is properly installed using any pattern
-        local cargo_binary="$HOME/.cargo/bin/$tool_name"
-        local system_binary="/usr/local/bin/$tool_name"
-        local local_binary="$HOME/.local/bin/$tool_name"
+        local cargo_binary="$HOME/.cargo/bin/$binary_name"
+        local system_binary="/usr/local/bin/$binary_name"
+        local local_binary="$HOME/.local/bin/$binary_name"
         local is_properly_installed="false"
         local installation_type=""
         
