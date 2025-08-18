@@ -395,7 +395,7 @@ run_with_timeout() {
 }
 
 # @function get_optimal_jobs
-# @brief Calculate optimal number of parallel jobs for builds
+# @brief Calculate optimal number of parallel jobs for builds with adaptive memory monitoring
 # @return Prints optimal job count
 get_optimal_jobs() {
     # Check if user has configured a specific job limit
@@ -407,19 +407,51 @@ get_optimal_jobs() {
         return 0
     fi
     
-    # Auto-calculate based on system resources
+    # Auto-calculate based on system resources with enhanced monitoring
     local cpu_cores
     cpu_cores=$(nproc)
     
-    # Limit based on available memory (assume 1GB per job for safety)
-    local available_memory_gb
-    available_memory_gb=$(($(free -g | awk '/^Mem:/{print $7}') + 1))
+    # Enhanced memory calculation with load monitoring
+    local total_memory_gb available_memory_gb current_load
+    total_memory_gb=$(free -g | awk '/^Mem:/{print $2}')
+    available_memory_gb=$(free -g | awk '/^Mem:/{print $7}')
     
-    local memory_limited_jobs=$((available_memory_gb))
+    # Get current system load (1-minute average)
+    current_load=$(uptime | grep -o '[0-9][0-9]*\.[0-9][0-9]*' | head -1 2>/dev/null || echo "0.0")
+    current_load_int=${current_load%.*}
     
-    # Return the smaller of CPU cores and memory-limited jobs, minimum of 1
-    local optimal_jobs=$((cpu_cores < memory_limited_jobs ? cpu_cores : memory_limited_jobs))
-    echo $((optimal_jobs > 0 ? optimal_jobs : 1))
+    # Memory-based job calculation with safety margins
+    local memory_per_job_gb=1
+    if [[ $total_memory_gb -gt 16 ]]; then
+        memory_per_job_gb=2  # Use more memory per job on high-memory systems
+    elif [[ $total_memory_gb -lt 4 ]]; then
+        memory_per_job_gb=1  # Conservative on low-memory systems
+    fi
+    
+    local memory_limited_jobs=$((available_memory_gb / memory_per_job_gb))
+    
+    # Load-based adjustment: reduce parallelism if system is already busy
+    local load_factor=1
+    if [[ ${current_load_int:-0} -gt $((cpu_cores * 2)) ]]; then
+        load_factor=2  # High load: halve parallelism
+        log "High system load detected (${current_load}), reducing parallelism"
+    elif [[ ${current_load_int:-0} -gt $cpu_cores ]]; then
+        load_factor=1  # Moderate load: slight reduction
+        memory_limited_jobs=$((memory_limited_jobs * 3 / 4))
+    fi
+    
+    # Calculate optimal jobs considering CPU, memory, and load
+    local cpu_limited_jobs=$((cpu_cores / load_factor))
+    local optimal_jobs=$((cpu_limited_jobs < memory_limited_jobs ? cpu_limited_jobs : memory_limited_jobs))
+    
+    # Enforce minimum and maximum bounds
+    optimal_jobs=$((optimal_jobs > 0 ? optimal_jobs : 1))
+    optimal_jobs=$((optimal_jobs < 8 ? optimal_jobs : 8))  # Cap at 8 for stability
+    
+    log "System resources: ${cpu_cores} CPUs, ${available_memory_gb}GB available memory, load ${current_load}"
+    log "Optimal parallel jobs: $optimal_jobs"
+    
+    echo "$optimal_jobs"
 }
 
 # =============================================================================
@@ -1203,16 +1235,49 @@ get_cache_key() {
 }
 
 # @function is_cached
-# @brief Check if a build is already cached
+# @brief Check if a build is already cached with integrity verification
 # @param $1 Tool name
 # @param $2 Build type
 # @param $3 Version/commit hash
 is_cached() {
+    local tool_name="$1"
+    local build_type="$2"
+    local version="$3"
     local cache_key
-    cache_key=$(get_cache_key "$1" "$2" "$3")
+    cache_key=$(get_cache_key "$tool_name" "$build_type" "$version")
     local cache_path="$CACHE_DIR/builds/$cache_key"
     
-    [[ -d "$cache_path" && -f "$cache_path/.build_complete" ]]
+    # Basic existence check
+    if [[ ! -d "$cache_path" || ! -f "$cache_path/.build_complete" ]]; then
+        return 1
+    fi
+    
+    # Integrity check: verify binary exists and is executable
+    local binary_name="${tool_name}"
+    local cached_binary="$cache_path/bin/$binary_name"
+    
+    if [[ ! -f "$cached_binary" || ! -x "$cached_binary" ]]; then
+        warning "Cache integrity check failed for $tool_name: binary missing or not executable"
+        # Clean up corrupted cache entry
+        rm -rf "$cache_path" 2>/dev/null || true
+        return 1
+    fi
+    
+    # Age check: reject cache entries older than configured limit (default 7 days)
+    local max_age_days="${GEARBOX_CACHE_MAX_AGE_DAYS:-7}"
+    if [[ -n "$max_age_days" && "$max_age_days" -gt 0 ]]; then
+        local cache_age_seconds
+        cache_age_seconds=$(( $(date +%s) - $(stat -c %Y "$cache_path/.build_complete" 2>/dev/null || echo 0) ))
+        local max_age_seconds=$((max_age_days * 86400))
+        
+        if [[ $cache_age_seconds -gt $max_age_seconds ]]; then
+            log "Cache entry for $tool_name is older than $max_age_days days, invalidating"
+            rm -rf "$cache_path" 2>/dev/null || true
+            return 1
+        fi
+    fi
+    
+    return 0
 }
 
 # @function get_cached_binary
@@ -1271,16 +1336,33 @@ cache_build() {
         return 0  # Non-fatal
     fi
     
-    # Copy binary to cache
+    # Copy binary to cache with integrity verification
     if [[ -f "$binary_path" ]]; then
         if cp "$binary_path" "$cache_path/bin/" 2>/dev/null; then
-            # Mark build as complete
-            echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$cache_path/.build_complete"
-            echo "tool=$tool_name" >> "$cache_path/.build_complete"
-            echo "build_type=$build_type" >> "$cache_path/.build_complete"
-            echo "version=$version" >> "$cache_path/.build_complete"
+            local cached_binary="$cache_path/bin/$(basename "$binary_path")"
             
-            log "Cached build for $tool_name ($build_type, $version)"
+            # Generate checksum for integrity verification
+            local checksum
+            if command -v sha256sum >/dev/null 2>&1; then
+                checksum=$(sha256sum "$cached_binary" 2>/dev/null | cut -d' ' -f1)
+            elif command -v shasum >/dev/null 2>&1; then
+                checksum=$(shasum -a 256 "$cached_binary" 2>/dev/null | cut -d' ' -f1)
+            else
+                checksum="unavailable"
+            fi
+            
+            # Store build metadata with integrity information
+            {
+                echo "timestamp=$(date '+%Y-%m-%d %H:%M:%S')"
+                echo "tool=$tool_name"
+                echo "build_type=$build_type"
+                echo "version=$version"
+                echo "binary_size=$(stat -c%s "$cached_binary" 2>/dev/null || echo 0)"
+                echo "checksum=$checksum"
+                echo "gearbox_version=${GEARBOX_VERSION:-unknown}"
+            } > "$cache_path/.build_complete"
+            
+            log "Cached build for $tool_name ($build_type, $version) with checksum: ${checksum:0:12}..."
         else
             warning "Failed to copy binary to cache: $binary_path"
         fi
@@ -1302,6 +1384,116 @@ get_tool_version() {
         cd "$repo_dir" && git rev-parse --short HEAD
     else
         echo "unknown"
+    fi
+}
+
+# @function verify_cached_binary
+# @brief Verify cached binary integrity with comprehensive checks
+# @param $1 Tool name
+# @param $2 Build type
+# @param $3 Version/commit hash
+verify_cached_binary() {
+    local tool_name="$1"
+    local build_type="$2"
+    local version="$3"
+    local cache_key
+    cache_key=$(get_cache_key "$tool_name" "$build_type" "$version")
+    local cache_path="$CACHE_DIR/builds/$cache_key"
+    local cached_binary="$cache_path/bin/$tool_name"
+    
+    # Basic existence and executable check
+    if [[ ! -f "$cached_binary" || ! -x "$cached_binary" ]]; then
+        return 1
+    fi
+    
+    # Verify checksum if available
+    if [[ -f "$cache_path/.build_complete" ]]; then
+        local stored_checksum
+        stored_checksum=$(grep "^checksum=" "$cache_path/.build_complete" | cut -d'=' -f2)
+        
+        if [[ "$stored_checksum" != "unavailable" && -n "$stored_checksum" ]]; then
+            local current_checksum
+            if command -v sha256sum >/dev/null 2>&1; then
+                current_checksum=$(sha256sum "$cached_binary" 2>/dev/null | cut -d' ' -f1)
+            elif command -v shasum >/dev/null 2>&1; then
+                current_checksum=$(shasum -a 256 "$cached_binary" 2>/dev/null | cut -d' ' -f1)
+            else
+                return 0  # Skip checksum verification if tools unavailable
+            fi
+            
+            if [[ "$stored_checksum" != "$current_checksum" ]]; then
+                warning "Checksum mismatch for cached $tool_name: expected $stored_checksum, got $current_checksum"
+                return 1
+            fi
+        fi
+    fi
+    
+    # Quick functional test: check if binary responds to --version or --help
+    if timeout 5 "$cached_binary" --version >/dev/null 2>&1 || 
+       timeout 5 "$cached_binary" --help >/dev/null 2>&1 || 
+       timeout 5 "$cached_binary" -V >/dev/null 2>&1; then
+        return 0
+    else
+        warning "Cached binary for $tool_name failed functional test"
+        return 1
+    fi
+}
+
+# @function cache_warmup
+# @brief Pre-warm cache with commonly used tools
+# @param $1 Optional space-separated list of tools to warm up
+cache_warmup() {
+    local tools_to_warm="${1:-fd ripgrep fzf bat}"
+    local warmed_count=0
+    local total_count=0
+    
+    log "Starting cache warmup for commonly used tools..."
+    
+    for tool in $tools_to_warm; do
+        total_count=$((total_count + 1))
+        
+        # Check if already cached
+        if is_cached "$tool" "standard" "latest"; then
+            log "✓ $tool already cached"
+            warmed_count=$((warmed_count + 1))
+        else
+            log "○ $tool not cached - will be built on first use"
+        fi
+    done
+    
+    log "Cache warmup complete: $warmed_count/$total_count tools cached"
+    
+    # Show cache statistics
+    show_cache_stats
+}
+
+# @function show_cache_stats
+# @brief Display cache usage statistics
+show_cache_stats() {
+    local cache_builds_dir="$CACHE_DIR/builds"
+    
+    if [[ ! -d "$cache_builds_dir" ]]; then
+        log "Cache directory not found"
+        return 0
+    fi
+    
+    local total_entries cached_size
+    total_entries=$(find "$cache_builds_dir" -name ".build_complete" 2>/dev/null | wc -l)
+    cached_size=$(du -sh "$cache_builds_dir" 2>/dev/null | cut -f1 || echo "unknown")
+    
+    log "Cache statistics:"
+    log "  - Total cached builds: $total_entries"
+    log "  - Cache size: $cached_size"
+    log "  - Cache location: $cache_builds_dir"
+    
+    # Show recently used tools
+    if [[ $total_entries -gt 0 ]]; then
+        log "  - Recent builds:"
+        find "$cache_builds_dir" -name ".build_complete" -exec grep "^tool=" {} \; 2>/dev/null | \
+            cut -d'=' -f2 | sort | uniq -c | sort -nr | head -5 | \
+            while read count tool; do
+                log "    $tool ($count versions)"
+            done
     fi
 }
 

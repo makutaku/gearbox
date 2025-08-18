@@ -75,9 +75,10 @@ type Orchestrator struct {
 	options       InstallationOptions
 	repoDir       string
 	scriptsDir    string
-	mu            sync.Mutex
+	mu            sync.RWMutex  // Use RWMutex for better read performance
 	results       []InstallationResult
 	progressBar   *progressbar.ProgressBar
+	resultPool    sync.Pool     // Memory pool for result objects
 }
 
 // Global variables
@@ -242,28 +243,37 @@ func NewOrchestrator(options InstallationOptions) (*Orchestrator, error) {
 		}
 	}
 
-	return &Orchestrator{
+	orchestrator := &Orchestrator{
 		config:     config,
 		options:    options,
 		repoDir:    repoDir,
 		scriptsDir: filepath.Join(repoDir, "scripts"),
 		results:    make([]InstallationResult, 0),
-	}, nil
+	}
+	
+	// Initialize memory pool for result objects
+	orchestrator.resultPool = sync.Pool{
+		New: func() interface{} {
+			return &InstallationResult{}
+		},
+	}
+	
+	return orchestrator, nil
 }
 
-// loadConfig loads the configuration from file
+// loadConfig loads the configuration from file with optimization for startup performance
 func loadConfig(path string) (Config, error) {
 	var config Config
 
-	file, err := os.Open(path)
-	if err != nil {
-		return config, fmt.Errorf("failed to open config file: %w", err)
-	}
-	defer file.Close()
-
-	data, err := io.ReadAll(file)
+	// Use os.ReadFile for better performance on small files
+	data, err := os.ReadFile(path)
 	if err != nil {
 		return config, fmt.Errorf("failed to read config file: %w", err)
+	}
+
+	// Use json.Decoder for streaming if file is large (>1MB), otherwise use Unmarshal
+	if len(data) > 1024*1024 {
+		return loadConfigStreaming(data)
 	}
 
 	if err := json.Unmarshal(data, &config); err != nil {
@@ -308,6 +318,18 @@ func loadConfig(path string) (Config, error) {
 		return config, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
+	return config, nil
+}
+
+// loadConfigStreaming loads large configuration files using streaming
+func loadConfigStreaming(data []byte) (Config, error) {
+	var config Config
+	decoder := json.NewDecoder(strings.NewReader(string(data)))
+	
+	if err := decoder.Decode(&config); err != nil {
+		return config, fmt.Errorf("failed to parse JSON configuration: %w", err)
+	}
+	
 	return config, nil
 }
 
