@@ -878,11 +878,71 @@ func getToolVersion(tool ToolConfig) string {
 		return "installed"
 	}
 
-	// Return first line of output, trimmed
-	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
-	if len(lines) > 0 {
-		return strings.TrimSpace(lines[0])
+	// Extract version information from output
+	return extractVersionFromOutput(string(output))
+}
+
+// extractVersionFromOutput intelligently extracts version information from command output
+func extractVersionFromOutput(output string) string {
+	if output == "" {
+		return "installed"
 	}
 
+	lines := strings.Split(strings.TrimSpace(output), "\n")
+	if len(lines) == 0 {
+		return "installed"
+	}
+
+	// Strategy 1: Look for lines that start with 'v' followed by a number (e.g., "v0.23.0")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) > 0 && line[0] == 'v' && len(line) > 1 {
+			// Check if second character is a digit
+			if line[1] >= '0' && line[1] <= '9' {
+				return line
+			}
+		}
+	}
+
+	// Strategy 2: Look for lines containing version patterns (e.g., "tool 1.2.3", "version 1.2.3")
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		// Look for patterns like "name version", "name 1.2.3", "version 1.2.3"
+		if strings.Contains(line, " ") {
+			parts := strings.Fields(line)
+			for i, part := range parts {
+				// Check if this part looks like a version (starts with digit, contains dots)
+				if len(part) > 0 && part[0] >= '0' && part[0] <= '9' && strings.Contains(part, ".") {
+					// Return this part and any following parts that might be version info
+					versionParts := parts[i:]
+					if len(versionParts) > 3 {
+						versionParts = versionParts[:3] // Limit to avoid too much info
+					}
+					return strings.Join(versionParts, " ")
+				}
+			}
+		}
+	}
+
+	// Strategy 3: Look for standalone version numbers in any line
+	for _, line := range lines {
+		line = strings.TrimSpace(line)
+		if len(line) > 0 && line[0] >= '0' && line[0] <= '9' && strings.Contains(line, ".") {
+			return line
+		}
+	}
+
+	// Strategy 4: Fall back to first line if it contains meaningful version info
+	firstLine := strings.TrimSpace(lines[0])
+	if len(firstLine) > 0 {
+		// If first line looks like it contains version info, use it
+		if strings.Contains(strings.ToLower(firstLine), "version") || 
+		   strings.Contains(firstLine, ".") ||
+		   len(strings.Fields(firstLine)) <= 4 { // Short, likely version info
+			return firstLine
+		}
+	}
+
+	// Strategy 5: Default fallback
 	return "installed"
 }
