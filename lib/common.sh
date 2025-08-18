@@ -1643,35 +1643,39 @@ cleanup_standard_artifacts() {
     
     # Remove common build artifacts while preserving source and important files
     
-    # Rust cleanup: remove most of target directory but preserve final binaries
+    # Rust cleanup: remove target directory build artifacts
+    # Note: Final binaries are installed to ~/.cargo/bin/ via 'cargo install'
+    # The target/release/ binaries are just intermediate build artifacts
     if [[ -d "$build_dir/target" ]]; then
-        # Keep final binaries temporarily
-        local temp_dir
-        temp_dir=$(mktemp -d)
+        # Check if tool is properly installed before cleaning build artifacts
+        local installed_binary="$HOME/.cargo/bin/$tool_name"
+        local has_symlink="false"
         
-        # Preserve final binaries if they exist
-        for binary_location in "$build_dir/target/release/$tool_name" "$build_dir/target/debug/$tool_name"; do
-            if [[ -f "$binary_location" ]]; then
-                cp "$binary_location" "$temp_dir/" 2>/dev/null || true
-            fi
-        done
-        
-        # Clean intermediate build artifacts
-        find "$build_dir/target" -name "*.rlib" -delete 2>/dev/null || true
-        find "$build_dir/target" -name "*.rmeta" -delete 2>/dev/null || true
-        find "$build_dir/target" -path "*/build/*" -delete 2>/dev/null || true
-        find "$build_dir/target" -path "*/deps/*" -delete 2>/dev/null || true
-        find "$build_dir/target" -path "*/incremental/*" -delete 2>/dev/null || true
-        rm -f "$build_dir/target/.rustc_info.json" 2>/dev/null || true
-        rm -f "$build_dir/target/CACHEDIR.TAG" 2>/dev/null || true
-        
-        # Restore final binary if it existed
-        if [[ -f "$temp_dir/$tool_name" ]]; then
-            mkdir -p "$build_dir/target/release"
-            cp "$temp_dir/$tool_name" "$build_dir/target/release/" 2>/dev/null || true
+        if [[ -L "/usr/local/bin/$tool_name" ]]; then
+            has_symlink="true"
         fi
         
-        rm -rf "$temp_dir"
+        # Only clean if the tool is properly installed
+        if [[ -f "$installed_binary" && "$has_symlink" == "true" ]]; then
+            log "Tool $tool_name is properly installed, cleaning build artifacts from target/"
+            
+            # Clean all build artifacts - no need to preserve target/release binaries
+            # since the real binary is in ~/.cargo/bin/
+            rm -rf "$build_dir/target/release/build" 2>/dev/null || true
+            rm -rf "$build_dir/target/release/deps" 2>/dev/null || true 
+            rm -rf "$build_dir/target/release/incremental" 2>/dev/null || true
+            rm -rf "$build_dir/target/debug" 2>/dev/null || true
+            find "$build_dir/target" -name "*.rlib" -delete 2>/dev/null || true
+            find "$build_dir/target" -name "*.rmeta" -delete 2>/dev/null || true
+            rm -f "$build_dir/target/.rustc_info.json" 2>/dev/null || true
+            rm -f "$build_dir/target/CACHEDIR.TAG" 2>/dev/null || true
+            
+            # Remove the intermediate binary since it's not used after cargo install
+            rm -f "$build_dir/target/release/$tool_name" 2>/dev/null || true
+        else
+            warning "Tool $tool_name not properly installed, preserving build artifacts"
+            log "Expected: $installed_binary and symlink at /usr/local/bin/$tool_name"
+        fi
     fi
     
     # Go cleanup
