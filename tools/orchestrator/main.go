@@ -527,6 +527,7 @@ func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 
 	// Add common options
 	args = append(args, "--skip-deps") // Dependencies handled separately
+	args = append(args, "--force")     // Always force to avoid interactive prompts
 	
 	if o.options.RunTests {
 		args = append(args, "--run-tests")
@@ -535,14 +536,21 @@ func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 	if o.options.NoShell && tool.ShellIntegration {
 		args = append(args, "--no-shell")
 	}
-	
-	if o.options.Force {
-		args = append(args, "--force")
-	}
 
 	// Execute installation
 	cmd := exec.Command("bash", args...)
-	cmd.Dir = o.repoDir
+	
+	// Set working directory to build directory (~/tools/build)
+	buildDir := os.ExpandEnv("$HOME/tools/build")
+	if err := os.MkdirAll(buildDir, 0755); err != nil {
+		return InstallationResult{
+			Tool:     tool,
+			Success:  false,
+			Error:    fmt.Errorf("failed to create build directory: %w", err),
+			Duration: time.Since(start),
+		}
+	}
+	cmd.Dir = buildDir
 
 	var output strings.Builder
 	if o.options.Verbose {
@@ -552,6 +560,9 @@ func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 		cmd.Stdout = &output
 		cmd.Stderr = &output
 	}
+
+	// Provide automatic "yes" responses to avoid interactive prompts
+	cmd.Stdin = strings.NewReader("y\ny\ny\ny\ny\ny\ny\ny\ny\ny\n")
 
 	err := cmd.Run()
 	
