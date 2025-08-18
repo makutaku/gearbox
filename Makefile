@@ -20,17 +20,21 @@ cli:
 	@echo "Building gearbox CLI..."
 	cd cmd/gearbox && go build $(LDFLAGS) -o ../../gearbox
 
-# Build existing Go tools
-tools:
+# Build Go tools from unified module
+tools: bin/orchestrator bin/script-generator bin/config-manager
+
+bin/orchestrator: cmd/orchestrator/main.go internal/orchestrator/main.go
 	@echo "Building orchestrator..."
 	@mkdir -p bin
-	cd tools/orchestrator && go build -o ../../bin/orchestrator
-	
+	@go build -o bin/orchestrator ./cmd/orchestrator
+
+bin/script-generator: cmd/script-generator/main.go internal/script-generator/main.go
 	@echo "Building script-generator..."
-	cd tools/script-generator && go build -o ../../bin/script-generator
-	
+	@go build -o bin/script-generator ./cmd/script-generator
+
+bin/config-manager: cmd/config-manager/main.go internal/config-manager/main.go
 	@echo "Building config-manager..."
-	cd tools/config-manager && go build -o ../../bin/config-manager
+	@go build -o bin/config-manager ./cmd/config-manager
 
 # Install dependencies
 deps:
@@ -53,7 +57,7 @@ test:
 # Clean build artifacts
 clean:
 	@echo "Cleaning build artifacts..."
-	rm -f bin/orchestrator bin/script-generator bin/config-manager
+	rm -f bin/orchestrator bin/script-generator bin/config-manager gearbox
 
 # Install system-wide (requires sudo)
 install: build

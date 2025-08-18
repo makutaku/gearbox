@@ -55,13 +55,12 @@ func runInstall(cmd *cobra.Command, args []string) error {
 	repoDir := filepath.Dir(execPath)
 	orchestratorPath := filepath.Join(repoDir, "bin", "orchestrator")
 
-	// Check if the advanced orchestrator is available
-	if _, err := os.Stat(orchestratorPath); err == nil {
-		return runWithOrchestrator(orchestratorPath, cmd, args)
+	// Check if the orchestrator is available
+	if _, err := os.Stat(orchestratorPath); err != nil {
+		return fmt.Errorf("orchestrator not found at %s: please run 'make build' to compile all components", orchestratorPath)
 	}
 
-	// Fallback to legacy shell-based installation
-	return runWithLegacyScripts(repoDir, cmd, args)
+	return runWithOrchestrator(orchestratorPath, cmd, args)
 }
 
 func runWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args []string) error {
@@ -113,86 +112,3 @@ func runWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args []str
 	return orchestratorCmd.Run()
 }
 
-func runWithLegacyScripts(repoDir string, cmd *cobra.Command, args []string) error {
-	fmt.Println("Note: Using legacy shell-based installation (orchestrator not available)")
-	fmt.Println("For better performance and features, consider rebuilding the project.")
-	fmt.Println()
-
-	// If no tools specified, delegate to install-all-tools.sh
-	if len(args) == 0 {
-		allToolsScript := filepath.Join(repoDir, "scripts", "install-all-tools.sh")
-		if _, err := os.Stat(allToolsScript); err != nil {
-			return fmt.Errorf("install-all-tools.sh not found: %w", err)
-		}
-
-		legacyCmd := exec.Command(allToolsScript)
-		
-		// Convert flags to legacy script arguments
-		var legacyArgs []string
-		if minimal, _ := cmd.Flags().GetBool("minimal"); minimal {
-			legacyArgs = append(legacyArgs, "--minimal")
-		}
-		if maximum, _ := cmd.Flags().GetBool("maximum"); maximum {
-			legacyArgs = append(legacyArgs, "--maximum")
-		}
-		if skipDeps, _ := cmd.Flags().GetBool("skip-common-deps"); skipDeps {
-			legacyArgs = append(legacyArgs, "--skip-common-deps")
-		}
-		if runTests, _ := cmd.Flags().GetBool("run-tests"); runTests {
-			legacyArgs = append(legacyArgs, "--run-tests")
-		}
-		if noShell, _ := cmd.Flags().GetBool("no-shell"); noShell {
-			legacyArgs = append(legacyArgs, "--no-shell")
-		}
-
-		legacyCmd.Args = append(legacyCmd.Args, legacyArgs...)
-		legacyCmd.Stdout = os.Stdout
-		legacyCmd.Stderr = os.Stderr
-		legacyCmd.Stdin = os.Stdin
-		
-		return legacyCmd.Run()
-	}
-
-	// Install individual tools using their scripts
-	for _, tool := range args {
-		scriptPath := filepath.Join(repoDir, "scripts", fmt.Sprintf("install-%s.sh", tool))
-		if _, err := os.Stat(scriptPath); err != nil {
-			fmt.Printf("Warning: Script for tool '%s' not found: %s\n", tool, scriptPath)
-			continue
-		}
-
-		fmt.Printf("Installing %s...\n", tool)
-		
-		toolCmd := exec.Command(scriptPath)
-		
-		// Convert flags to script arguments
-		var scriptArgs []string
-		if minimal, _ := cmd.Flags().GetBool("minimal"); minimal {
-			scriptArgs = append(scriptArgs, "-m")
-		}
-		if maximum, _ := cmd.Flags().GetBool("maximum"); maximum {
-			// Try different flag variations for maximum build
-			scriptArgs = append(scriptArgs, "-r") // Most tools use -r for release/maximum
-		}
-		if skipDeps, _ := cmd.Flags().GetBool("skip-common-deps"); skipDeps {
-			scriptArgs = append(scriptArgs, "--skip-deps")
-		}
-		if runTests, _ := cmd.Flags().GetBool("run-tests"); runTests {
-			scriptArgs = append(scriptArgs, "--run-tests")
-		}
-		if force, _ := cmd.Flags().GetBool("force"); force {
-			scriptArgs = append(scriptArgs, "--force")
-		}
-
-		toolCmd.Args = append(toolCmd.Args, scriptArgs...)
-		toolCmd.Stdout = os.Stdout
-		toolCmd.Stderr = os.Stderr
-		
-		if err := toolCmd.Run(); err != nil {
-			fmt.Printf("Error installing %s: %v\n", tool, err)
-			// Continue with other tools instead of failing completely
-		}
-	}
-
-	return nil
-}
