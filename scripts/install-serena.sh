@@ -242,8 +242,9 @@ setup_venv() {
         python3 -m venv "$venv_dir" || error "Failed to create virtual environment"
         source "$venv_dir/bin/activate" || error "Failed to activate virtual environment"
         
-        # Upgrade pip in virtual environment
-        pip install --upgrade pip setuptools wheel || warning "Failed to upgrade pip"
+        # Upgrade pip in virtual environment (critical for package compatibility)
+        log "Upgrading pip, setuptools, and wheel for reliable package installation..."
+        pip install --upgrade pip setuptools wheel || error "Failed to upgrade pip tools - this may cause package installation failures. Check network connectivity and pip configuration."
     fi
     
     success "Virtual environment activated"

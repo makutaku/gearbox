@@ -44,14 +44,17 @@ Options:
   --skip-deps          Skip dependency installation
   --force              Force reinstallation if already installed
   --no-shell           Skip shell integration setup
-  --install-fzf        Also install fzf for enhanced directory selection
+  --install-fzf        Also install fzf via cargo (simple method - for advanced options use ./install-fzf.sh)
   -h, --help           Show this help message
 
 Examples:
   $0                   # Default: install with shell integration
-  $0 --install-fzf     # Install zoxide and fzf together
+  $0 --install-fzf     # Install with basic fzf (prefer: ./install-fzf.sh for more options)
   $0 --no-shell        # Install without shell integration
   $0 -c                # Configuration check only
+  
+Recommended for enhanced functionality:
+  $0 && ./install-fzf.sh    # Install zoxide, then fzf with advanced build options
 
 EOF
 }
@@ -318,14 +321,13 @@ if [[ "$INSTALL_FZF" == true ]]; then
     if command -v fzf &> /dev/null && [[ "$FORCE_INSTALL" == false ]]; then
         log "fzf is already installed: $(fzf --version | head -n1)"
     else
+        log "Installing fzf via cargo (fail-fast approach)..."
         if [[ "$FORCE_INSTALL" == true ]]; then
-            cargo install fzf --force || warning "fzf installation failed, but continuing"
+            cargo install fzf --force || error "fzf installation failed - use dedicated './install-fzf.sh' script for better fzf installation options"
         else
-            cargo install fzf || warning "fzf installation failed, but continuing"
+            cargo install fzf || error "fzf installation failed - use dedicated './install-fzf.sh' script for better fzf installation options"
         fi
-        if command -v fzf &> /dev/null; then
-            success "fzf installed successfully"
-        fi
+        success "fzf installed successfully"
     fi
 fi
 
