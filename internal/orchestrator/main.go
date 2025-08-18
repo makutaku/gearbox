@@ -15,6 +15,7 @@ import (
 
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
+	"gearbox/pkg/validation"
 )
 
 // ToolConfig represents a single tool configuration
@@ -267,6 +268,44 @@ func loadConfig(path string) (Config, error) {
 
 	if err := json.Unmarshal(data, &config); err != nil {
 		return config, fmt.Errorf("failed to parse JSON configuration: %w", err)
+	}
+
+	// Validate configuration structure
+	validationConfig := validation.Config{
+		SchemaVersion:    config.SchemaVersion,
+		DefaultBuildType: config.DefaultBuildType,
+		Tools:            make([]validation.ToolConfig, len(config.Tools)),
+		Categories:       config.Categories,
+		Languages:        make(map[string]validation.LanguageConfig),
+	}
+
+	// Convert tools for validation
+	for i, tool := range config.Tools {
+		validationConfig.Tools[i] = validation.ToolConfig{
+			Name:             tool.Name,
+			Description:      tool.Description,
+			Category:         tool.Category,
+			Repository:       tool.Repository,
+			BinaryName:       tool.BinaryName,
+			Language:         tool.Language,
+			BuildTypes:       tool.BuildTypes,
+			Dependencies:     tool.Dependencies,
+			MinVersion:       tool.MinVersion,
+			ShellIntegration: tool.ShellIntegration,
+			TestCommand:      tool.TestCommand,
+		}
+	}
+
+	// Convert languages for validation
+	for name, lang := range config.Languages {
+		validationConfig.Languages[name] = validation.LanguageConfig{
+			MinVersion: lang.MinVersion,
+			BuildTool:  lang.BuildTool,
+		}
+	}
+
+	if err := validation.ValidateConfig(validationConfig); err != nil {
+		return config, fmt.Errorf("configuration validation failed: %w", err)
 	}
 
 	return config, nil

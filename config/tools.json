@@ -11,10 +11,13 @@
       "language": "rust",
       "build_types": {
         "minimal": "-m",
-        "standard": "-s", 
+        "standard": "-s",
         "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -31,7 +34,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -48,7 +54,10 @@
         "standard": "-s",
         "maximum": "-p"
       },
-      "dependencies": ["go", "build-essential"],
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": true,
       "test_command": "--version"
@@ -65,7 +74,12 @@
         "standard": "-s",
         "maximum": "-o"
       },
-      "dependencies": ["build-essential", "autoconf", "automake", "libtool"],
+      "dependencies": [
+        "build-essential",
+        "autoconf",
+        "automake",
+        "libtool"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -78,11 +92,14 @@
       "binary_name": "zoxide",
       "language": "rust",
       "build_types": {
-        "minimal": "",
-        "standard": "",
-        "maximum": ""
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": true,
       "test_command": "--version"
@@ -99,7 +116,10 @@
         "standard": "-r",
         "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -116,7 +136,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -133,7 +156,11 @@
         "standard": "-s",
         "maximum": "-f"
       },
-      "dependencies": ["python3", "python3-pip", "python3-venv"],
+      "dependencies": [
+        "python3",
+        "python3-pip",
+        "python3-venv"
+      ],
       "min_version": "3.11.0",
       "shell_integration": false,
       "test_command": "--version"
@@ -150,7 +177,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -167,7 +197,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -184,7 +217,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -201,7 +237,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": true,
       "test_command": "--version"
@@ -218,7 +257,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -235,7 +277,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -252,7 +297,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["go", "build-essential"],
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -269,7 +317,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -286,7 +337,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -303,7 +357,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -320,7 +377,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -337,7 +397,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -354,7 +417,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -371,7 +437,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -388,7 +457,10 @@
         "standard": "-r",
         "maximum": "-o"
       },
-      "dependencies": ["go", "build-essential"],
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -401,11 +473,14 @@
       "binary_name": "dust",
       "language": "rust",
       "build_types": {
-        "minimal": "",
-        "standard": "",
-        "maximum": ""
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -418,11 +493,14 @@
       "binary_name": "sd",
       "language": "rust",
       "build_types": {
-        "minimal": "",
-        "standard": "",
-        "maximum": ""
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -435,11 +513,14 @@
       "binary_name": "tldr",
       "language": "rust",
       "build_types": {
-        "minimal": "",
-        "standard": "",
-        "maximum": ""
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -452,11 +533,14 @@
       "binary_name": "choose",
       "language": "rust",
       "build_types": {
-        "minimal": "",
-        "standard": "",
-        "maximum": ""
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
       },
-      "dependencies": ["rust", "build-essential"],
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -473,7 +557,11 @@
         "standard": "-g",
         "maximum": "-x"
       },
-      "dependencies": ["build-essential", "yasm", "pkg-config"],
+      "dependencies": [
+        "build-essential",
+        "yasm",
+        "pkg-config"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "ffmpeg -version"
@@ -490,7 +578,10 @@
         "standard": "-f",
         "maximum": "-p"
       },
-      "dependencies": ["build-essential", "pkg-config"],
+      "dependencies": [
+        "build-essential",
+        "pkg-config"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "--version"
@@ -507,7 +598,9 @@
         "standard": "-o",
         "maximum": "-a"
       },
-      "dependencies": ["build-essential"],
+      "dependencies": [
+        "build-essential"
+      ],
       "min_version": "",
       "shell_integration": false,
       "test_command": "7zz"
@@ -515,7 +608,7 @@
   ],
   "categories": {
     "core": "Core Development Tools",
-    "navigation": "Navigation & File Management", 
+    "navigation": "Navigation & File Management",
     "development": "Development Tools",
     "system": "System Monitoring",
     "media": "Media & Image Processing"

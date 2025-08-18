@@ -445,11 +445,172 @@ cleanup_on_error() {
     if [[ $exit_code -ne 0 ]]; then
         warning "Operation failed with exit code $exit_code, performing cleanup..."
         
+        # Execute rollback actions first
+        execute_rollback
+        
         # Clean up any temporary directories
         [[ -n "${TEMP_DIR:-}" && -d "$TEMP_DIR" ]] && rm -rf "$TEMP_DIR"
         
         # Additional cleanup can be added here
         debug "Cleanup completed"
+    else
+        # Success - clear rollback actions
+        clear_rollback_actions
+    fi
+}
+
+# =============================================================================
+# ROLLBACK AND RECOVERY FUNCTIONS
+# =============================================================================
+
+# Global rollback state tracking
+declare -a ROLLBACK_ACTIONS=()
+declare -g ROLLBACK_ENABLED=true
+
+# @function add_rollback_action
+# @brief Add an action to the rollback stack
+# @param $1 Rollback command to execute
+# @description
+#   Adds a command to the rollback stack that will be executed in reverse order
+#   if rollback is triggered. Commands should be safe to execute multiple times.
+#
+# @example
+#   add_rollback_action "rm -f /tmp/myfile"
+#   add_rollback_action "systemctl stop myservice"
+add_rollback_action() {
+    local action="$1"
+    [[ -z "$action" ]] && error "Rollback action cannot be empty"
+    
+    if [[ "$ROLLBACK_ENABLED" == "true" ]]; then
+        ROLLBACK_ACTIONS+=("$action")
+        debug "Added rollback action: $action"
+    fi
+}
+
+# @function execute_rollback
+# @brief Execute all rollback actions in reverse order
+# @description
+#   Executes all registered rollback actions in LIFO order (last added first).
+#   Each action is executed with error handling to ensure all rollbacks run.
+execute_rollback() {
+    if [[ ${#ROLLBACK_ACTIONS[@]} -eq 0 ]]; then
+        debug "No rollback actions to execute"
+        return 0
+    fi
+    
+    warning "Executing rollback actions..."
+    
+    # Execute rollback actions in reverse order
+    for ((i=${#ROLLBACK_ACTIONS[@]}-1; i>=0; i--)); do
+        local action="${ROLLBACK_ACTIONS[i]}"
+        debug "Executing rollback: $action"
+        
+        # Execute with error handling - don't fail if rollback fails
+        if eval "$action" 2>/dev/null; then
+            debug "Rollback action succeeded: $action"
+        else
+            warning "Rollback action failed: $action"
+        fi
+    done
+    
+    success "Rollback completed"
+    ROLLBACK_ACTIONS=()  # Clear the actions
+}
+
+# @function clear_rollback_actions
+# @brief Clear all rollback actions without executing them
+# @description
+#   Clears the rollback stack without executing actions. Use this when
+#   installation succeeds and rollback is no longer needed.
+clear_rollback_actions() {
+    debug "Clearing ${#ROLLBACK_ACTIONS[@]} rollback actions"
+    ROLLBACK_ACTIONS=()
+}
+
+# @function disable_rollback
+# @brief Disable rollback action recording
+# @description
+#   Disables the recording of new rollback actions. Existing actions
+#   are preserved but no new ones will be added.
+disable_rollback() {
+    ROLLBACK_ENABLED=false
+    debug "Rollback action recording disabled"
+}
+
+# @function enable_rollback
+# @brief Enable rollback action recording
+enable_rollback() {
+    ROLLBACK_ENABLED=true
+    debug "Rollback action recording enabled"
+}
+
+# @function backup_file
+# @brief Create a backup of a file before modification
+# @param $1 File path to backup
+# @param $2 Optional backup suffix (default: .backup)
+# @return 0 on success, 1 on failure
+backup_file() {
+    local file_path="$1"
+    local backup_suffix="${2:-.backup}"
+    
+    [[ -z "$file_path" ]] && error "File path not specified"
+    [[ ! -f "$file_path" ]] && return 1  # File doesn't exist, no backup needed
+    
+    local backup_path="${file_path}${backup_suffix}"
+    
+    if cp "$file_path" "$backup_path" 2>/dev/null; then
+        debug "Created backup: $backup_path"
+        add_rollback_action "restore_file_backup '$file_path' '$backup_suffix'"
+        return 0
+    else
+        warning "Failed to create backup of $file_path"
+        return 1
+    fi
+}
+
+# @function restore_file_backup
+# @brief Restore a file from its backup
+# @param $1 Original file path
+# @param $2 Optional backup suffix (default: .backup)
+restore_file_backup() {
+    local file_path="$1"
+    local backup_suffix="${2:-.backup}"
+    local backup_path="${file_path}${backup_suffix}"
+    
+    if [[ -f "$backup_path" ]]; then
+        mv "$backup_path" "$file_path" 2>/dev/null
+        debug "Restored file from backup: $file_path"
+    else
+        debug "No backup found for: $file_path"
+    fi
+}
+
+# @function safe_install_binary
+# @brief Safely install a binary with automatic rollback
+# @param $1 Source binary path
+# @param $2 Target installation path
+safe_install_binary() {
+    local source_path="$1"
+    local target_path="$2"
+    
+    [[ -z "$source_path" ]] && error "Source path not specified"
+    [[ -z "$target_path" ]] && error "Target path not specified"
+    [[ ! -f "$source_path" ]] && error "Source binary not found: $source_path"
+    
+    # Backup existing binary if it exists
+    if [[ -f "$target_path" ]]; then
+        backup_file "$target_path"
+    else
+        # If file doesn't exist, add rollback to remove it
+        add_rollback_action "rm -f '$target_path'"
+    fi
+    
+    # Install the binary
+    if install -m 755 "$source_path" "$target_path"; then
+        success "Installed binary: $target_path"
+        return 0
+    else
+        error "Failed to install binary: $target_path"
     fi
 }
 

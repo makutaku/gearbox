@@ -1,0 +1,541 @@
+{
+  "schema_version": "1.0",
+  "default_build_type": "standard",
+  "tools": [
+    {
+      "name": "fd",
+      "description": "Fast file finder (Rust)",
+      "category": "core",
+      "repository": "https://github.com/sharkdp/fd.git",
+      "binary_name": "fd",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s", 
+        "maximum": "-r"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "ripgrep",
+      "description": "Fast text search (Rust)",
+      "category": "core",
+      "repository": "https://github.com/BurntSushi/ripgrep.git",
+      "binary_name": "rg",
+      "language": "rust",
+      "build_types": {
+        "minimal": "--no-pcre2",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "fzf",
+      "description": "Fuzzy finder (Go)",
+      "category": "core",
+      "repository": "https://github.com/junegunn/fzf.git",
+      "binary_name": "fzf",
+      "language": "go",
+      "build_types": {
+        "minimal": "-s",
+        "standard": "-s",
+        "maximum": "-p"
+      },
+      "dependencies": ["go", "build-essential"],
+      "min_version": "",
+      "shell_integration": true,
+      "test_command": "--version"
+    },
+    {
+      "name": "jq",
+      "description": "JSON processor (C)",
+      "category": "core",
+      "repository": "https://github.com/jqlang/jq.git",
+      "binary_name": "jq",
+      "language": "c",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-o"
+      },
+      "dependencies": ["build-essential", "autoconf", "automake", "libtool"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "zoxide",
+      "description": "Smart cd command (Rust)",
+      "category": "navigation",
+      "repository": "https://github.com/ajeetdsouza/zoxide.git",
+      "binary_name": "zoxide",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-r"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": true,
+      "test_command": "--version"
+    },
+    {
+      "name": "yazi",
+      "description": "Terminal file manager (Rust)",
+      "category": "navigation",
+      "repository": "https://github.com/sxyazi/yazi.git",
+      "binary_name": "yazi",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-r"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "fclones",
+      "description": "Duplicate file finder (Rust)",
+      "category": "navigation",
+      "repository": "https://github.com/pkolaczk/fclones.git",
+      "binary_name": "fclones",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "serena",
+      "description": "Coding agent toolkit (Python)",
+      "category": "development",
+      "repository": "https://github.com/huggingface/serena.git",
+      "binary_name": "serena",
+      "language": "python",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-f"
+      },
+      "dependencies": ["python3", "python3-pip", "python3-venv"],
+      "min_version": "3.11.0",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "uv",
+      "description": "Python package manager (Rust)",
+      "category": "development",
+      "repository": "https://github.com/astral-sh/uv.git",
+      "binary_name": "uv",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "ruff",
+      "description": "Python linter & formatter (Rust)",
+      "category": "development",
+      "repository": "https://github.com/astral-sh/ruff.git",
+      "binary_name": "ruff",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "bat",
+      "description": "Enhanced cat with syntax highlighting (Rust)",
+      "category": "development",
+      "repository": "https://github.com/sharkdp/bat.git",
+      "binary_name": "bat",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "starship",
+      "description": "Customizable shell prompt (Rust)",
+      "category": "development",
+      "repository": "https://github.com/starship/starship.git",
+      "binary_name": "starship",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": true,
+      "test_command": "--version"
+    },
+    {
+      "name": "eza",
+      "description": "Modern ls replacement (Rust)",
+      "category": "development",
+      "repository": "https://github.com/eza-community/eza.git",
+      "binary_name": "eza",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "delta",
+      "description": "Syntax-highlighting pager (Rust)",
+      "category": "development",
+      "repository": "https://github.com/dandavison/delta.git",
+      "binary_name": "delta",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "lazygit",
+      "description": "Terminal UI for Git (Go)",
+      "category": "development",
+      "repository": "https://github.com/jesseduffield/lazygit.git",
+      "binary_name": "lazygit",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["go", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "bottom",
+      "description": "Cross-platform system monitor (Rust)",
+      "category": "system",
+      "repository": "https://github.com/ClementTsang/bottom.git",
+      "binary_name": "btm",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "procs",
+      "description": "Modern ps replacement (Rust)",
+      "category": "system",
+      "repository": "https://github.com/dalance/procs.git",
+      "binary_name": "procs",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "tokei",
+      "description": "Code statistics tool (Rust)",
+      "category": "development",
+      "repository": "https://github.com/XAMPPRocky/tokei.git",
+      "binary_name": "tokei",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "difftastic",
+      "description": "Structural diff tool (Rust)",
+      "category": "development",
+      "repository": "https://github.com/Wilfred/difftastic.git",
+      "binary_name": "difft",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "bandwhich",
+      "description": "Network bandwidth monitor (Rust)",
+      "category": "system",
+      "repository": "https://github.com/imsnif/bandwhich.git",
+      "binary_name": "bandwhich",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "xsv",
+      "description": "CSV data toolkit (Rust)",
+      "category": "development",
+      "repository": "https://github.com/BurntSushi/xsv.git",
+      "binary_name": "xsv",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "hyperfine",
+      "description": "Command-line benchmarking (Rust)",
+      "category": "development",
+      "repository": "https://github.com/sharkdp/hyperfine.git",
+      "binary_name": "hyperfine",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "gh",
+      "description": "GitHub CLI (Go)",
+      "category": "development",
+      "repository": "https://github.com/cli/cli.git",
+      "binary_name": "gh",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": ["go", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "dust",
+      "description": "Better disk usage analyzer (Rust)",
+      "category": "system",
+      "repository": "https://github.com/bootandy/dust.git",
+      "binary_name": "dust",
+      "language": "rust",
+      "build_types": {
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "sd",
+      "description": "Find & replace CLI (Rust)",
+      "category": "development",
+      "repository": "https://github.com/chmln/sd.git",
+      "binary_name": "sd",
+      "language": "rust",
+      "build_types": {
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "tealdeer",
+      "description": "Fast tldr client (Rust)",
+      "category": "development",
+      "repository": "https://github.com/dbrgn/tealdeer.git",
+      "binary_name": "tldr",
+      "language": "rust",
+      "build_types": {
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "choose",
+      "description": "Cut/awk alternative (Rust)",
+      "category": "development",
+      "repository": "https://github.com/theryangeary/choose.git",
+      "binary_name": "choose",
+      "language": "rust",
+      "build_types": {
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
+      },
+      "dependencies": ["rust", "build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "ffmpeg",
+      "description": "Video/audio processing (C/C++)",
+      "category": "media",
+      "repository": "https://github.com/FFmpeg/FFmpeg.git",
+      "binary_name": "ffmpeg",
+      "language": "c",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-g",
+        "maximum": "-x"
+      },
+      "dependencies": ["build-essential", "yasm", "pkg-config"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "ffmpeg -version"
+    },
+    {
+      "name": "imagemagick",
+      "description": "Image manipulation (C/C++)",
+      "category": "media",
+      "repository": "https://github.com/ImageMagick/ImageMagick.git",
+      "binary_name": "magick",
+      "language": "c",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-f",
+        "maximum": "-p"
+      },
+      "dependencies": ["build-essential", "pkg-config"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "7zip",
+      "description": "Compression tool (C/C++)",
+      "category": "media",
+      "repository": "https://github.com/p7zip-project/p7zip.git",
+      "binary_name": "7zz",
+      "language": "c",
+      "build_types": {
+        "minimal": "-b",
+        "standard": "-o",
+        "maximum": "-a"
+      },
+      "dependencies": ["build-essential"],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "7zz"
+    }
+  ],
+  "categories": {
+    "core": "Core Development Tools",
+    "navigation": "Navigation & File Management", 
+    "development": "Development Tools",
+    "system": "System Monitoring",
+    "media": "Media & Image Processing"
+  },
+  "languages": {
+    "rust": {
+      "min_version": "1.88.0",
+      "build_tool": "cargo"
+    },
+    "go": {
+      "min_version": "1.23.4",
+      "build_tool": "go"
+    },
+    "c": {
+      "min_version": "",
+      "build_tool": "make"
+    },
+    "python": {
+      "min_version": "3.11.0",
+      "build_tool": "pip"
+    }
+  }
+}
