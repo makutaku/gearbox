@@ -39,11 +39,18 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `make build` - Build all components (CLI and tools)
 - `make cli` - Build just the Go CLI
 - `make tools` - Build orchestrator, script-generator, config-manager
+- `make deps` - Install Go dependencies
+- `make dev-setup` - Setup development environment
+- `make dev` - Quick development setup and test
 - `make clean` - Clean build artifacts
+- `make install` - Install system-wide (requires sudo)
+- `make info` - Show build information (version, build time, Go version)
 
 ### Testing
 - `make test` - Run all tests (Go and shell)
 - `./tests/test-runner.sh` - Run basic validation tests for installation scripts
+- `./tests/framework/test-framework.sh` - Comprehensive testing framework for shell functions and integrations
+- Individual tests: `test_unit_common.sh`, `test_integration_tools.sh`, `test_template_validation.sh`
 
 ### Individual Tool Installation
 Each tool has its own script in `scripts/`:
@@ -59,13 +66,20 @@ Each tool has its own script in `scripts/`:
   * `common.sh` - Core shared functions, logging, and utilities
   * `config.sh` - Configuration management system (~/.gearboxrc)
   * `doctor.sh` - Health check and diagnostic system
-- `cmd/gearbox/` - Go CLI source code:
-  * `main.go` - CLI entry point with cobra framework
-  * `commands/` - Command implementations (install, list, config, etc.)
+- `cmd/gearbox/` - Go CLI source code (Cobra framework):
+  * `main.go` - CLI entry point with version info and global flags
+  * `commands/` - Command implementations (install, list, config, doctor, status, generate)
+  * `internal/` - Internal packages (config, tools, ui)
+  * `pkg/` - Shared packages for CLI functionality
 - `tools/` - Go tools source code:
   * `orchestrator/` - Advanced installation orchestrator
-  * `script-generator/` - Template-based script generator
+  * `script-generator/` - Template-based script generator  
   * `config-manager/` - Configuration management tool
+- `templates/` - Script generation templates:
+  * `base.sh.tmpl` - Base template for all installation scripts
+  * Language-specific templates: `rust.sh.tmpl`, `go.sh.tmpl`, `c.sh.tmpl`, `python.sh.tmpl`
+- `config/` - Configuration files:
+  * `tools.json` - Tool definitions with metadata, build types, and dependencies
 - `bin/` - Compiled Go binaries (orchestrator, script-generator, config-manager)
 - `gearbox` - Main CLI binary (Go) with commands: install, list, config, doctor, help, status, generate
 - `docs/` - Documentation files
@@ -205,10 +219,16 @@ Default build type can be configured via:
   * Actionable recommendations for issues
 
 ### Testing Strategy
-- `test-runner.sh` validates script executability and configuration loading
-- Individual tools support `--run-tests` flag for post-build validation  
-- Final verification checks that all installed tools are accessible via command line
-- Health check system provides ongoing validation: `gearbox doctor`
+- **Shell Testing Framework**: Comprehensive testing system (`tests/framework/test-framework.sh`)
+  * Unit tests for shared library functions (`test_unit_common.sh`)
+  * Integration tests for tool installations (`test_integration_tools.sh`)
+  * Template validation tests (`test_template_validation.sh`)
+  * Test result tracking with pass/fail/skip counts and timing
+- **Basic Validation**: `test-runner.sh` validates script executability and configuration loading
+- **Go Testing**: Standard Go test framework for CLI and tools (`go test ./...`)
+- **Post-Install Validation**: Individual tools support `--run-tests` flag for post-build validation  
+- **Runtime Verification**: All installed tools checked via command line accessibility
+- **Health Check System**: Ongoing validation via `gearbox doctor` with comprehensive diagnostics
 
 ## Key Implementation Patterns
 
@@ -243,3 +263,46 @@ All installation scripts follow consistent patterns:
 - **Optimized order**: Go tools first, then Rust tools, then C/C++ tools
 - **Multiple build types**: Tools support different optimization levels via standardized flags
 - **Clean separation**: Source builds in `~/tools/build/`, final binaries in `/usr/local/bin/`
+
+### Go CLI Architecture
+The main CLI (`gearbox`) is built using Cobra framework:
+- **Type-safe commands**: Each command in `cmd/gearbox/commands/` with proper validation
+- **Global flags**: `--verbose`/`-v` and `--quiet`/`-q` for output control
+- **Version embedding**: Build-time version info via ldflags
+- **Orchestrator integration**: CLI delegates complex operations to Go tools
+- **Shell script fallback**: Commands can fall back to existing shell scripts when needed
+- **Error handling**: Structured error reporting with proper exit codes
+
+### Template System
+Script generation via Go templates (`templates/`):
+- **Base template** (`base.sh.tmpl`): Common structure for all installation scripts
+- **Language-specific templates**: Specialized patterns for Rust, Go, C/C++, Python tools
+- **Metadata-driven**: Tool definitions in `config/tools.json` drive template rendering
+- **Template variables**: Tool name, repository, build types, dependencies, shell integration
+- **Generated scripts**: Follow same patterns as hand-written scripts, use `lib/common.sh`
+- **Validation**: Template output validated by test framework
+
+## Development Workflow
+
+### Adding New Tools
+1. **Define tool metadata** in `config/tools.json`:
+   * Basic info: name, description, category, repository
+   * Build configuration: language, build types, dependencies
+   * Integration: binary name, test command, shell integration
+2. **Generate installation script**: Use `gearbox generate <tool-name>` 
+3. **Test script**: Run generated script with `--dry-run` and validation tests
+4. **Update documentation**: Tool automatically appears in `gearbox list`
+
+### Modifying CLI Commands
+1. **Edit command files** in `cmd/gearbox/commands/`
+2. **Build and test**: `make cli && ./gearbox --help`
+3. **Run tests**: `make test` for Go tests, `./tests/test-runner.sh` for shell tests
+4. **Update help text**: Ensure examples and descriptions are current
+
+### Tool Metadata Schema (`config/tools.json`)
+Each tool entry contains:
+- **Core fields**: `name`, `description`, `category`, `repository`, `binary_name`, `language`
+- **Build types**: `minimal`, `standard`, `maximum` with corresponding flags
+- **Dependencies**: Array of system packages and language toolchains
+- **Integration**: `shell_integration` boolean, `test_command` for validation
+- **Versioning**: `min_version` for compatibility requirements
