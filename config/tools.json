@@ -11,13 +11,13 @@
       "language": "rust",
       "build_types": {
         "minimal": "-m",
-        "standard": "-r",
+        "standard": "-s", 
         "maximum": "-r"
       },
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "fd --version"
+      "test_command": "--version"
     },
     {
       "name": "ripgrep",
@@ -34,7 +34,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "rg --version"
+      "test_command": "--version"
     },
     {
       "name": "fzf",
@@ -51,7 +51,7 @@
       "dependencies": ["go", "build-essential"],
       "min_version": "",
       "shell_integration": true,
-      "test_command": "fzf --version"
+      "test_command": "--version"
     },
     {
       "name": "jq",
@@ -68,7 +68,7 @@
       "dependencies": ["build-essential", "autoconf", "automake", "libtool"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "jq --version"
+      "test_command": "--version"
     },
     {
       "name": "zoxide",
@@ -85,7 +85,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": true,
-      "test_command": "zoxide --version"
+      "test_command": "--version"
     },
     {
       "name": "yazi",
@@ -102,7 +102,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "yazi --version"
+      "test_command": "--version"
     },
     {
       "name": "fclones",
@@ -119,7 +119,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "fclones --version"
+      "test_command": "--version"
     },
     {
       "name": "serena",
@@ -136,7 +136,7 @@
       "dependencies": ["python3", "python3-pip", "python3-venv"],
       "min_version": "3.11.0",
       "shell_integration": false,
-      "test_command": "serena --version"
+      "test_command": "--version"
     },
     {
       "name": "uv",
@@ -153,7 +153,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "uv --version"
+      "test_command": "--version"
     },
     {
       "name": "ruff",
@@ -170,7 +170,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "ruff --version"
+      "test_command": "--version"
     },
     {
       "name": "bat",
@@ -187,7 +187,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "bat --version"
+      "test_command": "--version"
     },
     {
       "name": "starship",
@@ -204,7 +204,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": true,
-      "test_command": "starship --version"
+      "test_command": "--version"
     },
     {
       "name": "eza",
@@ -221,7 +221,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "eza --version"
+      "test_command": "--version"
     },
     {
       "name": "delta",
@@ -238,7 +238,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "delta --version"
+      "test_command": "--version"
     },
     {
       "name": "lazygit",
@@ -255,7 +255,7 @@
       "dependencies": ["go", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "lazygit --version"
+      "test_command": "--version"
     },
     {
       "name": "bottom",
@@ -272,7 +272,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "btm --version"
+      "test_command": "--version"
     },
     {
       "name": "procs",
@@ -289,7 +289,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "procs --version"
+      "test_command": "--version"
     },
     {
       "name": "tokei",
@@ -306,7 +306,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "tokei --version"
+      "test_command": "--version"
     },
     {
       "name": "difftastic",
@@ -323,7 +323,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "difft --version"
+      "test_command": "--version"
     },
     {
       "name": "bandwhich",
@@ -340,7 +340,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "bandwhich --version"
+      "test_command": "--version"
     },
     {
       "name": "xsv",
@@ -357,7 +357,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "xsv --version"
+      "test_command": "--version"
     },
     {
       "name": "hyperfine",
@@ -374,7 +374,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "hyperfine --version"
+      "test_command": "--version"
     },
     {
       "name": "gh",
@@ -391,7 +391,7 @@
       "dependencies": ["go", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "gh --version"
+      "test_command": "--version"
     },
     {
       "name": "dust",
@@ -408,7 +408,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "dust --version"
+      "test_command": "--version"
     },
     {
       "name": "sd",
@@ -425,7 +425,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "sd --version"
+      "test_command": "--version"
     },
     {
       "name": "tealdeer",
@@ -442,7 +442,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "tldr --version"
+      "test_command": "--version"
     },
     {
       "name": "choose",
@@ -459,7 +459,7 @@
       "dependencies": ["rust", "build-essential"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "choose --version"
+      "test_command": "--version"
     },
     {
       "name": "ffmpeg",
@@ -493,7 +493,7 @@
       "dependencies": ["build-essential", "pkg-config"],
       "min_version": "",
       "shell_integration": false,
-      "test_command": "magick --version"
+      "test_command": "--version"
     },
     {
       "name": "7zip",

@@ -27,13 +27,7 @@ if [[ -z "${GEARBOX_LIB_DIR:-}" ]]; then
     readonly GEARBOX_LIB_DIR GEARBOX_REPO_DIR
 fi
 
-# Source main configuration file
-if [[ -f "$GEARBOX_REPO_DIR/config.sh" ]]; then
-    source "$GEARBOX_REPO_DIR/config.sh"
-else
-    echo "ERROR: config.sh not found in $GEARBOX_REPO_DIR" >&2
-    exit 1
-fi
+# Configuration now handled by lib/config.sh
 
 # Load configuration management library
 if [[ -f "$GEARBOX_LIB_DIR/config.sh" ]]; then
@@ -570,9 +564,11 @@ secure_download_and_pipe() {
         fi
     fi
     
-    # Execute the piped command
+    # Execute the piped command safely
     log "Executing: $pipe_command"
-    cat "$temp_file" | eval "$pipe_command" || {
+    # Split command into array for safe execution
+    read -ra cmd_array <<< "$pipe_command"
+    cat "$temp_file" | "${cmd_array[@]}" || {
         rm -f "$temp_file"
         error "Piped command failed: $pipe_command"
     }
@@ -874,10 +870,12 @@ cleanup_on_exit() {
         debug "Script completed successfully, performing cleanup..."
     fi
     
-    # Execute cleanup commands
+    # Execute cleanup commands safely
     for cmd in "${CLEANUP_COMMANDS[@]}"; do
         debug "Executing cleanup command: $cmd"
-        eval "$cmd" || warning "Cleanup command failed: $cmd"
+        # Split command into array for safe execution
+        read -ra cmd_array <<< "$cmd"
+        "${cmd_array[@]}" || warning "Cleanup command failed: $cmd"
     done
     
     # Remove temporary files
@@ -1085,7 +1083,7 @@ get_cached_binary() {
 }
 
 # @function cache_build
-# @brief Cache a successful build
+# @brief Cache a successful build (non-fatal if binary not found)
 # @param $1 Tool name
 # @param $2 Build type
 # @param $3 Version/commit hash
@@ -1096,29 +1094,41 @@ cache_build() {
     local version="$3"
     local binary_path="$4"
     
+    # Validate parameters
+    if [[ -z "$tool_name" || -z "$build_type" || -z "$version" || -z "$binary_path" ]]; then
+        warning "Cache build skipped: missing parameters (tool=$tool_name, type=$build_type, version=$version, path=$binary_path)"
+        return 0  # Non-fatal
+    fi
+    
     local cache_key
     cache_key=$(get_cache_key "$tool_name" "$build_type" "$version")
     local cache_path="$CACHE_DIR/builds/$cache_key"
     
-    # Create cache directory structure
-    ensure_directory "$cache_path/bin"
+    # Create cache directory structure (non-fatal if it fails)
+    if ! ensure_directory "$cache_path/bin" 2>/dev/null; then
+        warning "Failed to create cache directory, skipping cache for $tool_name"
+        return 0  # Non-fatal
+    fi
     
     # Copy binary to cache
     if [[ -f "$binary_path" ]]; then
-        cp "$binary_path" "$cache_path/bin/"
-        
-        # Mark build as complete
-        echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$cache_path/.build_complete"
-        echo "tool=$tool_name" >> "$cache_path/.build_complete"
-        echo "build_type=$build_type" >> "$cache_path/.build_complete"
-        echo "version=$version" >> "$cache_path/.build_complete"
-        
-        log "Cached build for $tool_name ($build_type, $version)"
-        return 0
+        if cp "$binary_path" "$cache_path/bin/" 2>/dev/null; then
+            # Mark build as complete
+            echo "$(date '+%Y-%m-%d %H:%M:%S')" > "$cache_path/.build_complete"
+            echo "tool=$tool_name" >> "$cache_path/.build_complete"
+            echo "build_type=$build_type" >> "$cache_path/.build_complete"
+            echo "version=$version" >> "$cache_path/.build_complete"
+            
+            log "Cached build for $tool_name ($build_type, $version)"
+        else
+            warning "Failed to copy binary to cache: $binary_path"
+        fi
     else
         warning "Binary not found for caching: $binary_path"
-        return 1
     fi
+    
+    # Always return success to prevent script failure
+    return 0
 }
 
 # @function get_tool_version
@@ -1154,6 +1164,14 @@ clean_old_cache() {
     fi
     return 0
 }
+
+# =============================================================================
+# DIRECTORY CONFIGURATION
+# =============================================================================
+
+# Global directory paths
+export BUILD_DIR="${BUILD_DIR:-$HOME/tools/build}"
+export CACHE_DIR="${CACHE_DIR:-$HOME/tools/cache}"
 
 # =============================================================================
 # INITIALIZATION

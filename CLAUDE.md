@@ -35,7 +35,14 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --run-tests` - Run test suites for tools that support it
 - `gearbox install --no-shell` - Skip shell integration setup (fzf)
 
+### Building
+- `make build` - Build all components (CLI and tools)
+- `make cli` - Build just the Go CLI
+- `make tools` - Build orchestrator, script-generator, config-manager
+- `make clean` - Clean build artifacts
+
 ### Testing
+- `make test` - Run all tests (Go and shell)
 - `./tests/test-runner.sh` - Run basic validation tests for installation scripts
 
 ### Individual Tool Installation
@@ -52,8 +59,15 @@ Each tool has its own script in `scripts/`:
   * `common.sh` - Core shared functions, logging, and utilities
   * `config.sh` - Configuration management system (~/.gearboxrc)
   * `doctor.sh` - Health check and diagnostic system
-- `config.sh` - Legacy configuration (migrated to lib/common.sh)
-- `gearbox` - Main CLI script with commands: install, list, config, doctor, help
+- `cmd/gearbox/` - Go CLI source code:
+  * `main.go` - CLI entry point with cobra framework
+  * `commands/` - Command implementations (install, list, config, etc.)
+- `tools/` - Go tools source code:
+  * `orchestrator/` - Advanced installation orchestrator
+  * `script-generator/` - Template-based script generator
+  * `config-manager/` - Configuration management tool
+- `bin/` - Compiled Go binaries (orchestrator, script-generator, config-manager)
+- `gearbox` - Main CLI binary (Go) with commands: install, list, config, doctor, help, status, generate
 - `docs/` - Documentation files
 - `examples/` - Example usage scripts
 - `tests/` - Basic validation tests

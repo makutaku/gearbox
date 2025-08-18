@@ -27,7 +27,7 @@ RUST_MIN_VERSION="1.70.0"
 # Default options
 BUILD_TYPE="release"      # debug, release, optimized
 MODE="install"            # config, build, install
-INSTALL_METHOD="binary"   # source, binary
+INSTALL_METHOD="source"   # source, binary (default to source for reliability)
 SKIP_DEPS=false
 RUN_TESTS=false
 FORCE_INSTALL=false
@@ -50,8 +50,8 @@ Modes:
   -i, --install         Configure, build, and install (default)
 
 Installation Methods:
-  --source             Build from source (requires Rust toolchain)
-  --binary             Download pre-built binary (default, faster)
+  --source             Build from source (default, most reliable)
+  --binary             Download pre-built binary (faster, may not be available)
 
 Options:
   --skip-deps          Skip dependency installation
@@ -166,19 +166,9 @@ log "Using source build method..."
 
 if [[ "$SKIP_DEPS" != true ]]; then
     log "Installing dependencies for tokei..."
-    sudo apt update; sudo apt install -y build-essential git curl
-    
-    if ! command -v rustc &> /dev/null; then
-        log "Installing Rust..."
-        curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh -s -- -y; source ~/.cargo/env
-    else
-        RUST_VERSION=$(rustc --version | grep -oP '\d+\.\d+\.\d+')
-        log "Found Rust version: $RUST_VERSION"
-        if ! version_compare "$RUST_VERSION" "$RUST_MIN_VERSION"; then
-            log "Updating Rust..."; rustup update
-        fi
-    fi
-    rustup update stable; rustup default stable; success "Dependencies installation completed!"
+    install_build_tools
+    install_rust_if_needed "$RUST_MIN_VERSION"
+    success "Dependencies installation completed!"
 else
     log "Skipping dependency installation as requested"
 fi
@@ -189,16 +179,11 @@ if ! command -v rustc &> /dev/null; then
 fi
 
 # Build from source
-BUILD_DIR="${BUILD_DIR:-$HOME/tools/build}"; mkdir -p "$BUILD_DIR"; cd "$BUILD_DIR"
+ensure_directory "$BUILD_DIR"
+cd "$BUILD_DIR"
 TOKEI_SOURCE_DIR="$BUILD_DIR/$TOKEI_DIR"
 
-if [[ ! -d "$TOKEI_SOURCE_DIR" ]]; then
-    log "Cloning tokei repository..."; git clone "$TOKEI_REPO" "$TOKEI_SOURCE_DIR"
-else
-    log "Updating tokei repository..."; cd "$TOKEI_SOURCE_DIR"
-    git fetch origin; git reset --hard origin/master
-fi
-
+clone_or_update_repo "$TOKEI_REPO" "$TOKEI_SOURCE_DIR" "master"
 cd "$TOKEI_SOURCE_DIR"
 [[ ! -f "Cargo.toml" ]] && error "Cargo.toml not found"
 log "tokei source configured successfully"
@@ -206,9 +191,18 @@ log "tokei source configured successfully"
 
 log "Building tokei..."
 case $BUILD_TYPE in
-    debug) cargo build; TARGET_DIR="target/debug" ;;
-    release) cargo build --release; TARGET_DIR="target/release" ;;
-    optimized) RUSTFLAGS="-C target-cpu=native" cargo build --release; TARGET_DIR="target/release" ;;
+    debug) 
+        execute_command_safely cargo build
+        TARGET_DIR="target/debug" 
+        ;;
+    release) 
+        execute_command_safely cargo build --release
+        TARGET_DIR="target/release" 
+        ;;
+    optimized) 
+        env RUSTFLAGS="-C target-cpu=native" execute_command_safely cargo build --release
+        TARGET_DIR="target/release" 
+        ;;
 esac
 
 [[ ! -f "$TARGET_DIR/tokei" ]] && error "Build failed - tokei binary not found"
@@ -218,12 +212,31 @@ success "tokei build completed successfully!"
 [[ "$RUN_TESTS" == true ]] && { log "Running tokei tests..."; cargo test || warning "Some tests failed"; }
 
 log "Installing tokei..."
-sudo cp "$TARGET_DIR/tokei" /usr/local/bin/; sudo chmod +x /usr/local/bin/tokei
+# Try system-wide installation first, fall back to user-local if sudo fails
+if sudo cp "$TARGET_DIR/tokei" "/usr/local/bin/tokei" && sudo chmod 755 "/usr/local/bin/tokei" 2>/dev/null; then
+    INSTALL_PATH="/usr/local/bin/tokei"
+    log "Installed tokei to system directory: $INSTALL_PATH"
+else
+    warning "System-wide installation failed, installing to user directory"
+    ensure_directory "$HOME/.local/bin"
+    cp "$TARGET_DIR/tokei" "$HOME/.local/bin/tokei"
+    chmod +x "$HOME/.local/bin/tokei"
+    INSTALL_PATH="$HOME/.local/bin/tokei"
+    
+    # Add to PATH if not already there
+    if [[ ":$PATH:" != *":$HOME/.local/bin:"* ]]; then
+        log "Adding ~/.local/bin to PATH..."
+        echo 'export PATH="$HOME/.local/bin:$PATH"' >> ~/.bashrc
+        export PATH="$HOME/.local/bin:$PATH"
+        warning "You may need to restart your shell or run 'source ~/.bashrc' for PATH changes to take effect"
+    fi
+    log "Installed tokei to user directory: $INSTALL_PATH"
+fi
 
 if command -v tokei &> /dev/null; then
     success "tokei installation completed successfully!"
     log "Installed version: $(tokei --version 2>/dev/null | head -n1)"
-    log "Installation method: Source build ($BUILD_TYPE)"; log "Binary location: /usr/local/bin/tokei"
+    log "Installation method: Source build ($BUILD_TYPE)"; log "Binary location: $INSTALL_PATH"
     echo; log "Usage examples:"; log "  tokei                    # Count lines in current directory"
     log "  tokei src/               # Count lines in specific directory"
     log "  tokei --languages        # List supported languages"
@@ -237,4 +250,6 @@ else
     error "tokei installation verification failed"
 fi
 
-sudo ldconfig; success "tokei installation completed!"
+# Update library cache if possible (non-critical)
+sudo ldconfig 2>/dev/null || true
+success "tokei installation completed!"

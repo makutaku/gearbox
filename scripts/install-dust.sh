@@ -26,12 +26,7 @@ else
     exit 1
 fi
 
-# Load shared library and configuration
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-REPO_DIR="$(dirname "$SCRIPT_DIR")"
-
-# Source configuration
-source "$REPO_DIR/config.sh"
+# Configuration loaded from lib/common.sh
 
 # Define simplified shared functions
 # Note: Logging functions now provided by lib/common.sh
