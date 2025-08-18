@@ -1,7 +1,8 @@
 #!/bin/bash
-
-# Simple Configuration Management for Gearbox
-# Handles ~/.gearboxrc configuration file
+#
+# @file lib/config.sh
+# @brief Simple Configuration Management for Gearbox
+# @description Handles ~/.gearboxrc configuration file and user preferences
 
 # Simple logging functions
 log() { echo "$1"; }

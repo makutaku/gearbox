@@ -87,6 +87,8 @@ var (
 	repoDir    string
 )
 
+// Main is the entry point for the orchestrator command-line tool.
+// It sets up the CLI commands and executes the orchestrator functionality.
 func Main() {
 	var rootCmd = &cobra.Command{
 		Use:   "orchestrator",
@@ -207,7 +209,9 @@ func verifyCmd() *cobra.Command {
 	}
 }
 
-// NewOrchestrator creates a new orchestrator instance
+// NewOrchestrator creates a new orchestrator instance with the given options.
+// It auto-detects repository and configuration paths, loads configuration,
+// and initializes the orchestrator with proper settings for parallel execution.
 func NewOrchestrator(options InstallationOptions) (*Orchestrator, error) {
 	// Auto-detect repository directory if not provided
 	if repoDir == "" {

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Common Dependencies Installation Script for All Build Tools
+# Common Dependencies Installation Script for Debian Linux
 # Installs shared dependencies once to avoid redundant installations
 # Usage: ./install-common-deps.sh
 

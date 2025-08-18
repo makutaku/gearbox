@@ -1,7 +1,8 @@
 #!/bin/bash
-
-# Gearbox Health Check System (gearbox doctor)
-# Comprehensive diagnostic tool for validating installation health
+#
+# @file lib/doctor.sh
+# @brief Gearbox Health Check System (gearbox doctor)
+# @description Comprehensive diagnostic tool for validating installation health
 
 # Simple logging functions (fallback)
 if ! command -v log &>/dev/null; then

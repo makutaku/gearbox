@@ -96,6 +96,8 @@ var (
 	repoDir     string
 )
 
+// Main is the entry point for the script generator command-line tool.
+// It provides functionality to generate installation scripts from templates.
 func Main() {
 	var rootCmd = &cobra.Command{
 		Use:   "script-generator",
@@ -213,7 +215,8 @@ type Generator struct {
 	templates   map[string]*template.Template
 }
 
-// NewGenerator creates a new generator instance
+// NewGenerator creates a new script generator instance with the given options.
+// It loads configuration and templates, then initializes the generator for script creation.
 func NewGenerator(options GeneratorOptions) (*Generator, error) {
 	// Set up repository directory
 	localRepoDir := repoDir

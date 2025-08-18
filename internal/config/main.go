@@ -46,6 +46,8 @@ type Config struct {
 var config Config
 var configPath string
 
+// Main is the entry point for the configuration manager command-line tool.
+// It provides functionality to manage gearbox configuration settings.
 func Main() {
 	var rootCmd = &cobra.Command{
 		Use:   "config-manager",

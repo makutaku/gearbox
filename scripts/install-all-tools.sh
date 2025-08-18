@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# All Tools Installation Script
+# All Tools Installation Script for Debian Linux
 # Installs all development tools in optimal order with shared dependencies
 # Usage: ./install-all-tools.sh [OPTIONS]
 
