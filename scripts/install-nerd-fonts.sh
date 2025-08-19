@@ -254,6 +254,161 @@ parse_specific_fonts() {
     printf '%s\n' "${font_list[@]}"
 }
 
+# Interactive font selection
+interactive_font_selection() {
+    echo
+    log "🎨 Interactive Font Selection"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    echo "Select fonts to install (press ENTER to toggle, 'q' to quit selection):"
+    echo
+    
+    # Create arrays for fonts and their selection status
+    local -a available_fonts=("${MAXIMUM_FONTS[@]}")
+    local -a font_selected=()
+    
+    # Initialize selection status (pre-select standard fonts)
+    for font in "${available_fonts[@]}"; do
+        local is_standard=false
+        for standard_font in "${STANDARD_FONTS[@]}"; do
+            if [[ "$font" == "$standard_font" ]]; then
+                is_standard=true
+                break
+            fi
+        done
+        font_selected+=("$is_standard")
+    done
+    
+    local current_index=0
+    local total_fonts=${#available_fonts[@]}
+    
+    while true; do
+        # Clear screen and show header
+        clear
+        echo "🎨 Interactive Font Selection"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo
+        echo "Use ↑/↓ to navigate, SPACE to toggle, 'p' to preview, ENTER to confirm, 'q' to quit"
+        echo
+        
+        # Calculate selected count and size
+        local selected_count=0
+        local estimated_size=0
+        for ((i=0; i<total_fonts; i++)); do
+            if [[ "${font_selected[i]}" == true ]]; then
+                ((selected_count++))
+                ((estimated_size += 10))  # Rough estimate: 10MB per font
+            fi
+        done
+        
+        echo "Selected: $selected_count fonts (~${estimated_size}MB)"
+        echo
+        
+        # Display font list
+        for ((i=0; i<total_fonts; i++)); do
+            local font="${available_fonts[i]}"
+            local prefix="   "
+            
+            if [[ $i -eq $current_index ]]; then
+                prefix="→ "
+            fi
+            
+            if [[ "${font_selected[i]}" == true ]]; then
+                echo -e "${prefix}✓ ${font}"
+            else
+                echo -e "${prefix}◯ ${font}"
+            fi
+        done
+        
+        echo
+        echo "Controls: [↑/↓] Navigate  [SPACE] Toggle  [p] Preview  [ENTER] Confirm  [q] Quit"
+        
+        # Read user input
+        read -rsn1 key
+        case "$key" in
+            $'\x1b')  # ESC sequence for arrow keys
+                read -rsn2 -t 0.1 key
+                case "$key" in
+                    '[A')  # Up arrow
+                        ((current_index > 0)) && ((current_index--))
+                        ;;
+                    '[B')  # Down arrow
+                        ((current_index < total_fonts - 1)) && ((current_index++))
+                        ;;
+                esac
+                ;;
+            ' ')  # Space - toggle selection
+                if [[ "${font_selected[current_index]}" == true ]]; then
+                    font_selected[current_index]=false
+                else
+                    font_selected[current_index]=true
+                fi
+                ;;
+            '')  # Enter - confirm selection
+                break
+                ;;
+            'p'|'P')  # Preview current font
+                local current_font="${available_fonts[current_index]}"
+                echo
+                log "🔍 Font Preview: $current_font"
+                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                
+                echo "${current_font} Nerd Font:"
+                echo "  Code: const fn = () => result !== null && value >= 0"
+                echo "  Icons:   󰈙  󰗀  󰅴  󰘳  󰊕  󰄛  󰊢"
+                echo "  Arrows: => -> <- ↗ ↙ ⟨ ⟩ ⮕"
+                
+                case "$current_font" in
+                    "FiraCode")
+                        echo "  Special: Programming ligatures and coding symbols"
+                        echo "  Perfect for: Code editors, terminals, IDEs"
+                        ;;
+                    "JetBrainsMono")
+                        echo "  Special: Clean lines, excellent readability"
+                        echo "  Perfect for: Long coding sessions, professional use"
+                        ;;
+                    "Hack")
+                        echo "  Special: Optimized for terminals"
+                        echo "  Perfect for: Command line work, system administration"
+                        ;;
+                    *)
+                        echo "  Description: Programming font with Nerd Font icons"
+                        ;;
+                esac
+                
+                echo
+                read -p "Press ENTER to return to selection menu..." -r
+                ;;
+            'q'|'Q')  # Quit
+                echo
+                warning "Font selection cancelled"
+                exit 0
+                ;;
+        esac
+    done
+    
+    # Output selected fonts
+    clear
+    echo "🎨 Font Selection Complete"
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+    echo
+    
+    local selected_fonts=()
+    for ((i=0; i<total_fonts; i++)); do
+        if [[ "${font_selected[i]}" == true ]]; then
+            selected_fonts+=("${available_fonts[i]}")
+        fi
+    done
+    
+    if [[ ${#selected_fonts[@]} -eq 0 ]]; then
+        warning "No fonts selected"
+        return 1
+    fi
+    
+    success "Selected ${#selected_fonts[@]} fonts for installation"
+    printf '%s\n' "${selected_fonts[@]}"
+}
+
 # Check if a font is already installed
 is_font_installed() {
     local font="$1"
@@ -367,8 +522,8 @@ install_fonts() {
         readarray -t fonts_to_install < <(parse_specific_fonts "$SPECIFIC_FONTS")
         log "Installing specific fonts: ${fonts_to_install[*]}"
     elif [[ "$INTERACTIVE" == true ]]; then
-        error "Interactive mode not implemented in simplified version"
-        return 1
+        readarray -t fonts_to_install < <(interactive_font_selection)
+        log "Installing selected fonts: ${fonts_to_install[*]}"
     else
         readarray -t fonts_to_install < <(get_font_list "$BUILD_TYPE")
         log "Installing $BUILD_TYPE collection: ${fonts_to_install[*]}"
