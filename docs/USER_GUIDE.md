@@ -15,9 +15,27 @@ Complete guide for installing and using essential command-line tools.
 
 ## Getting Started
 
+### ⚡ Quick Install (New Users)
+
+If you don't have gearbox installed yet:
+
+```bash
+# One-line installer (handles everything)
+curl -fsSL https://raw.githubusercontent.com/makutaku/gearbox/main/install.sh | bash
+
+# Quick setup with essential tools
+./quickstart.sh developer
+```
+
+The installer will:
+- ✅ Check and install dependencies (Go, Git, build tools)
+- ✅ Clone the repository and build the CLI
+- ✅ Add gearbox to your PATH
+- ✅ Verify installation works
+
 ### Discover Available Tools
 
-See what tools are available before installing:
+See what tools are available:
 
 ```bash
 gearbox list

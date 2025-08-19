@@ -11,6 +11,27 @@ Automated installation scripts for essential command-line tools on Debian Linux.
 
 ## Quick Start
 
+### ⚡ One-Line Install (Recommended)
+
+```bash
+# Full installer (handles dependencies, builds CLI)
+curl -fsSL https://raw.githubusercontent.com/makutaku/gearbox/main/install.sh | bash
+
+# Minimal installer (if you have Go/Git already)
+curl -fsSL https://raw.githubusercontent.com/makutaku/gearbox/main/install-minimal.sh | bash
+```
+
+### 🚀 Quick Setup Profiles
+
+```bash
+# After installation, choose a profile:
+./quickstart.sh minimal     # Essential tools (fd, ripgrep, fzf)
+./quickstart.sh developer   # Core dev tools + fonts (recommended)
+./quickstart.sh full        # Complete terminal experience
+```
+
+### 🔧 Manual Usage
+
 ```bash
 # See what tools are available
 gearbox list
@@ -59,6 +80,23 @@ make build
 - Standard build tools (gcc, make)
 
 **After building:** The `gearbox` binary will be available in the project root.
+
+## Installation Features
+
+The one-line installer provides:
+
+- 🔍 **Smart Detection** - Automatically detects your OS and package manager
+- 📦 **Dependency Management** - Installs Go, Git, build tools as needed  
+- 🛡️ **Safety Checks** - Won't run as root, validates everything works
+- 🎨 **Beautiful Output** - Color-coded progress with clear next steps
+- ⚡ **Fast Setup** - Complete installation in under 2 minutes
+- 🔄 **Update Support** - Re-run to update existing installations
+
+**Supported Systems:**
+- Ubuntu/Debian (apt)
+- RHEL/CentOS (yum) 
+- Fedora (dnf)
+- Any Linux with Go 1.22+
 
 ## Available Tools
 
