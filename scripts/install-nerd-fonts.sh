@@ -25,7 +25,7 @@ readonly NERD_FONTS_VERSION="v3.1.1"
 readonly FONTS_DIR="$HOME/.local/share/fonts"
 readonly DOWNLOAD_DIR="$HOME/tools/build/nerd-fonts"
 
-# Available fonts - simplified to arrays instead of associative arrays
+# Available fonts - expanded collection from nerd-fonts repository
 readonly -a MINIMAL_FONTS=(
     "FiraCode"
     "JetBrainsMono" 
@@ -41,24 +41,78 @@ readonly -a STANDARD_FONTS=(
     "CascadiaCode"
     "UbuntuMono"
     "DejaVuSansMono"
+    "RobotoMono"
+    "SpaceMono"
+    "Iosevka"
+    "GeistMono"
 )
 
 readonly -a MAXIMUM_FONTS=(
-    "FiraCode"
-    "JetBrainsMono"
-    "Hack"
-    "SourceCodePro"
-    "Inconsolata"
-    "CascadiaCode"
-    "UbuntuMono"
-    "DejaVuSansMono"
-    "VictorMono"
-    "Menlo"
+    # All fonts alphabetically ordered (exact names from nerd-fonts v3.1.1 release)
+    "0xProto"
+    "3270"
+    "Agave"
     "AnonymousPro"
-    "SpaceMono"
+    "Arimo"
+    "AurulentSansMono"
+    "BigBlueTerminal"
+    "BitstreamVeraSansMono"
+    "CascadiaCode"
+    "CascadiaMono"
+    "CodeNewRoman"
+    "ComicShannsMono"
+    "CommitMono"
+    "Cousine"
+    "D2Coding"
+    "DaddyTimeMono"
+    "DejaVuSansMono"
+    "DroidSansMono"
+    "EnvyCodeR"
+    "FantasqueSansMono"
+    "FiraCode"
+    "FiraMono"
+    "GeistMono"
+    "Go-Mono"
+    "Gohu"
+    "Hack"
+    "Hasklig"
+    "HeavyData"
+    "Hermit"
+    "iA-Writer"
     "IBMPlexMono"
+    "Inconsolata"
+    "InconsolataGo"
+    "InconsolataLGC"
+    "IntelOneMono"
+    "Iosevka"
+    "IosevkaTerm"
+    "IosevkaTermSlab"
+    "JetBrainsMono"
+    "Lekton"
+    "LiberationMono"
+    "Lilex"
+    "MartianMono"
+    "Meslo"
+    "Monaspace"
+    "Monofur"
+    "Monoid"
+    "Mononoki"
+    "MPlus"
+    "NerdFontsSymbolsOnly"
+    "Noto"
+    "OpenDyslexic"
+    "Overpass"
+    "ProFont"
+    "ProggyClean"
     "RobotoMono"
+    "ShareTechMono"
+    "SourceCodePro"
+    "SpaceMono"
     "Terminus"
+    "Tinos"
+    "Ubuntu"
+    "UbuntuMono"
+    "VictorMono"
 )
 
 # Default options
@@ -150,8 +204,8 @@ Usage: $0 [OPTIONS]
 
 Build Types:
   --minimal            Essential fonts (3 fonts: FiraCode, JetBrains Mono, Hack)
-  --standard           Popular fonts (8 fonts, ~80MB) - default
-  --maximum            All fonts (15+ fonts, ~200MB)
+  --standard           Popular fonts (12 fonts, ~120MB) - default
+  --maximum            All fonts (64 fonts, ~640MB)
 
 Font Selection:
   --fonts="Font1,Font2"    Install specific fonts (comma-separated)
@@ -254,176 +308,104 @@ parse_specific_fonts() {
     printf '%s\n' "${font_list[@]}"
 }
 
-# Interactive font selection
+# Interactive font selection - simple and robust approach
 interactive_font_selection() {
-    # Redirect all output during selection to stderr to avoid contaminating the font list
-    {
-        echo
-        echo "🎨 Interactive Font Selection"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo
-        echo "Select fonts to install (press ENTER to toggle, 'q' to quit selection):"
-        echo
-    } >&2
+    # Check if we're in an interactive terminal
+    if [[ ! -t 0 ]]; then
+        echo "🎨 Non-interactive mode detected - using standard font collection" >&2
+        printf '%s\n' "${STANDARD_FONTS[@]}"
+        return 0
+    fi
     
-    # Create arrays for fonts and their selection status
-    local -a available_fonts=("${MAXIMUM_FONTS[@]}")
-    local -a font_selected=()
+    echo "🎨 Interactive Font Selection" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo >&2
     
-    # Initialize selection status (pre-select standard fonts)
-    for font in "${available_fonts[@]}"; do
-        local is_standard=false
-        for standard_font in "${STANDARD_FONTS[@]}"; do
-            if [[ "$font" == "$standard_font" ]]; then
-                is_standard=true
-                break
-            fi
-        done
-        font_selected+=("$is_standard")
-    done
-    
-    local current_index=0
-    local total_fonts=${#available_fonts[@]}
-    
-    while true; do
-        # Clear screen and show header (redirect to stderr)
-        {
-            clear
-            echo "🎨 Interactive Font Selection"
-            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-            echo
-            echo "Use ↑/↓ to navigate, SPACE to toggle, 'p' to preview, ENTER to confirm, 'q' to quit"
-            echo
-        } >&2
+    # Simple menu using bash select builtin - much more reliable than custom terminal handling
+    local PS3="Choose an option (1-5): "
+    select choice in \
+        "Quick: Standard fonts (12 fonts, ~120MB) - Recommended" \
+        "Quick: Minimal fonts (3 essential fonts, ~30MB)" \
+        "Quick: All fonts (64 fonts, ~640MB)" \
+        "Custom: Choose specific fonts" \
+        "Cancel"; do
         
-        # Calculate selected count and size
-        local selected_count=0
-        local estimated_size=0
-        for ((i=0; i<total_fonts; i++)); do
-            if [[ "${font_selected[i]}" == true ]]; then
-                ((selected_count++))
-                ((estimated_size += 10))  # Rough estimate: 10MB per font
-            fi
-        done
-        
-        {
-            echo "Selected: $selected_count fonts (~${estimated_size}MB)"
-            echo
-            
-            # Display font list
-            for ((i=0; i<total_fonts; i++)); do
-                local font="${available_fonts[i]}"
-                local prefix="   "
-                
-                if [[ $i -eq $current_index ]]; then
-                    prefix="→ "
-                fi
-                
-                if [[ "${font_selected[i]}" == true ]]; then
-                    echo -e "${prefix}✓ ${font}"
-                else
-                    echo -e "${prefix}◯ ${font}"
-                fi
-            done
-            
-            echo
-            echo "Controls: [↑/↓] Navigate  [SPACE] Toggle  [p] Preview  [ENTER] Confirm  [q] Quit"
-        } >&2
-        
-        # Read user input
-        read -rsn1 key
-        case "$key" in
-            $'\x1b')  # ESC sequence for arrow keys
-                read -rsn2 -t 0.1 key
-                case "$key" in
-                    '[A')  # Up arrow
-                        ((current_index > 0)) && ((current_index--))
-                        ;;
-                    '[B')  # Down arrow
-                        ((current_index < total_fonts - 1)) && ((current_index++))
-                        ;;
-                esac
+        case $REPLY in
+            1)
+                echo "Selected: Standard font collection" >&2
+                printf '%s\n' "${STANDARD_FONTS[@]}"
+                return 0
                 ;;
-            ' ')  # Space - toggle selection
-                if [[ "${font_selected[current_index]}" == true ]]; then
-                    font_selected[current_index]=false
-                else
-                    font_selected[current_index]=true
-                fi
+            2)
+                echo "Selected: Minimal font collection" >&2
+                printf '%s\n' "${MINIMAL_FONTS[@]}"
+                return 0
                 ;;
-            '')  # Enter - confirm selection
-                break
+            3)
+                echo "Selected: Maximum font collection" >&2
+                printf '%s\n' "${MAXIMUM_FONTS[@]}"
+                return 0
                 ;;
-            'p'|'P')  # Preview current font
-                local current_font="${available_fonts[current_index]}"
-                {
-                    echo
-                    echo "🔍 Font Preview: $current_font"
-                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                    
-                    echo "${current_font} Nerd Font:"
-                    echo "  Code: const fn = () => result !== null && value >= 0"
-                    echo "  Icons:   󰈙  󰗀  󰅴  󰘳  󰊕  󰄛  󰊢"
-                    echo "  Arrows: => -> <- ↗ ↙ ⟨ ⟩ ⮕"
-                    
-                    case "$current_font" in
-                        "FiraCode")
-                            echo "  Special: Programming ligatures and coding symbols"
-                            echo "  Perfect for: Code editors, terminals, IDEs"
-                            ;;
-                        "JetBrainsMono")
-                            echo "  Special: Clean lines, excellent readability"
-                            echo "  Perfect for: Long coding sessions, professional use"
-                            ;;
-                        "Hack")
-                            echo "  Special: Optimized for terminals"
-                            echo "  Perfect for: Command line work, system administration"
-                            ;;
-                        *)
-                            echo "  Description: Programming font with Nerd Font icons"
-                            ;;
-                    esac
-                    
-                    echo
-                    read -p "Press ENTER to return to selection menu..." -r
-                } >&2
+            4)
+                break  # Go to custom selection
                 ;;
-            'q'|'Q')  # Quit
-                {
-                    echo
-                    echo "Font selection cancelled"
-                } >&2
+            5)
+                echo "Installation cancelled" >&2
                 exit 0
+                ;;
+            *)
+                echo "Invalid choice. Please enter 1, 2, 3, 4, or 5." >&2
                 ;;
         esac
     done
     
-    # Output selected fonts (only font names to stdout, UI to stderr)
-    local selected_fonts=()
-    for ((i=0; i<total_fonts; i++)); do
-        if [[ "${font_selected[i]}" == true ]]; then
-            selected_fonts+=("${available_fonts[i]}")
+    # Custom font selection - simple numbered approach
+    echo >&2
+    echo "Custom Font Selection" >&2
+    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━" >&2
+    echo >&2
+    echo "Available fonts:" >&2
+    
+    local -a available_fonts=("${MAXIMUM_FONTS[@]}")
+    local -i i=1
+    for font in "${available_fonts[@]}"; do
+        printf "%2d) %s\n" $i "$font" >&2
+        ((i++))
+    done
+    
+    echo >&2
+    echo "Enter font numbers separated by spaces or commas (e.g., '1 3 5' or '1,3,5'):" >&2
+    echo "Or press ENTER for standard collection:" >&2
+    read -r user_input
+    
+    # Handle empty input (default to standard)
+    if [[ -z "$user_input" ]]; then
+        echo "Using standard font collection" >&2
+        printf '%s\n' "${STANDARD_FONTS[@]}"
+        return 0
+    fi
+    
+    # Parse user input
+    local -a selected_fonts=()
+    # Replace commas with spaces and split
+    user_input="${user_input//,/ }"
+    for num in $user_input; do
+        # Validate it's a number
+        if [[ "$num" =~ ^[0-9]+$ ]] && [[ $num -ge 1 ]] && [[ $num -le ${#available_fonts[@]} ]]; then
+            local index=$((num - 1))
+            selected_fonts+=("${available_fonts[index]}")
+        else
+            echo "Invalid selection: $num (must be 1-${#available_fonts[@]})" >&2
         fi
     done
     
-    {
-        clear
-        echo "🎨 Font Selection Complete"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo
-        
-        if [[ ${#selected_fonts[@]} -eq 0 ]]; then
-            echo "No fonts selected"
-        else
-            echo "Selected ${#selected_fonts[@]} fonts for installation"
-        fi
-    } >&2
-    
     if [[ ${#selected_fonts[@]} -eq 0 ]]; then
-        return 1
+        echo "No valid fonts selected. Using standard collection." >&2
+        printf '%s\n' "${STANDARD_FONTS[@]}"
+        return 0
     fi
     
-    # Output only the font names to stdout (for consumption by readarray)
+    echo "Selected ${#selected_fonts[@]} fonts: ${selected_fonts[*]}" >&2
     printf '%s\n' "${selected_fonts[@]}"
 }
 

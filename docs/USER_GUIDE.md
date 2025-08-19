@@ -310,8 +310,8 @@ gearbox install nerd-fonts --configure-apps
 
 **Font Collections:**
 - **Minimal** (3 fonts, ~30MB): FiraCode, JetBrains Mono, Hack
-- **Standard** (8 fonts, ~80MB): Adds Source Code Pro, Inconsolata, Cascadia Code, Ubuntu Mono, DejaVu Sans Mono  
-- **Maximum** (15+ fonts, ~200MB): Complete collection including Victor Mono, Menlo, Anonymous Pro, Space Mono, IBM Plex Mono, Roboto Mono, Terminus
+- **Standard** (12 fonts, ~120MB): Adds Source Code Pro, Inconsolata, Cascadia Code, Ubuntu Mono, DejaVu Sans Mono, Roboto Mono, Space Mono, Iosevka, Geist Mono
+- **Maximum** (64 fonts, ~640MB): Complete collection including all available Nerd Fonts - modern fonts like Monaspace, CommitMono, MartianMono; classic fonts like IBM Plex Mono, Victor Mono; specialized fonts like OpenDyslexic, BigBlueTerminal
 
 **Key Features:**
 - **Programming Ligatures**: Enhanced display of `=>`, `!=`, `>=`, `<=`, `&&`, `||`, `->`, `<-`
