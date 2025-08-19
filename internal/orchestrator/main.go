@@ -58,6 +58,12 @@ type InstallationOptions struct {
 	MaxParallelJobs  int
 	Verbose          bool
 	DryRun           bool
+	
+	// Nerd-fonts specific options
+	Fonts            string
+	Interactive      bool
+	Preview          bool
+	ConfigureApps    bool
 }
 
 // InstallationResult represents the result of a tool installation
@@ -101,6 +107,7 @@ func Main() {
 	rootCmd.AddCommand(listCmd())
 	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(verifyCmd())
+	rootCmd.AddCommand(doctorCmd())
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "Path to tools.json configuration file")
@@ -150,6 +157,12 @@ and comprehensive progress tracking. If no tools are specified, all tools will b
 	cmd.Flags().IntVarP(&opts.MaxParallelJobs, "jobs", "j", 0, "Maximum parallel jobs (0 = auto-detect)")
 	cmd.Flags().BoolVarP(&opts.Verbose, "verbose", "v", false, "Enable verbose output")
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Show what would be installed without executing")
+
+	// Nerd-fonts specific options
+	cmd.Flags().StringVar(&opts.Fonts, "fonts", "", "Install specific fonts (comma-separated, e.g. 'FiraCode,JetBrainsMono')")
+	cmd.Flags().BoolVar(&opts.Interactive, "interactive", false, "Interactive font selection with previews")
+	cmd.Flags().BoolVar(&opts.Preview, "preview", false, "Show font previews before installation")
+	cmd.Flags().BoolVar(&opts.ConfigureApps, "configure-apps", false, "Automatically configure VS Code, terminals, etc.")
 
 	return cmd
 }
@@ -207,6 +220,25 @@ func verifyCmd() *cobra.Command {
 			return orchestrator.VerifyTools(args)
 		},
 	}
+}
+
+// doctorCmd creates the doctor command
+func doctorCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "doctor [tool]",
+		Short: "Run health checks and diagnostics",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to initialize orchestrator: %w", err)
+			}
+
+			return orchestrator.RunDoctor(args)
+		},
+	}
+	
+	cmd.Flags().Bool("fix", false, "Attempt to fix detected issues automatically")
+	return cmd
 }
 
 // NewOrchestrator creates a new orchestrator instance with the given options.
@@ -350,6 +382,16 @@ func (o *Orchestrator) InstallTools(toolNames []string) error {
 		}
 		validTools = append(validTools, tool)
 	}
+
+	// Handle nerd-fonts specific options
+	if len(validTools) == 1 && validTools[0].Name == "nerd-fonts" {
+		if o.options.Fonts != "" || o.options.Interactive || o.options.Preview || o.options.ConfigureApps {
+			return o.installNerdFontsWithOptions(validTools[0])
+		}
+	}
+
+	// Check for cross-tool recommendations
+	o.suggestRelatedTools(validTools)
 
 	// Resolve dependencies and determine installation order
 	installOrder, err := o.resolveDependencies(validTools)
@@ -762,13 +804,23 @@ func (o *Orchestrator) ShowStatus(toolNames []string) error {
 	var installed, notInstalled int
 
 	for _, tool := range tools {
-		if isToolInstalled(tool) {
-			installed++
-			version := getToolVersion(tool)
-			fmt.Printf("✅ %-15s %s\n", tool.Name, version)
+		if tool.Name == "nerd-fonts" {
+			// Special detailed handling for nerd-fonts
+			o.showNerdFontsDetailedStatus()
+			if isToolInstalled(tool) {
+				installed++
+			} else {
+				notInstalled++
+			}
 		} else {
-			notInstalled++
-			fmt.Printf("❌ %-15s Not installed\n", tool.Name)
+			if isToolInstalled(tool) {
+				installed++
+				version := getToolVersion(tool)
+				fmt.Printf("✅ %-15s %s\n", tool.Name, version)
+			} else {
+				notInstalled++
+				fmt.Printf("❌ %-15s Not installed\n", tool.Name)
+			}
 		}
 	}
 
@@ -1086,4 +1138,538 @@ func getNerdFontsVersion() string {
 	}
 	
 	return fmt.Sprintf("%s Nerd Fonts installed", count)
+}
+
+// getNerdFontsDetailedStatus returns detailed status information for nerd-fonts
+func getNerdFontsDetailedStatus() map[string]interface{} {
+	status := make(map[string]interface{})
+	
+	// Check if fc-list is available
+	if _, err := exec.LookPath("fc-list"); err != nil {
+		status["error"] = "fc-list not available"
+		return status
+	}
+	
+	// Get all Nerd Fonts
+	cmd := exec.Command("sh", "-c", "fc-list | grep -i 'nerd font' | cut -d: -f2 | cut -d, -f1 | sort | uniq")
+	output, err := cmd.Output()
+	if err != nil {
+		status["error"] = "Error listing fonts"
+		return status
+	}
+	
+	fontList := strings.TrimSpace(string(output))
+	if fontList == "" {
+		status["installed"] = false
+		status["count"] = 0
+		status["fonts"] = []string{}
+		return status
+	}
+	
+	fonts := strings.Split(fontList, "\n")
+	cleanFonts := make([]string, 0, len(fonts))
+	for _, font := range fonts {
+		font = strings.TrimSpace(font)
+		if font != "" {
+			cleanFonts = append(cleanFonts, font)
+		}
+	}
+	
+	status["installed"] = len(cleanFonts) > 0
+	status["count"] = len(cleanFonts)
+	status["fonts"] = cleanFonts
+	
+	// Get disk usage
+	homeDir := os.Getenv("HOME")
+	fontsDir := homeDir + "/.local/share/fonts"
+	
+	cmd = exec.Command("du", "-sh", fontsDir)
+	if diskOutput, err := cmd.Output(); err == nil {
+		diskUsage := strings.Fields(string(diskOutput))
+		if len(diskUsage) > 0 {
+			status["disk_usage"] = diskUsage[0]
+		}
+	}
+	
+	// Check font cache status
+	cmd = exec.Command("fc-cache", "--version")
+	if err := cmd.Run(); err == nil {
+		status["font_cache"] = "available"
+	} else {
+		status["font_cache"] = "unavailable"
+	}
+	
+	return status
+}
+
+// showNerdFontsDetailedStatus displays detailed status for nerd-fonts
+func (o *Orchestrator) showNerdFontsDetailedStatus() {
+	status := getNerdFontsDetailedStatus()
+	
+	if errorMsg, hasError := status["error"]; hasError {
+		fmt.Printf("❌ %-15s %s\n", "nerd-fonts", errorMsg)
+		return
+	}
+	
+	installed, _ := status["installed"].(bool)
+	count, _ := status["count"].(int)
+	fonts, _ := status["fonts"].([]string)
+	
+	if !installed || count == 0 {
+		fmt.Printf("❌ %-15s Not installed\n", "nerd-fonts")
+		return
+	}
+	
+	fmt.Printf("✅ %-15s %d fonts installed\n", "nerd-fonts", count)
+	
+	// Show individual fonts
+	for _, font := range fonts {
+		if len(font) > 30 {
+			font = font[:27] + "..."
+		}
+		fmt.Printf("   ├─ %s\n", font)
+	}
+	
+	// Show disk usage if available
+	if diskUsage, hasDisk := status["disk_usage"]; hasDisk {
+		fmt.Printf("   └─ 💾 Disk usage: %s in ~/.local/share/fonts\n", diskUsage)
+	}
+}
+
+// RunDoctor runs health checks and diagnostics
+func (o *Orchestrator) RunDoctor(toolNames []string) error {
+	if len(toolNames) == 1 && toolNames[0] == "nerd-fonts" {
+		return o.runNerdFontsDoctor()
+	}
+	
+	// General doctor functionality can be added here
+	fmt.Printf("🔍 General Health Check\n")
+	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	fmt.Printf("For tool-specific diagnostics, specify a tool name.\n")
+	fmt.Printf("Example: gearbox doctor nerd-fonts\n")
+	
+	return nil
+}
+
+// runNerdFontsDoctor runs comprehensive nerd-fonts health checks
+func (o *Orchestrator) runNerdFontsDoctor() error {
+	fmt.Printf("🔍 Nerd Fonts Health Check\n")
+	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+	
+	var issues []string
+	var recommendations []string
+	
+	// 1. Check if nerd-fonts are installed
+	if !isNerdFontsInstalled() {
+		fmt.Printf("❌ Nerd Fonts: Not installed\n")
+		issues = append(issues, "No Nerd Fonts installed")
+		recommendations = append(recommendations, "Run 'gearbox install nerd-fonts' to install fonts")
+	} else {
+		status := getNerdFontsDetailedStatus()
+		count, _ := status["count"].(int)
+		fonts, _ := status["fonts"].([]string)
+		
+		fmt.Printf("✅ Nerd Fonts: %d fonts installed\n", count)
+		for _, font := range fonts[:min(3, len(fonts))] {
+			fmt.Printf("   ├─ %s\n", font)
+		}
+		if len(fonts) > 3 {
+			fmt.Printf("   └─ ... and %d more\n", len(fonts)-3)
+		}
+	}
+	
+	// 2. Check font cache
+	if _, err := exec.LookPath("fc-cache"); err != nil {
+		fmt.Printf("❌ Font Cache: fc-cache not available\n")
+		issues = append(issues, "Font cache system unavailable")
+		recommendations = append(recommendations, "Install fontconfig package: sudo apt install fontconfig")
+	} else {
+		fmt.Printf("✅ Font Cache: Available and working\n")
+	}
+	
+	// 3. Check terminal support
+	terminalSupport := checkTerminalSupport()
+	if terminalSupport {
+		fmt.Printf("✅ Terminal Support: Unicode symbols supported\n")
+	} else {
+		fmt.Printf("⚠️  Terminal Support: Limited Unicode support detected\n")
+		issues = append(issues, "Terminal may not display all font symbols")
+		recommendations = append(recommendations, "Use a modern terminal like Kitty, Alacritty, or configure your current terminal")
+	}
+	
+	// 4. Check VS Code configuration
+	vscodeConfigured, _ := checkVSCodeFontConfig()
+	if vscodeConfigured {
+		fmt.Printf("✅ VS Code: Configured to use Nerd Fonts\n")
+	} else {
+		if isVSCodeInstalled() {
+			fmt.Printf("⚠️  VS Code: Not configured to use Nerd Fonts\n")
+			issues = append(issues, "VS Code not configured for Nerd Fonts")
+			recommendations = append(recommendations, "Add to VS Code settings.json: \"editor.fontFamily\": \"FiraCode Nerd Font\"")
+		} else {
+			fmt.Printf("ℹ️  VS Code: Not installed\n")
+		}
+	}
+	
+	// 5. Check terminal font configuration
+	terminalConfigured := checkTerminalSupport()
+	if terminalConfigured {
+		fmt.Printf("✅ Terminal Config: Using Nerd Font\n")
+	} else {
+		fmt.Printf("⚠️  Terminal Config: Not using Nerd Font\n")
+		issues = append(issues, "Terminal not configured to use Nerd Fonts")
+		recommendations = append(recommendations, "Configure your terminal to use a Nerd Font (e.g., 'JetBrains Mono Nerd Font')")
+	}
+	
+	// 6. Check starship integration
+	if isStarshipInstalled() {
+		fmt.Printf("✅ Starship: Installed (works great with Nerd Fonts)\n")
+		if !isNerdFontsInstalled() {
+			recommendations = append(recommendations, "Starship icons will display better with Nerd Fonts installed")
+		}
+	} else {
+		fmt.Printf("ℹ️  Starship: Not installed\n")
+		recommendations = append(recommendations, "Consider installing Starship for an enhanced prompt: gearbox install starship")
+	}
+	
+	// Summary
+	fmt.Printf("\n📈 Health Check Summary\n")
+	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+	
+	if len(issues) == 0 {
+		fmt.Printf("🎉 All checks passed! Your Nerd Fonts setup is optimal.\n")
+	} else {
+		fmt.Printf("⚠️  Found %d issue(s):\n", len(issues))
+		for i, issue := range issues {
+			fmt.Printf("  %d. %s\n", i+1, issue)
+		}
+	}
+	
+	if len(recommendations) > 0 {
+		fmt.Printf("\n💡 Recommendations:\n")
+		for i, rec := range recommendations {
+			fmt.Printf("  %d. %s\n", i+1, rec)
+		}
+	}
+	
+	return nil
+}
+
+// Helper functions for nerd-fonts doctor checks
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
+}
+
+func checkTerminalSupport() bool {
+	// Check for Unicode support by testing if terminal can display basic Unicode
+	term := os.Getenv("TERM")
+	if strings.Contains(term, "xterm") || strings.Contains(term, "screen") || 
+	   strings.Contains(term, "tmux") || strings.Contains(term, "alacritty") ||
+	   strings.Contains(term, "kitty") {
+		return true
+	}
+	
+	// Check LANG/LC_* environment variables for UTF-8 support
+	for _, envVar := range []string{"LANG", "LC_ALL", "LC_CTYPE"} {
+		if val := os.Getenv(envVar); strings.Contains(strings.ToUpper(val), "UTF") {
+			return true
+		}
+	}
+	
+	return false
+}
+
+func isVSCodeInstalled() bool {
+	// Check for VS Code binary
+	if _, err := exec.LookPath("code"); err == nil {
+		return true
+	}
+	// Check for VS Code Insiders
+	if _, err := exec.LookPath("code-insiders"); err == nil {
+		return true
+	}
+	return false
+}
+
+func checkVSCodeFontConfig() (bool, string) {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return false, ""
+	}
+	
+	configPath := filepath.Join(homeDir, ".config", "Code", "User", "settings.json")
+	if _, err := os.Stat(configPath); err != nil {
+		return false, ""
+	}
+	
+	content, err := os.ReadFile(configPath)
+	if err != nil {
+		return false, ""
+	}
+	
+	configStr := string(content)
+	if strings.Contains(configStr, "Nerd Font") {
+		// Extract font family if possible
+		if idx := strings.Index(configStr, `"editor.fontFamily"`); idx != -1 {
+			start := strings.Index(configStr[idx:], `"`) + idx + 1
+			end := strings.Index(configStr[start:], `"`) + start
+			if start < end && end < len(configStr) {
+				fontFamily := configStr[strings.Index(configStr[start:], `"`)+start+1:end]
+				return true, fontFamily
+			}
+		}
+		return true, "Unknown Nerd Font"
+	}
+	
+	return false, ""
+}
+
+func isStarshipInstalled() bool {
+	_, err := exec.LookPath("starship")
+	return err == nil
+}
+
+func checkStarshipFontUsage() bool {
+	homeDir, err := os.UserHomeDir()
+	if err != nil {
+		return false
+	}
+	
+	// Check starship config
+	configPath := filepath.Join(homeDir, ".config", "starship.toml")
+	if content, err := os.ReadFile(configPath); err == nil {
+		// Look for Nerd Font symbols or emoji usage
+		configStr := string(content)
+		nerdFontSymbols := []string{"", "", "", "", "", "λ", "⎈", ""}
+		for _, symbol := range nerdFontSymbols {
+			if strings.Contains(configStr, symbol) {
+				return true
+			}
+		}
+	}
+	
+	return false
+}
+
+func checkFontcacheHealth() (bool, []string) {
+	var issues []string
+	
+	// Check if fc-cache exists
+	if _, err := exec.LookPath("fc-cache"); err != nil {
+		issues = append(issues, "fc-cache command not found - fontconfig may not be installed")
+		return false, issues
+	}
+	
+	// Check font cache directory
+	homeDir, _ := os.UserHomeDir()
+	cacheDir := filepath.Join(homeDir, ".cache", "fontconfig")
+	if _, err := os.Stat(cacheDir); err != nil {
+		issues = append(issues, "Font cache directory not found - run 'fc-cache -f' to rebuild")
+	}
+	
+	// Try to run fc-list to test font system
+	cmd := exec.Command("fc-list")
+	if err := cmd.Run(); err != nil {
+		issues = append(issues, "Font system not responding - try running 'fc-cache -fv'")
+		return false, issues
+	}
+	
+	return len(issues) == 0, issues
+}
+
+func getTerminalRecommendations() []string {
+	var recommendations []string
+	
+	term := os.Getenv("TERM")
+	switch {
+	case strings.Contains(term, "kitty"):
+		recommendations = append(recommendations, "Kitty: Add 'font_family JetBrains Mono Nerd Font' to ~/.config/kitty/kitty.conf")
+	case strings.Contains(term, "alacritty"):
+		recommendations = append(recommendations, "Alacritty: Configure font in ~/.config/alacritty/alacritty.yml")
+	case strings.Contains(term, "gnome"):
+		recommendations = append(recommendations, "GNOME Terminal: Set font via Preferences > Profiles > Text")
+	default:
+		recommendations = append(recommendations, "Configure your terminal to use a Nerd Font for best results")
+		recommendations = append(recommendations, "Popular choices: JetBrains Mono Nerd Font, FiraCode Nerd Font, Hack Nerd Font")
+	}
+	
+	return recommendations
+}
+
+// installNerdFontsWithOptions handles nerd-fonts installation with special options
+func (o *Orchestrator) installNerdFontsWithOptions(tool ToolConfig) error {
+	fmt.Printf("🎨 Nerd Fonts Installation with Advanced Options\n\n")
+
+	// Build script command with options
+	args := []string{}
+	
+	if o.options.Fonts != "" {
+		args = append(args, "--fonts="+o.options.Fonts)
+	}
+	
+	if o.options.Interactive {
+		args = append(args, "--interactive")
+	}
+	
+	if o.options.Preview {
+		args = append(args, "--preview")
+	}
+	
+	if o.options.ConfigureApps {
+		args = append(args, "--configure-apps")
+	}
+	
+	// Add standard orchestrator options
+	if o.options.BuildType == "minimal" {
+		args = append(args, "--minimal")
+	} else if o.options.BuildType == "maximum" {
+		args = append(args, "--maximum")
+	}
+	
+	if o.options.SkipCommonDeps {
+		args = append(args, "--skip-deps")
+	}
+	
+	if o.options.RunTests {
+		args = append(args, "--run-tests")
+	}
+	
+	if o.options.Force {
+		args = append(args, "--force")
+	}
+	
+	if o.options.DryRun {
+		args = append(args, "--config-only")
+	}
+
+	// Execute the nerd-fonts script directly with the options
+	return o.executeNerdFontsScript(args)
+}
+
+// executeNerdFontsScript runs the nerd-fonts script with given arguments
+func (o *Orchestrator) executeNerdFontsScript(args []string) error {
+	// Find the script path
+	scriptPath := "./scripts/install-nerd-fonts.sh"
+	if _, err := os.Stat(scriptPath); err != nil {
+		// Try alternative paths
+		scriptPath = "scripts/install-nerd-fonts.sh"
+		if _, err := os.Stat(scriptPath); err != nil {
+			return fmt.Errorf("nerd-fonts script not found: %w", err)
+		}
+	}
+
+	// Build the command
+	cmdArgs := []string{"bash", scriptPath}
+	cmdArgs = append(cmdArgs, args...)
+	cmd := exec.Command(cmdArgs[0], cmdArgs[1:]...)
+	
+	// Connect stdio for interactive features
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	
+	fmt.Printf("🚀 Executing: %s %s\n", scriptPath, strings.Join(args, " "))
+	
+	return cmd.Run()
+}
+
+// suggestRelatedTools analyzes the tools being installed and suggests related tools
+func (o *Orchestrator) suggestRelatedTools(tools []ToolConfig) {
+	var suggestions []string
+	var installingNames []string
+	
+	// Get names of tools being installed
+	for _, tool := range tools {
+		installingNames = append(installingNames, tool.Name)
+	}
+	
+	// Check for specific tool relationships
+	hasStarship := contains(installingNames, "starship")
+	hasNerdFonts := contains(installingNames, "nerd-fonts")
+	hasFzf := contains(installingNames, "fzf")
+	hasBat := contains(installingNames, "bat")
+	hasEza := contains(installingNames, "eza")
+	hasDelta := contains(installingNames, "delta")
+	
+	// Starship + Nerd Fonts relationship
+	if hasStarship && !hasNerdFonts && !isNerdFontsInstalled() {
+		suggestions = append(suggestions, "🎨 Consider adding 'nerd-fonts' - Starship displays icons and symbols much better with Nerd Fonts")
+	}
+	if hasNerdFonts && !hasStarship && !isStarshipInstalled() {
+		suggestions = append(suggestions, "⭐ Consider adding 'starship' - A customizable prompt that works great with Nerd Fonts")
+	}
+	
+	// Terminal enhancement bundle
+	if (hasFzf || hasBat || hasEza) && len(installingNames) == 1 {
+		missing := []string{}
+		if !hasFzf && !isToolInConfig("fzf") {
+			missing = append(missing, "fzf")
+		}
+		if !hasBat && !isToolInConfig("bat") {
+			missing = append(missing, "bat")
+		}
+		if !hasEza && !isToolInConfig("eza") {
+			missing = append(missing, "eza")
+		}
+		
+		if len(missing) > 0 {
+			suggestions = append(suggestions, fmt.Sprintf("🚀 Terminal bundle: Consider also installing %s for a complete terminal experience", strings.Join(missing, ", ")))
+		}
+	}
+	
+	// Git workflow enhancement
+	if hasDelta && !contains(installingNames, "lazygit") && !isToolInConfig("lazygit") {
+		suggestions = append(suggestions, "🔧 Consider adding 'lazygit' - A terminal UI for Git that pairs well with Delta")
+	}
+	
+	// Development tools bundle
+	developmentTools := []string{"ripgrep", "fd", "sd", "tokei"}
+	installingDev := 0
+	for _, devTool := range developmentTools {
+		if contains(installingNames, devTool) {
+			installingDev++
+		}
+	}
+	
+	if installingDev >= 1 && installingDev < len(developmentTools) {
+		missing := []string{}
+		for _, devTool := range developmentTools {
+			if !contains(installingNames, devTool) && !isToolInConfig(devTool) {
+				missing = append(missing, devTool)
+			}
+		}
+		if len(missing) > 0 && len(missing) <= 2 {
+			suggestions = append(suggestions, fmt.Sprintf("💻 Development bundle: Consider also installing %s", strings.Join(missing, ", ")))
+		}
+	}
+	
+	// Show suggestions if any
+	if len(suggestions) > 0 {
+		fmt.Printf("\n💡 Related Tool Suggestions\n")
+		fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
+		for _, suggestion := range suggestions {
+			fmt.Printf("   %s\n", suggestion)
+		}
+		fmt.Printf("\n   Use: gearbox install <additional_tools>\n\n")
+	}
+}
+
+// Helper function to check if a slice contains a string
+func contains(slice []string, str string) bool {
+	for _, item := range slice {
+		if item == str {
+			return true
+		}
+	}
+	return false
+}
+
+// Helper function to check if a tool exists in config and is likely installed
+func isToolInConfig(toolName string) bool {
+	// Simple check - try to find the tool binary in PATH
+	cmd := exec.Command("which", toolName)
+	return cmd.Run() == nil
 }

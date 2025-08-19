@@ -22,10 +22,12 @@ func NewInstallCmd() *cobra.Command {
 If no tools are specified, you will be prompted to install all available tools.
 The orchestrator provides parallel installation, dependency resolution, and 
 comprehensive progress tracking.`,
-		Example: `  gearbox install fd ripgrep fzf       # Install specific tools
-  gearbox install --minimal fd         # Fast installation
-  gearbox install --maximum ffmpeg     # Full-featured build
-  gearbox install                      # Install all tools (with confirmation)`,
+		Example: `  gearbox install fd ripgrep fzf             # Install specific tools
+  gearbox install --minimal fd               # Fast installation
+  gearbox install --maximum ffmpeg           # Full-featured build
+  gearbox install nerd-fonts --fonts="FiraCode"    # Install specific font
+  gearbox install nerd-fonts --interactive   # Interactive font selection
+  gearbox install                            # Install all tools (with confirmation)`,
 		RunE: runInstall,
 	}
 
@@ -45,12 +47,25 @@ comprehensive progress tracking.`,
 	cmd.Flags().Bool("no-cache", false, "Disable build cache")
 	cmd.Flags().Bool("dry-run", false, "Show what would be installed without executing")
 
+	// Nerd-fonts specific options
+	cmd.Flags().String("fonts", "", "Install specific fonts (comma-separated, e.g. 'FiraCode,JetBrainsMono')")
+	cmd.Flags().Bool("interactive", false, "Interactive font selection with previews")
+	cmd.Flags().Bool("preview", false, "Show font previews before installation")
+	cmd.Flags().Bool("configure-apps", false, "Automatically configure VS Code, terminals, etc.")
+
 	return cmd
 }
 
 func runInstall(cmd *cobra.Command, args []string) error {
 	start := time.Now()
 	log := logger.GetGlobalLogger().Operation("install")
+	
+	// Debug: Show detailed argument parsing info
+	fmt.Printf("🔍 CLI Debug - Raw args from Cobra: %v\n", args)
+	fmt.Printf("🔍 CLI Debug - Command line: %v\n", os.Args)
+	if fonts, _ := cmd.Flags().GetString("fonts"); fonts != "" {
+		fmt.Printf("🔍 CLI Debug - fonts flag value: '%s'\n", fonts)
+	}
 	
 	log.Infof("Starting installation of %d tools", len(args))
 	
@@ -83,7 +98,7 @@ func runWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args []str
 	// Build the orchestrator command
 	orchestratorCmd := exec.Command(orchestratorPath, "install")
 	
-	// Add tool arguments
+	// Add tool arguments  
 	orchestratorCmd.Args = append(orchestratorCmd.Args, args...)
 
 	// Convert flags to orchestrator arguments
@@ -113,6 +128,20 @@ func runWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args []str
 	}
 	if dryRun, _ := cmd.Flags().GetBool("dry-run"); dryRun {
 		orchestratorCmd.Args = append(orchestratorCmd.Args, "--dry-run")
+	}
+
+	// Add nerd-fonts specific flags
+	if fonts, _ := cmd.Flags().GetString("fonts"); fonts != "" {
+		orchestratorCmd.Args = append(orchestratorCmd.Args, "--fonts", fonts)
+	}
+	if interactive, _ := cmd.Flags().GetBool("interactive"); interactive {
+		orchestratorCmd.Args = append(orchestratorCmd.Args, "--interactive")
+	}
+	if preview, _ := cmd.Flags().GetBool("preview"); preview {
+		orchestratorCmd.Args = append(orchestratorCmd.Args, "--preview")
+	}
+	if configureApps, _ := cmd.Flags().GetBool("configure-apps"); configureApps {
+		orchestratorCmd.Args = append(orchestratorCmd.Args, "--configure-apps")
 	}
 
 	// Add global flags
