@@ -5,12 +5,13 @@ Complete guide for installing and using essential command-line tools.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Installation Options](#installation-options)
-3. [Individual Tools](#individual-tools)
-4. [Common Workflows](#common-workflows)
-5. [Shell Integration](#shell-integration)
-6. [Troubleshooting](#troubleshooting)
-7. [Reference](#reference)
+2. [Building the CLI](#building-the-cli)
+3. [Installation Options](#installation-options)
+4. [Individual Tools](#individual-tools)
+5. [Common Workflows](#common-workflows)
+6. [Shell Integration](#shell-integration)
+7. [Troubleshooting](#troubleshooting)
+8. [Reference](#reference)
 
 ## Getting Started
 
@@ -77,6 +78,39 @@ If commands aren't found, refresh your shell:
 
 ```bash
 hash -r && source ~/.bashrc
+```
+
+## Building the CLI
+
+If you need to build the gearbox CLI from source (e.g., after git clone):
+
+```bash
+# Quick CLI build
+make cli
+
+# Build everything (CLI + orchestrator + tools)
+make build
+
+# Development setup (install Go dependencies)
+make dev-setup
+
+# Clean rebuild
+make clean && make build
+```
+
+**Requirements:**
+- Go 1.22+
+- Git  
+- Standard build tools (gcc, make, curl)
+
+**Result:** Creates `./gearbox` binary in project root.
+
+**First-time setup:**
+```bash
+git clone <repository>
+cd gearbox
+make build         # Build all components
+./gearbox list     # Verify CLI works
 ```
 
 ## Installation Options

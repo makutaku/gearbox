@@ -34,6 +34,32 @@ gearbox doctor
 gearbox doctor cleanup --all --mode standard
 ```
 
+## Building from Source
+
+The gearbox CLI is built from Go source code. Build instructions:
+
+```bash
+# Build the CLI binary
+make cli
+
+# Build CLI + all components (orchestrator, tools)
+make build
+
+# Development setup (install dependencies)
+make dev-setup
+
+# Clean and rebuild
+make clean
+make build
+```
+
+**Requirements:**
+- Go 1.22+ 
+- Git
+- Standard build tools (gcc, make)
+
+**After building:** The `gearbox` binary will be available in the project root.
+
 ## Available Tools
 
 | Tool | Description | Key Features |
