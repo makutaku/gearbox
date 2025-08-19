@@ -13,6 +13,9 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
 - `gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
 - `gearbox install --maximum ffmpeg` - Install with full-featured builds
+- `gearbox install nerd-fonts` - Install standard font collection (8 fonts) with cross-tool suggestions
+- `gearbox install nerd-fonts --fonts="FiraCode"` - Install specific font via CLI
+- `gearbox install nerd-fonts --interactive` - Interactive font selection with previews
 - `gearbox list` - Show available tools with descriptions
 - `gearbox help` - Show detailed help and usage information
 
@@ -25,6 +28,8 @@ This is an Essential Tools Installer - a collection of automated installation sc
 
 ### Health Checks & Diagnostics
 - `gearbox doctor` - Run comprehensive health checks
+- `gearbox doctor nerd-fonts` - Advanced font diagnostics (cache, terminal, VS Code, starship)
+- `gearbox status nerd-fonts` - Detailed font status with individual fonts and disk usage
 - `gearbox doctor system` - Check system requirements only
 - `gearbox doctor tools` - Check installed tools status
 - `gearbox doctor env` - Check environment variables
@@ -53,13 +58,186 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - Individual tests: `test_unit_common.sh`, `test_integration_tools.sh`, `test_template_validation.sh`
 
 ### Individual Tool Installation
-Each tool has its own script in `scripts/`:
-- `scripts/install-fd.sh -r` - Install fd with release build
-- `scripts/install-ripgrep.sh --release` - Install ripgrep with optimized build
-- `scripts/install-fzf.sh --standard --no-shell` - Install fzf with standard build, no shell integration
-- `scripts/install-nerd-fonts.sh --minimal` - Install essential fonts (FiraCode, JetBrains Mono, Hack)
-- `scripts/install-nerd-fonts.sh --interactive` - Choose fonts interactively
-- `scripts/install-nerd-fonts.sh --configure-apps` - Install fonts and configure VS Code, terminals
+Use the main CLI for all installations (recommended):
+- `gearbox install fd` - Install fd with standard build
+- `gearbox install ripgrep --maximum` - Install ripgrep with optimized build
+- `gearbox install fzf --no-shell` - Install fzf without shell integration
+- `gearbox install nerd-fonts --minimal` - Install essential fonts (3 fonts)
+- `gearbox install nerd-fonts` - Install standard font collection (8 fonts)  
+- `gearbox install nerd-fonts --maximum` - Install complete font collection (15+ fonts)
+
+Direct scripts are available for advanced use cases but discouraged for normal usage.
+
+### Advanced Nerd Fonts Features
+
+The nerd-fonts implementation provides sophisticated font management with professional-grade UX features:
+
+#### Installation Modes & Build Types
+```bash
+# CLI-based installations (recommended)
+gearbox install nerd-fonts                    # Standard collection (8 fonts, ~80MB)
+gearbox install nerd-fonts --minimal          # Essential fonts (3 fonts, ~30MB) 
+gearbox install nerd-fonts --maximum          # Complete collection (15+ fonts, ~200MB)
+
+# Advanced font selection via CLI
+gearbox install nerd-fonts --fonts="FiraCode"               # Install specific font
+gearbox install nerd-fonts --fonts="FiraCode,JetBrainsMono" # Install multiple fonts
+gearbox install nerd-fonts --interactive                    # Interactive selection with previews
+gearbox install nerd-fonts --preview --fonts="FiraCode"     # Preview before installation
+
+# Combined options
+gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Install + auto-configure apps
+gearbox install nerd-fonts --interactive --configure-apps       # Interactive + configuration
+gearbox install nerd-fonts --dry-run --fonts="Hack"             # Preview specific font
+```
+
+#### Smart Application Configuration
+```bash
+# CLI with automatic application configuration
+gearbox install nerd-fonts --configure-apps                     # Install + configure apps
+gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Specific font + configure
+gearbox status nerd-fonts                                       # Check installation status and health
+
+# Configuration examples (automatically applied with --configure-apps):
+# VS Code: "editor.fontFamily": "FiraCode Nerd Font", "editor.fontLigatures": true
+# Kitty: font_family JetBrains Mono Nerd Font  
+# Alacritty: family: JetBrains Mono Nerd Font
+```
+
+#### Font Collections by Build Type
+
+**Minimal Collection (3 fonts, ~30MB):**
+- FiraCode - Programming ligatures + icons
+- JetBrains Mono - Clean, readable monospace  
+- Hack - Terminal-optimized
+
+**Standard Collection (8 fonts, ~80MB):**
+- All minimal fonts plus:
+- Source Code Pro - Adobe's programming font
+- Inconsolata - Classic monospace
+- Cascadia Code - Microsoft's font with ligatures
+- Ubuntu Mono - Ubuntu's official monospace
+- DejaVu Sans Mono - Popular open source font
+
+**Maximum Collection (15+ fonts, ~200MB):**
+- All standard fonts plus:
+- Victor Mono - Cursive italic programming font
+- Menlo - Apple's monospace font
+- Anonymous Pro - Fixed-width font for coders
+- Space Mono - Google's monospace font  
+- IBM Plex Mono - IBM's corporate font
+- Roboto Mono - Google's robot-themed font
+- Terminus - Bitmap font optimized for coding
+
+#### Interactive Font Preview System
+```bash
+# Rich previews with actual character samples
+scripts/install-nerd-fonts.sh --preview --fonts="FiraCode,JetBrainsMono"
+
+# Interactive selection with live previews
+scripts/install-nerd-fonts.sh --interactive
+# Navigation: ↑/↓ arrows, SPACE to select, 'p' to preview, ENTER to confirm
+```
+
+**Preview includes:**
+- **Programming Ligatures**: `=> != >= <= && || -> <-`
+- **File Icons**: `  󰈙  󰗀  󰅴  󰘳  󰊕`
+- **Git Symbols**: `  󰊢  󰊰  󰜘  󰊦`  
+- **System Icons**: `  󰍹  󰻀  󰍛  󰈎  󰏗`
+- **Real Code Samples**: JavaScript/TypeScript examples with ligatures
+- **Font Configuration Names**: Exact family names for terminal/editor config
+
+#### Advanced Health Checks & Diagnostics
+```bash
+# Comprehensive nerd-fonts health check
+gearbox doctor nerd-fonts                     # CLI integration
+./bin/orchestrator doctor nerd-fonts          # Direct orchestrator access
+
+# Status with detailed font information
+gearbox status nerd-fonts                     # Shows installed fonts, disk usage
+./bin/orchestrator status nerd-fonts          # Detailed status display
+```
+
+**Health Check Coverage:**
+- **Font Installation**: Verify specific fonts are properly installed
+- **Font Cache System**: Validate fontconfig cache integrity  
+- **Terminal Support**: Check Unicode/UTF-8 compatibility
+- **VS Code Integration**: Detect and validate editor configuration
+- **Terminal Configuration**: Check terminal-specific font settings
+- **Starship Integration**: Assess cross-tool compatibility and suggestions
+- **System Requirements**: Verify fontconfig, fc-cache, and dependencies
+
+#### Cross-Tool Dependency Intelligence
+```bash
+# Smart suggestions during installation
+gearbox install nerd-fonts --dry-run
+# → Suggests: "⭐ Consider adding 'starship' - A customizable prompt that works great with Nerd Fonts"
+
+gearbox install starship --dry-run  
+# → Suggests: "🎨 Consider adding 'nerd-fonts' - Starship displays icons and symbols much better with Nerd Fonts"
+
+# Bundle suggestions for related tools
+gearbox install fzf --dry-run
+# → Suggests terminal enhancement bundle (bat, eza) for complete experience
+```
+
+**Intelligent Relationships:**
+- **Starship ↔ Nerd Fonts**: Bi-directional suggestions for optimal prompt experience
+- **Terminal Enhancement Bundle**: fzf, bat, eza recommendations  
+- **Development Tools Bundle**: ripgrep, fd, sd, tokei groupings
+- **Git Workflow**: delta + lazygit pairings
+
+#### Font Management & Maintenance
+```bash
+# Installation with testing and verification
+scripts/install-nerd-fonts.sh --run-tests     # Verify fonts after installation
+scripts/install-nerd-fonts.sh --force         # Force reinstall existing fonts
+
+# Build configuration and caching  
+scripts/install-nerd-fonts.sh --skip-deps     # Skip dependency installation
+scripts/install-nerd-fonts.sh --config-only  # Prepare config without installing
+
+# Different installation phases
+scripts/install-nerd-fonts.sh --build-only    # Download and prepare, don't install
+scripts/install-nerd-fonts.sh --install       # Complete installation (default)
+```
+
+#### Professional Configuration Examples
+
+**VS Code settings.json:**
+```json
+{
+  "editor.fontFamily": "FiraCode Nerd Font",
+  "editor.fontLigatures": true,
+  "terminal.integrated.fontFamily": "JetBrains Mono Nerd Font"
+}
+```
+
+**Terminal Configurations:**
+```bash
+# Kitty (auto-configured)
+echo 'font_family JetBrains Mono Nerd Font' >> ~/.config/kitty/kitty.conf
+
+# Alacritty (auto-configured) 
+# ~/.config/alacritty/alacritty.yml
+font:
+  normal:
+    family: JetBrains Mono Nerd Font
+```
+
+**Starship Integration:**
+```toml
+# ~/.config/starship.toml - enhanced with Nerd Font symbols
+[character]
+success_symbol = "[](bold green)"
+error_symbol = "[](bold red)"
+
+[git_branch] 
+symbol = " "
+
+[directory]
+substitutions = { "~" = "󰜴" }
+```
 
 ## Architecture
 
@@ -109,7 +287,7 @@ Each tool has its own script in `scripts/`:
   * Environment and permission checks
 
 **Main Installation Script (`scripts/install-all-tools.sh`)**:
-- Orchestrates tool installation in optimal dependency order for all 30 tools
+- Orchestrates tool installation in optimal dependency order for all 31 tools
 - Supports three build types: minimal, standard, maximum (configurable via ~/.gearboxrc)
 - Handles common dependency installation via `install-common-deps.sh`
 - Installation order optimized for shared toolchains: Go tools → Rust tools → C/C++ tools
@@ -127,7 +305,7 @@ Each tool has its own script in `scripts/`:
 - Safe command execution (no eval usage, array-based commands)
 - Root prevention checks for security
 
-### Available Tools (30 total)
+### Available Tools (31 total)
 
 **Core Development Tools:**
 - **fd** - Fast file finder (Rust) - build flags: -m minimal, -r release
@@ -148,7 +326,7 @@ Each tool has its own script in `scripts/`:
 - **uv** - Python package manager (Rust)
 - **ruff** - Python linter & formatter (Rust)
 - **starship** - Customizable shell prompt (Rust)
-- **nerd-fonts** - Patched fonts with icons and glyphs for developers (C)
+- **nerd-fonts** - Patched fonts with icons and glyphs for developers (C) - advanced UX features
 - **delta** - Syntax-highlighting pager (Rust)
 - **lazygit** - Terminal UI for Git (Go)
 - **gh** - GitHub CLI (Go)
@@ -285,6 +463,121 @@ Script generation via Go templates (`templates/`):
 - **Template variables**: Tool name, repository, build types, dependencies, shell integration
 - **Generated scripts**: Follow same patterns as hand-written scripts, use `lib/common.sh`
 - **Validation**: Template output validated by test framework
+
+### Advanced Tool Patterns
+
+The nerd-fonts implementation showcases advanced architectural patterns for complex tools:
+
+#### Sophisticated UX Architecture
+- **Multi-Modal Interface**: Supports CLI args, interactive selection, and preview modes
+- **Rich Preview System**: Real character samples with categorized symbol display
+- **Cross-Tool Intelligence**: Bi-directional relationship awareness (starship ↔ nerd-fonts)
+- **Contextual Suggestions**: Bundle recommendations based on installation patterns
+
+#### Font Management Architecture
+```bash
+# Font collection management via associative arrays
+declare -A MINIMAL_FONTS=( [FiraCode]="..." [JetBrainsMono]="..." )
+declare -A STANDARD_FONTS=( ... )  # Inherits + extends minimal
+declare -A MAXIMUM_FONTS=( ... )   # Inherits + extends standard
+
+# Dynamic font collection resolution
+get_font_collection "$BUILD_TYPE" selected_fonts
+```
+
+#### Interactive System Architecture
+```bash
+# Navigation state management
+current_index=0
+font_selected["FontName"]=true/false
+
+# Live preview integration
+case "$key" in
+    'p'|'P') show_font_preview "${fonts_array[$current_index]}" ;;
+    $'\x1b') handle_arrow_keys ;;  # ESC sequences for ↑/↓
+    ' ')     toggle_font_selection ;;
+    '')      confirm_selection ;;
+esac
+```
+
+#### Health Check Integration
+```go
+// Orchestrator integration for advanced diagnostics
+func (o *Orchestrator) runNerdFontsDoctor() error {
+    // Multi-faceted health assessment
+    fontStatus := isNerdFontsInstalled()
+    cacheHealth, issues := checkFontcacheHealth()
+    terminalSupport := checkTerminalSupport()
+    vscodeConfigured, fontFamily := checkVSCodeFontConfig()
+    
+    // Cross-tool relationship analysis
+    if isStarshipInstalled() && !fontStatus {
+        recommendations = append(recommendations, starshipNeedsFontsMessage)
+    }
+    
+    return formatHealthReport(status, issues, recommendations)
+}
+```
+
+#### Dependency Intelligence System
+```go
+// Cross-tool relationship mapping
+func (o *Orchestrator) suggestRelatedTools(tools []ToolConfig) {
+    relationships := map[string][]string{
+        "starship":    {"nerd-fonts"},     // Prompt needs icons
+        "nerd-fonts":  {"starship"},       // Fonts enhance prompts
+        "delta":       {"lazygit"},        // Git workflow bundle
+        "fzf":         {"bat", "eza"},     // Terminal enhancement bundle
+    }
+    
+    // Dynamic suggestion generation based on installation context
+    generateIntelligentSuggestions(tools, relationships)
+}
+```
+
+#### Application Configuration Architecture
+```bash
+# Multi-application auto-configuration
+configure_applications() {
+    # VS Code JSON manipulation with jq
+    jq '. + {"editor.fontFamily": "FiraCode Nerd Font"}' settings.json
+    
+    # Terminal-specific configuration detection and setup
+    configure_terminal_fonts()  # Handles Kitty, Alacritty, GNOME Terminal
+}
+
+# Dynamic terminal detection and configuration
+configure_terminal_fonts() {
+    case "$(detect_terminal)" in
+        kitty)     configure_kitty_font ;;
+        alacritty) configure_alacritty_font ;;
+        gnome)     suggest_gnome_configuration ;;
+    esac
+}
+```
+
+#### Status Display Architecture
+```go
+// Enhanced status reporting for complex tools
+func (o *Orchestrator) showNerdFontsDetailedStatus() {
+    status := getNerdFontsDetailedStatus()
+    
+    fmt.Printf("📋 Nerd Fonts Status\n")
+    fmt.Printf("Installed: %d fonts\n", status["installed_count"])
+    fmt.Printf("Disk Usage: %s\n", status["disk_usage"])
+    
+    // Individual font listing with metadata
+    for font, info := range status["fonts"].(map[string]interface{}) {
+        fmt.Printf("  ✅ %s (%s)\n", font, info["description"])
+    }
+}
+```
+
+This architecture enables:
+- **Professional UX**: Rich previews, intelligent suggestions, comprehensive diagnostics
+- **Cross-Tool Intelligence**: Relationship awareness between tools for optimal workflow
+- **Scalable Patterns**: Template for implementing advanced features in other tools
+- **Maintainable Code**: Clean separation between UI, business logic, and system integration
 
 ## Development Workflow
 
