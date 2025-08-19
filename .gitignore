@@ -3,6 +3,10 @@ build/
 cache/
 workspace/
 
+# Compiled binaries
+gearbox
+bin/
+
 # Temporary files
 *.tmp
 *.log
