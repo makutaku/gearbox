@@ -335,13 +335,32 @@ gearbox install nerd-fonts --interactive
 # Navigation: ↑/↓ arrows, SPACE to select, 'p' to preview, ENTER to confirm
 ```
 
-**Health Checks:**
+**Font Management:**
 ```bash
-# Check font installation status
+# View installed fonts by family
 gearbox status nerd-fonts
 
-# Comprehensive font diagnostics  
+# Basic health check with recommendations
 gearbox doctor nerd-fonts
+
+# Detailed diagnostics with verbose output
+gearbox doctor nerd-fonts --verbose
+
+# View all font variants (system command)
+fc-list | grep -i nerd
+```
+
+**Status Output Example:**
+```
+✅ Found 375 Nerd Fonts from 13 font families
+📁 Location: ~/.local/share/fonts (1.3 GB)
+
+📋 Font Families:
+ 1. CaskaydiaCove (36 variants)
+ 2. FiraCode (18 variants)  
+ 3. JetBrainsMono (48 variants)
+ 4. Iosevka (81 variants)
+ ...
 ```
 
 **Font Examples in Action:**
@@ -536,6 +555,27 @@ gearbox install --run-tests fd ripgrep fzf jq
 
 # Minimal for CI/containers
 gearbox install --minimal fd ripgrep
+```
+
+### Checking Installation Status
+
+Verify what's installed and monitor health:
+
+```bash
+# Check all tool installation status
+gearbox status
+
+# Check specific tools
+gearbox status fd ripgrep fzf
+
+# View installed Nerd Fonts by family
+gearbox status nerd-fonts
+
+# Health check with diagnostics
+gearbox doctor nerd-fonts
+
+# Detailed font analysis
+gearbox doctor nerd-fonts --verbose
 ```
 
 ### Media Processing Setup

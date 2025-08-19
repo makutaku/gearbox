@@ -16,17 +16,25 @@ import (
 // NewDoctorCmd creates the doctor command
 func NewDoctorCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "doctor",
+		Use:   "doctor [tool_name]",
 		Short: "Run health checks and diagnostics",
 		Long: `Run comprehensive health checks to validate the system state,
 tool installations, and configuration.
 
-This command checks:
+General health checks:
 - System requirements and dependencies
 - Tool installation status and integrity  
 - Configuration validity
 - Build environment setup
-- Network connectivity for downloads`,
+- Network connectivity for downloads
+
+Tool-specific diagnostics:
+- nerd-fonts: Font installation, cache status, and availability checks
+
+Examples:
+  gearbox doctor                    # General system health check
+  gearbox doctor nerd-fonts         # Nerd Fonts specific diagnostics
+  gearbox doctor nerd-fonts --verbose  # Detailed font analysis`,
 		RunE: runDoctor,
 	}
 
@@ -79,13 +87,19 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	
 	repoDir := filepath.Dir(execPath)
 	
-	// Try to use advanced orchestrator health checks if available
+	// Check if tool-specific diagnostics are requested
+	if len(args) > 0 {
+		toolName := args[0]
+		return runToolSpecificDoctor(repoDir, toolName, cmd)
+	}
+	
+	// Try to use advanced orchestrator health checks if available for general checks
 	orchestratorPath := filepath.Join(repoDir, "bin", "orchestrator")
 	if _, err := os.Stat(orchestratorPath); err == nil {
 		return runWithOrchestratorDoctor(orchestratorPath, cmd, args)
 	}
 
-	// Fallback to shell-based doctor if available
+	// Fallback to shell-based doctor if available for general checks
 	doctorScript := filepath.Join(repoDir, "lib", "doctor.sh")
 	if _, err := os.Stat(doctorScript); err == nil {
 		return runWithShellDoctor(repoDir, cmd, args)
@@ -117,6 +131,12 @@ func runWithOrchestratorDoctor(orchestratorPath string, cmd *cobra.Command, args
 }
 
 func runWithShellDoctor(repoDir string, cmd *cobra.Command, args []string) error {
+	// Check if tool-specific diagnostics are requested
+	if len(args) > 0 {
+		toolName := args[0]
+		return runToolSpecificDoctor(repoDir, toolName, cmd)
+	}
+	
 	// Source the doctor library and run checks
 	fmt.Println("Running shell-based health checks...")
 	
@@ -137,26 +157,10 @@ func runWithShellDoctor(repoDir string, cmd *cobra.Command, args []string) error
 }
 
 func runBasicHealthChecks() error {
-	fmt.Println("🏥 Gearbox Health Check")
-	fmt.Println("=====================")
-	fmt.Println()
-
-	// Basic system checks
-	fmt.Println("✅ Go runtime available")
-	
-	// Check for common tools
-	commonTools := []string{"git", "curl", "wget", "make", "gcc"}
-	for _, tool := range commonTools {
-		if _, err := exec.LookPath(tool); err == nil {
-			fmt.Printf("✅ %s available\n", tool)
-		} else {
-			fmt.Printf("❌ %s not found\n", tool)
-		}
-	}
-
-	fmt.Println()
-	fmt.Println("Note: For comprehensive health checks, please rebuild the project")
-	fmt.Println("to enable the advanced orchestrator and full diagnostic suite.")
+	fmt.Println("🔍 General Health Check")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println("For tool-specific diagnostics, specify a tool name.")
+	fmt.Println("Example: gearbox doctor nerd-fonts")
 
 	return nil
 }
@@ -393,4 +397,260 @@ func humanReadableSize(bytes int64) string {
 		exp++
 	}
 	return fmt.Sprintf("%.1f %cB", float64(bytes)/float64(div), "KMGTPE"[exp])
+}
+
+// runToolSpecificDoctor handles diagnostics for specific tools
+func runToolSpecificDoctor(repoDir, toolName string, cmd *cobra.Command) error {
+	switch toolName {
+	case "nerd-fonts":
+		return runNerdFontsDoctor(repoDir, cmd)
+	default:
+		return fmt.Errorf("tool-specific diagnostics not implemented for '%s'", toolName)
+	}
+}
+
+// runNerdFontsDoctor performs comprehensive nerd-fonts health checks
+func runNerdFontsDoctor(repoDir string, cmd *cobra.Command) error {
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	
+	fmt.Println("🎨 Nerd Fonts Health Check")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println()
+	
+	// Track overall health
+	var totalChecks, passedChecks, failedChecks, warningChecks int
+	
+	// 1. Check font installation status
+	fmt.Println("📍 Installation Status")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	installedFonts, err := getInstalledNerdFonts()
+	totalChecks++
+	if err != nil {
+		fmt.Printf("❌ Failed to check installed fonts: %v\n", err)
+		failedChecks++
+	} else if len(installedFonts) == 0 {
+		fmt.Printf("⚠️  No Nerd Fonts detected\n")
+		warningChecks++
+	} else {
+		fmt.Printf("✅ Found %d Nerd Fonts installed\n", len(installedFonts))
+		passedChecks++
+		
+		if verbose {
+			fmt.Println("\nInstalled fonts:")
+			for _, font := range installedFonts[:min(10, len(installedFonts))] {
+				fmt.Printf("  • %s\n", font)
+			}
+			if len(installedFonts) > 10 {
+				fmt.Printf("  ... and %d more\n", len(installedFonts)-10)
+			}
+		}
+	}
+	fmt.Println()
+	
+	// 2. Check font cache status
+	fmt.Println("🔄 Font Cache Status")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	totalChecks++
+	cacheValid := checkFontCache()
+	if cacheValid {
+		fmt.Println("✅ Font cache is up to date")
+		passedChecks++
+	} else {
+		fmt.Println("⚠️  Font cache may need refresh (run: fc-cache -fv)")
+		warningChecks++
+	}
+	fmt.Println()
+	
+	// 3. Check fonts directory
+	fmt.Println("📁 Fonts Directory")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	fontsDir := filepath.Join(os.Getenv("HOME"), ".local", "share", "fonts")
+	totalChecks++
+	if stat, err := os.Stat(fontsDir); err != nil {
+		fmt.Printf("❌ Fonts directory not found: %s\n", fontsDir)
+		failedChecks++
+	} else if !stat.IsDir() {
+		fmt.Printf("❌ Fonts path is not a directory: %s\n", fontsDir)
+		failedChecks++
+	} else {
+		fmt.Printf("✅ Fonts directory exists: %s\n", fontsDir)
+		passedChecks++
+		
+		if verbose {
+			// Show directory size and file count
+			if size := getDirSize(fontsDir); size > 0 {
+				fmt.Printf("   Size: %s\n", humanReadableSize(size))
+			}
+			if count := countFontFiles(fontsDir); count > 0 {
+				fmt.Printf("   Font files: %d\n", count)
+			}
+		}
+	}
+	fmt.Println()
+	
+	// 4. Check application support
+	fmt.Println("🖥️  Application Support")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	apps := []string{"code", "gnome-terminal", "konsole", "alacritty", "kitty"}
+	for _, app := range apps {
+		totalChecks++
+		if _, err := exec.LookPath(app); err == nil {
+			fmt.Printf("✅ %s available\n", app)
+			passedChecks++
+		} else {
+			fmt.Printf("ℹ️  %s not installed\n", app)
+			// Don't count as failure since these are optional
+		}
+	}
+	fmt.Println()
+	
+	// 5. Check popular font availability
+	fmt.Println("🔍 Font Availability Check")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	popularFonts := []string{"FiraCode", "JetBrains", "Hack", "SauceCodePro", "CaskaydiaCove"}
+	for _, font := range popularFonts {
+		totalChecks++
+		if checkFontAvailable(font) {
+			fmt.Printf("✅ %s Nerd Font available\n", font)
+			passedChecks++
+		} else {
+			fmt.Printf("❌ %s Nerd Font not found\n", font)
+			failedChecks++
+		}
+	}
+	fmt.Println()
+	
+	// 6. Check installation script
+	fmt.Println("🛠️  Installation Script")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	scriptPath := filepath.Join(repoDir, "scripts", "install-nerd-fonts.sh")
+	totalChecks++
+	if stat, err := os.Stat(scriptPath); err != nil {
+		fmt.Printf("❌ Installation script not found: %s\n", scriptPath)
+		failedChecks++
+	} else if stat.Mode()&0111 == 0 {
+		fmt.Printf("⚠️  Installation script not executable: %s\n", scriptPath)
+		warningChecks++
+	} else {
+		fmt.Printf("✅ Installation script ready: %s\n", scriptPath)
+		passedChecks++
+		
+		if verbose {
+			fmt.Printf("   Modified: %s\n", stat.ModTime().Format("2006-01-02 15:04:05"))
+			fmt.Printf("   Size: %s\n", humanReadableSize(stat.Size()))
+		}
+	}
+	fmt.Println()
+	
+	// Summary
+	fmt.Println("📊 Health Check Summary")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Printf("Total checks: %d\n", totalChecks)
+	fmt.Printf("✅ Passed: %d\n", passedChecks)
+	if warningChecks > 0 {
+		fmt.Printf("⚠️  Warnings: %d\n", warningChecks)
+	}
+	if failedChecks > 0 {
+		fmt.Printf("❌ Failed: %d\n", failedChecks)
+	}
+	
+	fmt.Println()
+	
+	// Overall status
+	if failedChecks > 0 {
+		fmt.Println("🔴 Nerd Fonts health: CRITICAL - Issues detected")
+		fmt.Println("   Recommendation: Run 'gearbox install nerd-fonts' to fix installation")
+	} else if warningChecks > 0 {
+		fmt.Println("🟡 Nerd Fonts health: GOOD - Minor issues detected")
+		fmt.Println("   Recommendation: Consider refreshing font cache with 'fc-cache -fv'")
+	} else {
+		fmt.Println("🟢 Nerd Fonts health: EXCELLENT - All checks passed")
+	}
+	
+	return nil
+}
+
+// Helper functions for nerd-fonts diagnostics
+
+func getInstalledNerdFonts() ([]string, error) {
+	cmd := exec.Command("fc-list")
+	output, err := cmd.Output()
+	if err != nil {
+		return nil, err
+	}
+	
+	var fonts []string
+	lines := strings.Split(string(output), "\n")
+	for _, line := range lines {
+		if strings.Contains(strings.ToLower(line), "nerd") {
+			// Extract font name from fc-list output
+			parts := strings.Split(line, ":")
+			if len(parts) >= 2 {
+				fontName := strings.TrimSpace(parts[1])
+				if fontName != "" {
+					fonts = append(fonts, fontName)
+				}
+			}
+		}
+	}
+	
+	return fonts, nil
+}
+
+func checkFontCache() bool {
+	// Check if fc-cache is available and working
+	cmd := exec.Command("fc-cache", "--version")
+	return cmd.Run() == nil
+}
+
+func checkFontAvailable(fontName string) bool {
+	cmd := exec.Command("fc-list")
+	output, err := cmd.Output()
+	if err != nil {
+		return false
+	}
+	
+	outputLower := strings.ToLower(string(output))
+	fontLower := strings.ToLower(fontName)
+	
+	return strings.Contains(outputLower, fontLower) && strings.Contains(outputLower, "nerd")
+}
+
+func getDirSize(dirPath string) int64 {
+	cmd := exec.Command("du", "-sb", dirPath)
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	
+	var size int64
+	fmt.Sscanf(string(output), "%d", &size)
+	return size
+}
+
+func countFontFiles(dirPath string) int {
+	cmd := exec.Command("find", dirPath, "-name", "*.ttf", "-o", "-name", "*.otf")
+	output, err := cmd.Output()
+	if err != nil {
+		return 0
+	}
+	
+	lines := strings.Split(strings.TrimSpace(string(output)), "\n")
+	if len(lines) == 1 && lines[0] == "" {
+		return 0
+	}
+	return len(lines)
+}
+
+func min(a, b int) int {
+	if a < b {
+		return a
+	}
+	return b
 }
