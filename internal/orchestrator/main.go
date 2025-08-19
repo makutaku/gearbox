@@ -78,6 +78,8 @@ type InstallationResult struct {
 // Orchestrator manages the installation process
 type Orchestrator struct {
 	config        Config
+	bundleConfig  *BundleConfiguration
+	packageMgr    *PackageManager
 	options       InstallationOptions
 	repoDir       string
 	scriptsDir    string
@@ -105,6 +107,7 @@ func Main() {
 	// Add commands
 	rootCmd.AddCommand(installCmd())
 	rootCmd.AddCommand(listCmd())
+	rootCmd.AddCommand(showCmd())
 	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(verifyCmd())
 	rootCmd.AddCommand(doctorCmd())
@@ -173,12 +176,21 @@ func listCmd() *cobra.Command {
 	var verbose bool
 
 	cmd := &cobra.Command{
-		Use:   "list",
-		Short: "List available tools",
+		Use:   "list [bundles]",
+		Short: "List available tools or bundles",
+		Long: `List available tools or bundles.
+		
+Without arguments, lists all available tools.
+Use 'list bundles' to list all available bundles.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			orchestrator, err := NewOrchestrator(InstallationOptions{})
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
+			}
+			
+			// Check if user wants to list bundles
+			if len(args) > 0 && args[0] == "bundles" {
+				return orchestrator.ListBundles(verbose)
 			}
 
 			return orchestrator.ListTools(category, verbose)
@@ -187,6 +199,29 @@ func listCmd() *cobra.Command {
 
 	cmd.Flags().StringVar(&category, "category", "", "Filter by category")
 	cmd.Flags().BoolVarP(&verbose, "verbose", "v", false, "Show detailed information")
+	return cmd
+}
+
+// showCmd creates the show command
+func showCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "show bundle <name>",
+		Short: "Show details about a bundle",
+		Args:  cobra.ExactArgs(2),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if args[0] != "bundle" {
+				return fmt.Errorf("only 'show bundle' is supported")
+			}
+			
+			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			if err != nil {
+				return fmt.Errorf("failed to initialize orchestrator: %w", err)
+			}
+			
+			return orchestrator.ShowBundle(args[1])
+		},
+	}
+	
 	return cmd
 }
 
@@ -294,6 +329,27 @@ func NewOrchestrator(options InstallationOptions) (*Orchestrator, error) {
 		},
 	}
 	
+	// Load bundle configuration
+	bundleConfig, err := orchestrator.loadBundles()
+	if err != nil {
+		// Bundles are optional, so just log warning
+		if options.Verbose {
+			fmt.Printf("⚠️  Warning: Failed to load bundles: %v\n", err)
+		}
+		bundleConfig = &BundleConfiguration{
+			SchemaVersion: "1.0",
+			Bundles:       []BundleConfig{},
+		}
+	}
+	orchestrator.bundleConfig = bundleConfig
+	
+	// Detect package manager (optional, for system package support)
+	packageMgr, err := detectPackageManager()
+	if err != nil && options.Verbose {
+		fmt.Printf("⚠️  System package manager not detected: %v\n", err)
+	}
+	orchestrator.packageMgr = packageMgr
+	
 	return orchestrator, nil
 }
 
@@ -371,11 +427,60 @@ func loadConfigStreaming(data []byte) (Config, error) {
 
 // InstallTools orchestrates the installation of specified tools
 func (o *Orchestrator) InstallTools(toolNames []string) error {
-	fmt.Printf("🔧 Gearbox Orchestrator - Installing %d tools\n\n", len(toolNames))
+	// Track which tools come from which bundles for progress display
+	bundleToolMap := make(map[string][]string)
+	var directTools []string
+	
+	// First, expand any bundles and track their tools
+	for _, name := range toolNames {
+		if o.isBundle(name, o.bundleConfig.Bundles) {
+			visited := make(map[string]bool)
+			expandedTools, err := o.expandBundle(name, o.bundleConfig.Bundles, visited)
+			if err != nil {
+				return fmt.Errorf("failed to expand bundle %s: %w", name, err)
+			}
+			bundleToolMap[name] = expandedTools
+		} else {
+			directTools = append(directTools, name)
+		}
+	}
+	
+	// Get all unique tools
+	expandedToolNames, err := o.expandBundlesAndTools(toolNames)
+	if err != nil {
+		return fmt.Errorf("failed to expand bundles: %w", err)
+	}
+	
+	// Show installation header with bundle context
+	if len(bundleToolMap) > 0 {
+		fmt.Printf("🔧 Gearbox Orchestrator - Installing %d tools", len(expandedToolNames))
+		if len(bundleToolMap) == 1 {
+			for bundleName := range bundleToolMap {
+				fmt.Printf(" (bundle: %s)", bundleName)
+			}
+		} else {
+			fmt.Printf(" (from %d bundles)", len(bundleToolMap))
+		}
+		if len(directTools) > 0 {
+			fmt.Printf(" + %d direct tools", len(directTools))
+		}
+		fmt.Printf("\n\n")
+		
+		// Show bundle breakdown
+		for bundleName, tools := range bundleToolMap {
+			fmt.Printf("📦 Bundle '%s': %d tools\n", bundleName, len(tools))
+		}
+		if len(directTools) > 0 {
+			fmt.Printf("🔧 Direct tools: %d\n", len(directTools))
+		}
+		fmt.Printf("\n")
+	} else {
+		fmt.Printf("🔧 Gearbox Orchestrator - Installing %d tools\n\n", len(expandedToolNames))
+	}
 
 	// Validate tool names
 	var validTools []ToolConfig
-	for _, name := range toolNames {
+	for _, name := range expandedToolNames {
 		tool, found := o.findTool(name)
 		if !found {
 			return fmt.Errorf("tool not found: %s", name)
@@ -400,11 +505,16 @@ func (o *Orchestrator) InstallTools(toolNames []string) error {
 	}
 
 	if o.options.DryRun {
-		return o.showDryRun(installOrder)
+		return o.showDryRun(installOrder, toolNames)
 	}
 
 	// Show installation plan
 	o.showInstallationPlan(installOrder)
+
+	// Install system packages first (if any)
+	if err := o.installSystemPackagesFromBundles(toolNames); err != nil {
+		return fmt.Errorf("failed to install system packages: %w", err)
+	}
 
 	// Install common dependencies first (unless skipped)
 	if !o.options.SkipCommonDeps {
@@ -436,6 +546,49 @@ func (o *Orchestrator) InstallTools(toolNames []string) error {
 
 	// Show results
 	return o.showResults()
+}
+
+// installSystemPackagesFromBundles installs system packages for any bundles in the tool list
+func (o *Orchestrator) installSystemPackagesFromBundles(toolNames []string) error {
+	if o.packageMgr == nil {
+		return nil // No package manager available, skip system packages
+	}
+	
+	var allSystemPackages []string
+	
+	// Check each tool name to see if it's a bundle with system packages
+	for _, name := range toolNames {
+		if o.isBundle(name, o.bundleConfig.Bundles) {
+			visited := make(map[string]bool)
+			packages, err := o.expandSystemPackages(name, o.bundleConfig.Bundles, visited, o.packageMgr.Name)
+			if err != nil {
+				return fmt.Errorf("failed to expand system packages from bundle %s: %w", name, err)
+			}
+			allSystemPackages = append(allSystemPackages, packages...)
+		}
+	}
+	
+	if len(allSystemPackages) == 0 {
+		return nil // No system packages to install
+	}
+	
+	// Remove duplicates
+	seen := make(map[string]bool)
+	var uniquePackages []string
+	for _, pkg := range allSystemPackages {
+		if !seen[pkg] {
+			seen[pkg] = true
+			uniquePackages = append(uniquePackages, pkg)
+		}
+	}
+	
+	if o.options.DryRun {
+		fmt.Printf("📦 System packages that would be installed (%s): %s\n\n", o.packageMgr.Name, strings.Join(uniquePackages, ", "))
+		return nil
+	}
+	
+	// Install system packages
+	return o.packageMgr.installPackages(uniquePackages, o.options.DryRun)
 }
 
 // findTool finds a tool by name in the configuration
@@ -491,13 +644,17 @@ func (o *Orchestrator) resolveDependencies(tools []ToolConfig) ([]ToolConfig, er
 }
 
 // showDryRun displays what would be installed without executing
-func (o *Orchestrator) showDryRun(tools []ToolConfig) error {
+func (o *Orchestrator) showDryRun(tools []ToolConfig, originalToolNames []string) error {
 	fmt.Printf("🔍 Dry Run - Installation Plan\n\n")
 	fmt.Printf("Build Type: %s\n", o.options.BuildType)
 	fmt.Printf("Max Parallel Jobs: %d\n", o.options.MaxParallelJobs)
 	fmt.Printf("Skip Common Deps: %v\n", o.options.SkipCommonDeps)
 	fmt.Printf("Run Tests: %v\n", o.options.RunTests)
 	fmt.Printf("Shell Integration: %v\n", !o.options.NoShell)
+	
+	// Show system packages if any
+	o.showSystemPackagesPlan(originalToolNames)
+	
 	fmt.Printf("\nInstallation Order:\n")
 
 	for i, tool := range tools {
@@ -511,6 +668,43 @@ func (o *Orchestrator) showDryRun(tools []ToolConfig) error {
 
 	fmt.Printf("\nTotal tools to install: %d\n", len(tools))
 	return nil
+}
+
+// showSystemPackagesPlan displays system packages that would be installed in dry-run mode
+func (o *Orchestrator) showSystemPackagesPlan(toolNames []string) {
+	if o.packageMgr == nil {
+		return
+	}
+	
+	var allSystemPackages []string
+	
+	// Check each tool name to see if it's a bundle with system packages
+	for _, name := range toolNames {
+		if o.isBundle(name, o.bundleConfig.Bundles) {
+			visited := make(map[string]bool)
+			packages, err := o.expandSystemPackages(name, o.bundleConfig.Bundles, visited, o.packageMgr.Name)
+			if err == nil {
+				allSystemPackages = append(allSystemPackages, packages...)
+			}
+		}
+	}
+	
+	if len(allSystemPackages) > 0 {
+		// Remove duplicates
+		seen := make(map[string]bool)
+		var uniquePackages []string
+		for _, pkg := range allSystemPackages {
+			if !seen[pkg] {
+				seen[pkg] = true
+				uniquePackages = append(uniquePackages, pkg)
+			}
+		}
+		
+		fmt.Printf("\nSystem packages that would be installed (%s):\n", o.packageMgr.Name)
+		for _, pkg := range uniquePackages {
+			fmt.Printf("  - %s\n", pkg)
+		}
+	}
 }
 
 // showInstallationPlan displays the installation plan

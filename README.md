@@ -1,11 +1,12 @@
 # Essential Tools Installer
 
-Automated installation scripts for essential command-line tools on Debian Linux. Build from source with optimized configurations and proper dependency management.
+Automated installation scripts for essential command-line tools on Debian Linux. Build from source with optimized configurations, proper dependency management, and convenient tool bundles for quick setup.
 
 ## Why This Project?
 
 - **Source builds** with optimized configurations for best performance
 - **Smart dependency management** - install once, share across tools
+- **Tool bundles** - curated collections for different workflows (developer, data-science, etc.)
 - **Multiple build types** - minimal, standard, or maximum feature sets
 - **Battle-tested** - idempotent, safe, non-root installations
 
@@ -47,6 +48,54 @@ gearbox install
 
 # Fast builds for quick setup
 gearbox install --minimal fd ripgrep
+
+### 📦 Tool Bundles
+
+Install curated collections of tools with a single command:
+
+```bash
+# Install essential tools bundle (core terminal productivity tools)
+gearbox install --bundle essential
+
+# Install complete developer toolkit (includes essential + git tools, fonts)
+gearbox install --bundle developer
+
+# Install data science tools (jq, xsv, choose, hyperfine, serena, uv, ruff)
+gearbox install --bundle data-science
+
+# Install web development environment (includes nginx, nodejs via apt)
+gearbox install --bundle web-dev
+
+# Install Docker development setup (includes docker, docker-compose)
+gearbox install --bundle docker-dev
+
+# Install network administration toolkit (nmap, tcpdump, wireshark + monitoring tools)  
+gearbox install --bundle netadmin
+
+# List all available bundles
+gearbox list bundles
+
+# Show what's in a bundle (including system packages)
+gearbox show bundle web-dev
+```
+
+**Available Bundles:**
+- `minimal` - Bare essentials (fd, ripgrep, fzf)
+- `essential` - Modern terminal essentials everyone should have
+- `developer` - Professional dev environment with beautiful terminal
+- `web-dev` - **NEW!** Web development (nginx, nodejs, npm + gearbox tools)
+- `docker-dev` - **NEW!** Docker development (docker, docker-compose + git tools)
+- `database-admin` - **NEW!** Database tools (postgresql, mysql, redis clients)
+- `netadmin` - **NEW!** Network administration and monitoring toolkit
+- `rust-dev` - All Rust-based tools
+- `data-science` - Data analysis and Python tools
+- `system-admin` - System monitoring tools
+- `terminal-enhancement` - Better terminal experience
+- `git-workflow` - Git productivity tools
+- `quickstart` - Recommended starter bundle
+
+**🆕 System Package Support:**
+Bundles can now include system packages (installed via apt, yum, dnf) alongside gearbox tools. Perfect for complete development environments!
 
 # Check system health and disk usage
 gearbox doctor

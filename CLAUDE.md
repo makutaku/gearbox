@@ -16,6 +16,17 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install nerd-fonts` - Install standard font collection (8 fonts) with cross-tool suggestions
 - `gearbox install nerd-fonts --fonts="FiraCode"` - Install specific font via CLI
 - `gearbox install nerd-fonts --interactive` - Interactive font selection with previews
+
+### Bundle Installation (NEW!)
+- `gearbox install --bundle essential` - Install curated bundle of essential tools
+- `gearbox install --bundle developer` - Complete development environment
+- `gearbox install --bundle web-dev` - Web development (nginx, nodejs + tools)  
+- `gearbox install --bundle docker-dev` - Docker development environment
+- `gearbox install --bundle netadmin` - Network administration and monitoring toolkit
+- `gearbox list bundles` - Show available bundles with descriptions
+- `gearbox show bundle web-dev` - Show bundle contents including system packages
+
+### General Commands  
 - `gearbox list` - Show available tools with descriptions
 - `gearbox help` - Show detailed help and usage information
 

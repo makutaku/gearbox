@@ -23,6 +23,8 @@ If no tools are specified, you will be prompted to install all available tools.
 The orchestrator provides parallel installation, dependency resolution, and 
 comprehensive progress tracking.`,
 		Example: `  gearbox install fd ripgrep fzf             # Install specific tools
+  gearbox install --bundle essential         # Install essential bundle
+  gearbox install --bundle developer         # Install developer bundle
   gearbox install --minimal fd               # Fast installation
   gearbox install --maximum ffmpeg           # Full-featured build
   gearbox install nerd-fonts --fonts="FiraCode"    # Install specific font
@@ -52,6 +54,9 @@ comprehensive progress tracking.`,
 	cmd.Flags().Bool("interactive", false, "Interactive font selection with previews")
 	cmd.Flags().Bool("preview", false, "Show font previews before installation")
 	cmd.Flags().Bool("configure-apps", false, "Automatically configure VS Code, terminals, etc.")
+	
+	// Bundle options
+	cmd.Flags().String("bundle", "", "Install a predefined bundle (e.g. 'essential', 'developer', 'data-science')")
 
 	return cmd
 }
@@ -59,6 +64,12 @@ comprehensive progress tracking.`,
 func runInstall(cmd *cobra.Command, args []string) error {
 	start := time.Now()
 	log := logger.GetGlobalLogger().Operation("install")
+	
+	// Handle bundle flag
+	if bundleName, _ := cmd.Flags().GetString("bundle"); bundleName != "" {
+		// Add bundle to args list
+		args = append(args, bundleName)
+	}
 	
 	// Debug: Show detailed argument parsing info
 	fmt.Printf("🔍 CLI Debug - Raw args from Cobra: %v\n", args)

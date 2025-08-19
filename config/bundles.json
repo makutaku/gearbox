@@ -1,0 +1,172 @@
+{
+  "schema_version": "1.0",
+  "bundles": [
+    {
+      "name": "minimal",
+      "description": "Bare minimum essentials for productivity",
+      "category": "core",
+      "tools": ["fd", "ripgrep", "fzf"],
+      "tags": ["essential", "search", "productivity"]
+    },
+    {
+      "name": "essential",
+      "description": "Modern terminal essentials that everyone should have",
+      "category": "core",
+      "tools": ["fd", "ripgrep", "fzf", "bat", "eza", "jq", "zoxide"],
+      "tags": ["essential", "terminal", "productivity", "search", "navigation"]
+    },
+    {
+      "name": "developer",
+      "description": "Professional development environment with beautiful terminal and git workflow",
+      "category": "development",
+      "tools": ["starship", "nerd-fonts", "delta", "lazygit", "gh", "tokei", "sd", "tealdeer", "hyperfine"],
+      "system_packages": ["git", "curl", "wget", "tree"],
+      "package_managers": {
+        "apt": ["git", "curl", "wget", "tree"],
+        "yum": ["git", "curl", "wget", "tree"],
+        "dnf": ["git", "curl", "wget", "tree"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["development", "git", "terminal", "fonts", "productivity", "professional"]
+    },
+    {
+      "name": "rust-dev",
+      "description": "Rust developer toolkit with all Rust-based tools",
+      "category": "development",
+      "tools": ["bottom", "procs", "dust", "bandwhich", "hyperfine", "tealdeer", "difftastic", "fclones"],
+      "includes_bundles": ["developer"],
+      "tags": ["rust", "development", "performance"]
+    },
+    {
+      "name": "data-science",
+      "description": "Tools for data analysis and processing",
+      "category": "data",
+      "tools": ["jq", "xsv", "choose", "hyperfine", "serena", "uv", "ruff"],
+      "tags": ["data", "analysis", "python", "csv", "json"]
+    },
+    {
+      "name": "system-admin",
+      "description": "System monitoring and administration tools",
+      "category": "system",
+      "tools": ["bottom", "procs", "bandwhich", "dust", "sd", "tealdeer"],
+      "includes_bundles": ["minimal"],
+      "tags": ["system", "monitoring", "admin", "network"]
+    },
+    {
+      "name": "media",
+      "description": "Media processing and manipulation tools",
+      "category": "media",
+      "tools": ["ffmpeg", "imagemagick", "7zip"],
+      "tags": ["media", "video", "audio", "image", "compression"]
+    },
+    {
+      "name": "terminal-enhancement",
+      "description": "Tools to enhance terminal experience",
+      "category": "terminal",
+      "tools": ["bat", "eza", "delta", "starship", "nerd-fonts", "zoxide", "fzf"],
+      "tags": ["terminal", "ux", "productivity"]
+    },
+    {
+      "name": "file-management",
+      "description": "Advanced file management and navigation",
+      "category": "files",
+      "tools": ["fd", "ripgrep", "fzf", "yazi", "zoxide", "fclones", "dust"],
+      "tags": ["files", "search", "navigation", "duplicate"]
+    },
+    {
+      "name": "text-processing",
+      "description": "Text and data processing utilities",
+      "category": "text",
+      "tools": ["sd", "xsv", "choose", "jq", "bat", "delta"],
+      "tags": ["text", "regex", "csv", "json", "diff"]
+    },
+    {
+      "name": "git-workflow",
+      "description": "Complete git workflow enhancement",
+      "category": "git",
+      "tools": ["delta", "lazygit", "gh", "difftastic"],
+      "includes_bundles": ["minimal"],
+      "tags": ["git", "github", "diff", "workflow"]
+    },
+    {
+      "name": "python-dev",
+      "description": "Python development environment",
+      "category": "development",
+      "tools": ["serena", "uv", "ruff"],
+      "includes_bundles": ["essential"],
+      "tags": ["python", "development", "linting", "packaging"]
+    },
+    {
+      "name": "quickstart",
+      "description": "Recommended quickstart for new users",
+      "category": "core",
+      "tools": ["starship", "nerd-fonts"],
+      "includes_bundles": ["essential"],
+      "tags": ["quickstart", "recommended", "beginner"]
+    },
+    {
+      "name": "web-dev",
+      "description": "Complete web development environment",
+      "category": "development", 
+      "tools": ["serena", "uv", "ruff"],
+      "system_packages": ["nginx", "nodejs", "npm"],
+      "package_managers": {
+        "apt": ["nginx", "nodejs", "npm"],
+        "yum": ["nginx", "nodejs", "npm"],
+        "dnf": ["nginx", "nodejs", "npm"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["web", "development", "nginx", "nodejs"]
+    },
+    {
+      "name": "docker-dev",
+      "description": "Docker development environment",
+      "category": "development",
+      "tools": ["lazygit", "gh"],
+      "system_packages": ["docker.io", "docker-compose"],
+      "package_managers": {
+        "apt": ["docker.io", "docker-compose"],
+        "yum": ["docker", "docker-compose"],
+        "dnf": ["docker", "docker-compose"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["docker", "containers", "development"]
+    },
+    {
+      "name": "database-admin",
+      "description": "Database administration tools",
+      "category": "system",
+      "tools": ["jq", "xsv"],
+      "system_packages": ["postgresql-client", "mysql-client", "redis-tools"],
+      "package_managers": {
+        "apt": ["postgresql-client", "mysql-client", "redis-tools"],
+        "yum": ["postgresql", "mysql", "redis"],
+        "dnf": ["postgresql", "mysql", "redis"]
+      },
+      "includes_bundles": ["minimal"],
+      "tags": ["database", "admin", "postgresql", "mysql", "redis"]
+    },
+    {
+      "name": "netadmin",
+      "description": "Network administration and monitoring toolkit",
+      "category": "network",
+      "tools": ["bandwhich", "bottom", "procs", "dust", "jq", "xsv", "hyperfine"],
+      "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
+      "package_managers": {
+        "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
+        "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
+        "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["network", "admin", "monitoring", "security", "diagnostics", "performance"]
+    },
+    {
+      "name": "all",
+      "description": "Install all available tools",
+      "category": "complete",
+      "tools": [],
+      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin"],
+      "tags": ["complete", "all"]
+    }
+  ]
+}

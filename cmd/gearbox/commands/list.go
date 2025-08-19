@@ -12,15 +12,19 @@ import (
 // NewListCmd creates the list command
 func NewListCmd() *cobra.Command {
 	cmd := &cobra.Command{
-		Use:     "list",
+		Use:     "list [bundles]",
 		Aliases: []string{"ls"},
-		Short:   "Show available tools with descriptions",
-		Long: `Display a comprehensive list of all available development tools.
+		Short:   "Show available tools or bundles with descriptions",
+		Long: `Display a comprehensive list of all available development tools or bundles.
+
+Usage:
+  gearbox list              # List all available tools
+  gearbox list bundles      # List all available bundles
 
 The list includes:
-- Tool names and categories
-- Brief descriptions of each tool
-- Language/technology used
+- Tool/bundle names and categories
+- Brief descriptions
+- Language/technology used (for tools)
 - Installation status (if orchestrator is available)`,
 		RunE: runList,
 	}
@@ -28,6 +32,7 @@ The list includes:
 	cmd.Flags().BoolP("installed", "i", false, "Show only installed tools")
 	cmd.Flags().BoolP("available", "a", false, "Show only available (not installed) tools")
 	cmd.Flags().StringP("category", "c", "", "Filter by category (core, navigation, media, etc.)")
+	cmd.Flags().BoolP("verbose", "v", false, "Show detailed information")
 
 	return cmd
 }
@@ -45,7 +50,14 @@ func runList(cmd *cobra.Command, args []string) error {
 	// Check if the advanced orchestrator is available
 	if _, err := os.Stat(orchestratorPath); err == nil {
 		// Use the orchestrator for enhanced listing
-		orchestratorCmd := exec.Command(orchestratorPath, "list")
+		cmdArgs := []string{"list"}
+		
+		// Pass through arguments (e.g., "bundles")
+		if len(args) > 0 {
+			cmdArgs = append(cmdArgs, args...)
+		}
+		
+		orchestratorCmd := exec.Command(orchestratorPath, cmdArgs...)
 		
 		// Pass through any flags
 		if installed, _ := cmd.Flags().GetBool("installed"); installed {
@@ -56,6 +68,9 @@ func runList(cmd *cobra.Command, args []string) error {
 		}
 		if category, _ := cmd.Flags().GetString("category"); category != "" {
 			orchestratorCmd.Args = append(orchestratorCmd.Args, "--category", category)
+		}
+		if verbose, _ := cmd.Flags().GetBool("verbose"); verbose {
+			orchestratorCmd.Args = append(orchestratorCmd.Args, "--verbose")
 		}
 
 		orchestratorCmd.Stdout = os.Stdout
