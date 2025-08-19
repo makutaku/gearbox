@@ -256,12 +256,15 @@ parse_specific_fonts() {
 
 # Interactive font selection
 interactive_font_selection() {
-    echo
-    log "🎨 Interactive Font Selection"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo
-    echo "Select fonts to install (press ENTER to toggle, 'q' to quit selection):"
-    echo
+    # Redirect all output during selection to stderr to avoid contaminating the font list
+    {
+        echo
+        echo "🎨 Interactive Font Selection"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo
+        echo "Select fonts to install (press ENTER to toggle, 'q' to quit selection):"
+        echo
+    } >&2
     
     # Create arrays for fonts and their selection status
     local -a available_fonts=("${MAXIMUM_FONTS[@]}")
@@ -283,13 +286,15 @@ interactive_font_selection() {
     local total_fonts=${#available_fonts[@]}
     
     while true; do
-        # Clear screen and show header
-        clear
-        echo "🎨 Interactive Font Selection"
-        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-        echo
-        echo "Use ↑/↓ to navigate, SPACE to toggle, 'p' to preview, ENTER to confirm, 'q' to quit"
-        echo
+        # Clear screen and show header (redirect to stderr)
+        {
+            clear
+            echo "🎨 Interactive Font Selection"
+            echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+            echo
+            echo "Use ↑/↓ to navigate, SPACE to toggle, 'p' to preview, ENTER to confirm, 'q' to quit"
+            echo
+        } >&2
         
         # Calculate selected count and size
         local selected_count=0
@@ -301,27 +306,29 @@ interactive_font_selection() {
             fi
         done
         
-        echo "Selected: $selected_count fonts (~${estimated_size}MB)"
-        echo
-        
-        # Display font list
-        for ((i=0; i<total_fonts; i++)); do
-            local font="${available_fonts[i]}"
-            local prefix="   "
+        {
+            echo "Selected: $selected_count fonts (~${estimated_size}MB)"
+            echo
             
-            if [[ $i -eq $current_index ]]; then
-                prefix="→ "
-            fi
+            # Display font list
+            for ((i=0; i<total_fonts; i++)); do
+                local font="${available_fonts[i]}"
+                local prefix="   "
+                
+                if [[ $i -eq $current_index ]]; then
+                    prefix="→ "
+                fi
+                
+                if [[ "${font_selected[i]}" == true ]]; then
+                    echo -e "${prefix}✓ ${font}"
+                else
+                    echo -e "${prefix}◯ ${font}"
+                fi
+            done
             
-            if [[ "${font_selected[i]}" == true ]]; then
-                echo -e "${prefix}✓ ${font}"
-            else
-                echo -e "${prefix}◯ ${font}"
-            fi
-        done
-        
-        echo
-        echo "Controls: [↑/↓] Navigate  [SPACE] Toggle  [p] Preview  [ENTER] Confirm  [q] Quit"
+            echo
+            echo "Controls: [↑/↓] Navigate  [SPACE] Toggle  [p] Preview  [ENTER] Confirm  [q] Quit"
+        } >&2
         
         # Read user input
         read -rsn1 key
@@ -349,50 +356,49 @@ interactive_font_selection() {
                 ;;
             'p'|'P')  # Preview current font
                 local current_font="${available_fonts[current_index]}"
-                echo
-                log "🔍 Font Preview: $current_font"
-                echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-                
-                echo "${current_font} Nerd Font:"
-                echo "  Code: const fn = () => result !== null && value >= 0"
-                echo "  Icons:   󰈙  󰗀  󰅴  󰘳  󰊕  󰄛  󰊢"
-                echo "  Arrows: => -> <- ↗ ↙ ⟨ ⟩ ⮕"
-                
-                case "$current_font" in
-                    "FiraCode")
-                        echo "  Special: Programming ligatures and coding symbols"
-                        echo "  Perfect for: Code editors, terminals, IDEs"
-                        ;;
-                    "JetBrainsMono")
-                        echo "  Special: Clean lines, excellent readability"
-                        echo "  Perfect for: Long coding sessions, professional use"
-                        ;;
-                    "Hack")
-                        echo "  Special: Optimized for terminals"
-                        echo "  Perfect for: Command line work, system administration"
-                        ;;
-                    *)
-                        echo "  Description: Programming font with Nerd Font icons"
-                        ;;
-                esac
-                
-                echo
-                read -p "Press ENTER to return to selection menu..." -r
+                {
+                    echo
+                    echo "🔍 Font Preview: $current_font"
+                    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+                    
+                    echo "${current_font} Nerd Font:"
+                    echo "  Code: const fn = () => result !== null && value >= 0"
+                    echo "  Icons:   󰈙  󰗀  󰅴  󰘳  󰊕  󰄛  󰊢"
+                    echo "  Arrows: => -> <- ↗ ↙ ⟨ ⟩ ⮕"
+                    
+                    case "$current_font" in
+                        "FiraCode")
+                            echo "  Special: Programming ligatures and coding symbols"
+                            echo "  Perfect for: Code editors, terminals, IDEs"
+                            ;;
+                        "JetBrainsMono")
+                            echo "  Special: Clean lines, excellent readability"
+                            echo "  Perfect for: Long coding sessions, professional use"
+                            ;;
+                        "Hack")
+                            echo "  Special: Optimized for terminals"
+                            echo "  Perfect for: Command line work, system administration"
+                            ;;
+                        *)
+                            echo "  Description: Programming font with Nerd Font icons"
+                            ;;
+                    esac
+                    
+                    echo
+                    read -p "Press ENTER to return to selection menu..." -r
+                } >&2
                 ;;
             'q'|'Q')  # Quit
-                echo
-                warning "Font selection cancelled"
+                {
+                    echo
+                    echo "Font selection cancelled"
+                } >&2
                 exit 0
                 ;;
         esac
     done
     
-    # Output selected fonts
-    clear
-    echo "🎨 Font Selection Complete"
-    echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
-    echo
-    
+    # Output selected fonts (only font names to stdout, UI to stderr)
     local selected_fonts=()
     for ((i=0; i<total_fonts; i++)); do
         if [[ "${font_selected[i]}" == true ]]; then
@@ -400,12 +406,24 @@ interactive_font_selection() {
         fi
     done
     
+    {
+        clear
+        echo "🎨 Font Selection Complete"
+        echo "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━"
+        echo
+        
+        if [[ ${#selected_fonts[@]} -eq 0 ]]; then
+            echo "No fonts selected"
+        else
+            echo "Selected ${#selected_fonts[@]} fonts for installation"
+        fi
+    } >&2
+    
     if [[ ${#selected_fonts[@]} -eq 0 ]]; then
-        warning "No fonts selected"
         return 1
     fi
     
-    success "Selected ${#selected_fonts[@]} fonts for installation"
+    # Output only the font names to stdout (for consumption by readarray)
     printf '%s\n' "${selected_fonts[@]}"
 }
 
