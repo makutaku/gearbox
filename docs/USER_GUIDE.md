@@ -44,7 +44,7 @@ Install all tools with optimal dependency management:
 gearbox install
 ```
 
-This will show a confirmation prompt before installing all 30 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
+This will show a confirmation prompt before installing all 31 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
 
 ### Selective Installation
 
@@ -134,7 +134,7 @@ The installer manages these dependencies:
 
 ## Individual Tools
 
-The installer provides 30 essential tools organized by category. Here are the most commonly used tools with installation and usage examples:
+The installer provides 31 essential tools organized by category. Here are the most commonly used tools with installation and usage examples:
 
 ### Core Development Tools
 
@@ -280,6 +280,75 @@ eza -la                      # Long format with hidden files
 eza --tree                   # Tree view
 eza --git                    # Show Git status
 ```
+
+### Fonts & Terminal Enhancement
+
+#### nerd-fonts - Developer Fonts with Icons
+
+Patched fonts with programming ligatures, file icons, and Git symbols that enhance terminal and editor experience.
+
+```bash
+# Quick start - install essential fonts
+gearbox install nerd-fonts --minimal
+
+# Standard collection (recommended)
+gearbox install nerd-fonts
+
+# Complete collection with all fonts
+gearbox install nerd-fonts --maximum
+
+# Install specific fonts
+gearbox install nerd-fonts --fonts="FiraCode"
+gearbox install nerd-fonts --fonts="FiraCode,JetBrainsMono"
+
+# Interactive selection with previews
+gearbox install nerd-fonts --interactive
+
+# Install and auto-configure applications
+gearbox install nerd-fonts --configure-apps
+```
+
+**Font Collections:**
+- **Minimal** (3 fonts, ~30MB): FiraCode, JetBrains Mono, Hack
+- **Standard** (8 fonts, ~80MB): Adds Source Code Pro, Inconsolata, Cascadia Code, Ubuntu Mono, DejaVu Sans Mono  
+- **Maximum** (15+ fonts, ~200MB): Complete collection including Victor Mono, Menlo, Anonymous Pro, Space Mono, IBM Plex Mono, Roboto Mono, Terminus
+
+**Key Features:**
+- **Programming Ligatures**: Enhanced display of `=>`, `!=`, `>=`, `<=`, `&&`, `||`, `->`, `<-`
+- **File Icons**: Folder, code, image, archive icons in terminal file listings  
+- **Git Symbols**: Branch, commit, merge indicators for Git tools
+- **Terminal Enhancement**: Perfect with starship prompt, eza file listings, bat syntax highlighting
+
+**Automatic Configuration** (with `--configure-apps`):
+- **VS Code**: Sets FiraCode as editor font with ligatures enabled
+- **Kitty Terminal**: Configures JetBrains Mono Nerd Font
+- **Alacritty Terminal**: Sets up font family configuration
+- **Cross-tool Integration**: Optimizes display for starship, eza, bat, lazygit
+
+**Preview and Selection:**
+```bash
+# Preview fonts before installing
+gearbox install nerd-fonts --preview --fonts="FiraCode"
+
+# Interactive selection with live previews
+gearbox install nerd-fonts --interactive
+# Navigation: ↑/↓ arrows, SPACE to select, 'p' to preview, ENTER to confirm
+```
+
+**Health Checks:**
+```bash
+# Check font installation status
+gearbox status nerd-fonts
+
+# Comprehensive font diagnostics  
+gearbox doctor nerd-fonts
+```
+
+**Font Examples in Action:**
+- **Code Editors**: Enhanced ligatures improve code readability
+- **Terminal Prompts**: Starship displays beautiful icons and Git status
+- **File Managers**: Yazi and eza show intuitive file type icons
+- **Git Tools**: Lazygit displays clear branch and status symbols
 
 ### Development Tools
 
@@ -434,7 +503,7 @@ scripts/install-7zip.sh --asm-optimized  # Assembly optimized
 
 ### All Available Tools
 
-For a complete list of all 30 tools with descriptions:
+For a complete list of all 31 tools with descriptions:
 
 ```bash
 gearbox list
@@ -442,6 +511,7 @@ gearbox list
 
 **Core Development:** fd, ripgrep, fzf, jq  
 **Navigation:** zoxide, yazi, fclones, bat, eza, dust  
+**Fonts & Enhancement:** nerd-fonts  
 **Development:** serena, uv, ruff, starship, delta, lazygit, gh, difftastic  
 **System Monitoring:** bottom, procs, bandwhich  
 **Text Processing:** sd, xsv, choose, tealdeer  
@@ -457,6 +527,9 @@ Essential tools for development:
 ```bash
 # Core development tools
 gearbox install fd ripgrep fzf jq
+
+# With enhanced terminal experience
+gearbox install fd ripgrep fzf jq nerd-fonts starship
 
 # With testing validation
 gearbox install --run-tests fd ripgrep fzf jq

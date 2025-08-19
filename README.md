@@ -18,6 +18,9 @@ gearbox list
 # Install specific tools (recommended)
 gearbox install fd ripgrep fzf jq
 
+# Install with enhanced terminal experience
+gearbox install fd ripgrep fzf nerd-fonts starship
+
 # Install all tools (with confirmation prompt)
 gearbox install
 
@@ -47,6 +50,7 @@ gearbox doctor cleanup --all --mode standard
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |
 | **starship** | Customizable shell prompt | Fast, contextual info, Nerd Font support |
+| **nerd-fonts** | Developer fonts with icons | Programming ligatures, file icons, Git symbols |
 | **eza** | Modern ls replacement | Git integration, tree view, enhanced colors |
 | **delta** | Syntax-highlighting pager | Git diff enhancement, word-level highlighting |
 | **lazygit** | Terminal UI for Git | Interactive Git operations, visual interface |
@@ -68,7 +72,7 @@ gearbox doctor cleanup --all --mode standard
 
 ## Disk Space Management
 
-Building 30+ tools from source can consume 8GB+ of disk space. Gearbox provides intelligent cleanup:
+Building 31+ tools from source can consume 8GB+ of disk space. Gearbox provides intelligent cleanup:
 
 ```bash
 # Show disk usage report
