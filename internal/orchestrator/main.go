@@ -16,6 +16,7 @@ import (
 	"github.com/schollz/progressbar/v3"
 	"github.com/spf13/cobra"
 	"gearbox/pkg/validation"
+	"gearbox/pkg/uninstall"
 )
 
 // ToolConfig represents a single tool configuration
@@ -121,6 +122,11 @@ func Main() {
 	rootCmd.AddCommand(manifestStatusCmd())
 	rootCmd.AddCommand(listDependentsCmd())
 	rootCmd.AddCommand(canRemoveCmd())
+	
+	// Add uninstall commands
+	rootCmd.AddCommand(uninstallCmd())
+	rootCmd.AddCommand(uninstallPlanCmd())
+	rootCmd.AddCommand(uninstallExecuteCmd())
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "Path to tools.json configuration file")
@@ -1967,4 +1973,278 @@ func canRemoveCmd() *cobra.Command {
 			return handleCanRemove(args)
 		},
 	}
+}
+
+// uninstallCmd creates the uninstall command
+func uninstallCmd() *cobra.Command {
+	var opts uninstall.RemovalOptions
+
+	cmd := &cobra.Command{
+		Use:   "uninstall [tools...]",
+		Short: "Uninstall tools with safe removal",
+		Long: `Uninstall one or more tools with dependency analysis and safe removal.
+Analyzes dependencies and provides a removal plan before execution.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("no tools specified for removal")
+			}
+
+			// Create removal engine with standard safety level
+			engine, err := uninstall.NewRemovalEngine(uninstall.SafetyStandard)
+			if err != nil {
+				return fmt.Errorf("failed to create removal engine: %w", err)
+			}
+
+			// Plan removal
+			plan, err := engine.PlanRemoval(args, opts)
+			if err != nil {
+				return fmt.Errorf("failed to plan removal: %w", err)
+			}
+
+			// Show plan and get confirmation
+			if err := showRemovalPlan(plan); err != nil {
+				return err
+			}
+
+			if !opts.DryRun {
+				fmt.Printf("\nProceed with removal? [y/N]: ")
+				var response string
+				fmt.Scanln(&response)
+				if strings.ToLower(response) != "y" && strings.ToLower(response) != "yes" {
+					fmt.Printf("❌ Removal cancelled\n")
+					return nil
+				}
+			}
+
+			// Execute removal
+			executor, err := uninstall.NewRemovalExecutor(opts.DryRun)
+			if err != nil {
+				return fmt.Errorf("failed to create removal executor: %w", err)
+			}
+
+			result, err := executor.ExecutePlan(plan, opts)
+			if err != nil {
+				return fmt.Errorf("failed to execute removal: %w", err)
+			}
+
+			// Show results
+			fmt.Printf("\n%s", result.Summary())
+			return nil
+		},
+	}
+
+	// Removal options
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force removal even if there are dependents")
+	cmd.Flags().BoolVar(&opts.Cascade, "cascade", false, "Remove unused dependencies")
+	cmd.Flags().BoolVar(&opts.RemoveConfig, "remove-config", false, "Remove configuration files")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Show what would be removed without executing")
+	cmd.Flags().BoolVar(&opts.Backup, "backup", true, "Create backup before removal")
+	cmd.Flags().StringVar(&opts.BackupSuffix, "backup-suffix", "", "Suffix for backup files")
+
+	return cmd
+}
+
+// uninstallPlanCmd creates the uninstall-plan command
+func uninstallPlanCmd() *cobra.Command {
+	var safetyLevel string
+
+	cmd := &cobra.Command{
+		Use:   "uninstall-plan [tools...]",
+		Short: "Show removal plan without executing",
+		Long: `Analyze what would be removed for the specified tools.
+Shows dependency analysis and safety warnings.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("no tools specified for analysis")
+			}
+
+			// Parse safety level
+			var safety uninstall.SafetyLevel
+			switch strings.ToLower(safetyLevel) {
+			case "conservative":
+				safety = uninstall.SafetyConservative
+			case "standard":
+				safety = uninstall.SafetyStandard
+			case "aggressive":
+				safety = uninstall.SafetyAggressive
+			default:
+				safety = uninstall.SafetyStandard
+			}
+
+			// Create removal engine
+			engine, err := uninstall.NewRemovalEngine(safety)
+			if err != nil {
+				return fmt.Errorf("failed to create removal engine: %w", err)
+			}
+
+			// Plan removal
+			opts := uninstall.RemovalOptions{DryRun: true}
+			plan, err := engine.PlanRemoval(args, opts)
+			if err != nil {
+				return fmt.Errorf("failed to plan removal: %w", err)
+			}
+
+			// Show detailed plan
+			return showDetailedRemovalPlan(plan, engine)
+		},
+	}
+
+	cmd.Flags().StringVar(&safetyLevel, "safety", "standard", "Safety level (conservative, standard, aggressive)")
+
+	return cmd
+}
+
+// uninstallExecuteCmd creates the uninstall-execute command
+func uninstallExecuteCmd() *cobra.Command {
+	var opts uninstall.RemovalOptions
+
+	cmd := &cobra.Command{
+		Use:   "uninstall-execute [tools...]",
+		Short: "Execute removal without confirmation",
+		Long: `Execute tool removal without interactive confirmation.
+Use with caution - this bypasses safety prompts.`,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			if len(args) == 0 {
+				return fmt.Errorf("no tools specified for removal")
+			}
+
+			// Create removal engine with aggressive safety for non-interactive use
+			engine, err := uninstall.NewRemovalEngine(uninstall.SafetyAggressive)
+			if err != nil {
+				return fmt.Errorf("failed to create removal engine: %w", err)
+			}
+
+			// Plan removal
+			plan, err := engine.PlanRemoval(args, opts)
+			if err != nil {
+				return fmt.Errorf("failed to plan removal: %w", err)
+			}
+
+			// Execute removal immediately
+			executor, err := uninstall.NewRemovalExecutor(opts.DryRun)
+			if err != nil {
+				return fmt.Errorf("failed to create removal executor: %w", err)
+			}
+
+			fmt.Printf("🗑️  Executing removal of %d tools...\n", len(plan.ToRemove))
+
+			result, err := executor.ExecutePlan(plan, opts)
+			if err != nil {
+				return fmt.Errorf("failed to execute removal: %w", err)
+			}
+
+			// Show results
+			fmt.Printf("\n%s", result.Summary())
+			return nil
+		},
+	}
+
+	// Removal options
+	cmd.Flags().BoolVar(&opts.Force, "force", false, "Force removal even if there are dependents")
+	cmd.Flags().BoolVar(&opts.Cascade, "cascade", false, "Remove unused dependencies")
+	cmd.Flags().BoolVar(&opts.RemoveConfig, "remove-config", false, "Remove configuration files")
+	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Show what would be removed without executing")
+	cmd.Flags().BoolVar(&opts.Backup, "backup", true, "Create backup before removal")
+	cmd.Flags().StringVar(&opts.BackupSuffix, "backup-suffix", "", "Suffix for backup files")
+
+	return cmd
+}
+
+// showRemovalPlan displays a removal plan to the user
+func showRemovalPlan(plan *uninstall.RemovalPlan) error {
+	fmt.Printf("🗑️  Removal Plan\n")
+	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n")
+
+	// Show tools to be removed
+	if len(plan.ToRemove) > 0 {
+		fmt.Printf("📋 Tools to be removed (%d):\n", len(plan.ToRemove))
+		for _, action := range plan.ToRemove {
+			safety := "🟢"
+			if !action.IsSafe {
+				safety = "🔴"
+			}
+			fmt.Printf("  %s %-15s (%s) - %s\n", 
+				safety, action.Target, action.Method, action.Reason)
+		}
+		fmt.Printf("\n")
+	}
+
+	// Show tools to be kept
+	if len(plan.ToKeep) > 0 {
+		fmt.Printf("🛡️  Tools to be kept (%d):\n", len(plan.ToKeep))
+		for _, keep := range plan.ToKeep {
+			fmt.Printf("  %-15s - %s\n", keep.Target, strings.Join(keep.Reasons, ", "))
+		}
+		fmt.Printf("\n")
+	}
+
+	// Show dependency actions
+	if len(plan.Dependencies) > 0 {
+		fmt.Printf("🔗 Dependency actions:\n")
+		for _, dep := range plan.Dependencies {
+			action := "preserve"
+			if dep.Action != "preserve" {
+				action = string(dep.Action)
+			}
+			fmt.Printf("  %-15s %s - %s\n", dep.Dependency, action, dep.Reason)
+		}
+		fmt.Printf("\n")
+	}
+
+	// Show warnings
+	if len(plan.Warnings) > 0 {
+		fmt.Printf("⚠️  Warnings (%d):\n", len(plan.Warnings))
+		for _, warning := range plan.Warnings {
+			level := "ℹ️"
+			if warning.Level == "warning" {
+				level = "⚠️"
+			} else if warning.Level == "error" {
+				level = "❌"
+			}
+			fmt.Printf("  %s %s: %s\n", level, warning.Target, warning.Message)
+		}
+		fmt.Printf("\n")
+	}
+
+	// Show summary
+	fmt.Printf("📊 Summary:\n")
+	fmt.Printf("  Total requested: %d\n", plan.Summary.TotalRequested)
+	fmt.Printf("  Will remove: %d\n", plan.Summary.WillRemove)
+	fmt.Printf("  Will keep: %d\n", plan.Summary.WillKeep)
+	fmt.Printf("  Warnings: %d\n", plan.Summary.WarningCount)
+
+	return nil
+}
+
+// showDetailedRemovalPlan displays a detailed removal plan with validation
+func showDetailedRemovalPlan(plan *uninstall.RemovalPlan, engine *uninstall.RemovalEngine) error {
+	if err := showRemovalPlan(plan); err != nil {
+		return err
+	}
+
+	// Validate plan and show additional warnings
+	validationWarnings := engine.ValidatePlan(plan)
+	if len(validationWarnings) > 0 {
+		fmt.Printf("\n🔍 Validation Results:\n")
+		for _, warning := range validationWarnings {
+			level := "ℹ️"
+			if warning.Level == "warning" {
+				level = "⚠️"
+			} else if warning.Level == "error" {
+				level = "❌"
+			}
+			fmt.Printf("  %s %s: %s\n", level, warning.Target, warning.Message)
+		}
+	}
+
+	// Show method breakdown
+	if len(plan.Summary.MethodBreakdown) > 0 {
+		fmt.Printf("\n🔧 Removal methods:\n")
+		for method, count := range plan.Summary.MethodBreakdown {
+			description := uninstall.GetRemovalMethodDescription(method)
+			fmt.Printf("  %-20s %d tools - %s\n", string(method), count, description)
+		}
+	}
+
+	return nil
 }
