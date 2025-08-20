@@ -99,12 +99,34 @@
       "tags": ["python", "development", "linting", "packaging", "deprecated"]
     },
     {
-      "name": "quickstart",
-      "description": "Recommended quickstart for new users",
-      "category": "core",
+      "name": "beginner",
+      "description": "Perfect starting point for new developers (essential tools + beautiful terminal)",
+      "category": "foundation",
       "tools": ["starship", "nerd-fonts"],
       "includes_bundles": ["essential"],
-      "tags": ["quickstart", "recommended", "beginner"]
+      "tags": ["foundation", "beginner", "user-journey", "starter"]
+    },
+    {
+      "name": "intermediate",
+      "description": "Productive developer environment with git workflow and development tools",
+      "category": "foundation",
+      "tools": ["delta", "lazygit", "gh", "tokei", "sd", "tealdeer"],
+      "system_packages": ["git", "curl", "wget", "tree"],
+      "package_managers": {
+        "apt": ["git", "curl", "wget", "tree"],
+        "yum": ["git", "curl", "wget", "tree"],
+        "dnf": ["git", "curl", "wget", "tree"]
+      },
+      "includes_bundles": ["beginner"],
+      "tags": ["foundation", "intermediate", "user-journey", "git", "development"]
+    },
+    {
+      "name": "advanced",
+      "description": "High-performance development environment with debugging and performance tools",
+      "category": "foundation",
+      "tools": ["hyperfine", "bottom", "procs", "difftastic"],
+      "includes_bundles": ["intermediate"],
+      "tags": ["foundation", "advanced", "user-journey", "performance", "debugging"]
     },
     {
       "name": "web-dev",
@@ -324,6 +346,117 @@
       "tags": ["cpp", "c", "ecosystem", "development", "systems", "performance", "native"]
     },
     {
+      "name": "frontend-dev",
+      "description": "Complete frontend development environment (HTML/CSS/JS + design tools)",
+      "category": "domain",
+      "tools": [],
+      "system_packages": ["nodejs", "npm"],
+      "package_managers": {
+        "apt": ["nodejs", "npm"],
+        "yum": ["nodejs", "npm"],
+        "dnf": ["nodejs", "npm"]
+      },
+      "post_install": [
+        "npm install -g @angular/cli",
+        "npm install -g @vue/cli",
+        "npm install -g create-react-app",
+        "npm install -g vite",
+        "npm install -g sass",
+        "npm install -g postcss-cli",
+        "npm install -g webpack-cli",
+        "npm install -g parcel"
+      ],
+      "includes_bundles": ["intermediate"],
+      "tags": ["domain", "frontend", "web", "html", "css", "javascript", "design"]
+    },
+    {
+      "name": "backend-dev",
+      "description": "Complete backend development environment (APIs + databases + servers)",
+      "category": "domain",
+      "tools": ["jq", "xsv"],
+      "system_packages": ["postgresql-client", "mysql-client", "redis-tools", "nginx"],
+      "package_managers": {
+        "apt": ["postgresql-client", "mysql-client", "redis-tools", "nginx", "curl", "wget"],
+        "yum": ["postgresql", "mysql", "redis", "nginx", "curl", "wget"],
+        "dnf": ["postgresql", "mysql", "redis", "nginx", "curl", "wget"]
+      },
+      "includes_bundles": ["intermediate"],
+      "tags": ["domain", "backend", "api", "database", "server", "microservices"]
+    },
+    {
+      "name": "mobile-dev",
+      "description": "Cross-platform mobile development environment",
+      "category": "domain",
+      "tools": [],
+      "system_packages": ["nodejs", "npm"],
+      "package_managers": {
+        "apt": ["nodejs", "npm"],
+        "yum": ["nodejs", "npm"],
+        "dnf": ["nodejs", "npm"]
+      },
+      "post_install": [
+        "npm install -g react-native-cli",
+        "npm install -g @ionic/cli",
+        "npm install -g cordova",
+        "npm install -g @capacitor/cli"
+      ],
+      "includes_bundles": ["intermediate"],
+      "tags": ["domain", "mobile", "react-native", "ionic", "cordova", "cross-platform"]
+    },
+    {
+      "name": "data-scientist",
+      "description": "Data science and machine learning development environment", 
+      "category": "domain",
+      "tools": ["jq", "xsv", "choose", "hyperfine"],
+      "includes_bundles": ["python-ecosystem"],
+      "tags": ["domain", "data-science", "machine-learning", "analysis", "jupyter", "pandas"]
+    },
+    {
+      "name": "devops-engineer",
+      "description": "Infrastructure, monitoring, and deployment toolkit",
+      "category": "domain",
+      "tools": ["bandwhich", "dust"],
+      "system_packages": ["docker.io", "docker-compose"],
+      "package_managers": {
+        "apt": ["docker.io", "docker-compose", "awscli"],
+        "yum": ["docker", "docker-compose", "awscli"],
+        "dnf": ["docker", "docker-compose", "awscli"]
+      },
+      "post_install": [
+        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true"
+      ],
+      "includes_bundles": ["advanced"],
+      "tags": ["domain", "devops", "infrastructure", "monitoring", "deployment", "kubernetes", "docker"]
+    },
+    {
+      "name": "security-researcher",
+      "description": "Security analysis, penetration testing, and vulnerability scanning toolkit",
+      "category": "domain",
+      "tools": [],
+      "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
+      "package_managers": {
+        "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "nikto", "sqlmap", "hydra"],
+        "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois"],
+        "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois"]
+      },
+      "includes_bundles": ["advanced"],
+      "tags": ["domain", "security", "penetration-testing", "vulnerability-scanning", "network-analysis"]
+    },
+    {
+      "name": "game-dev",
+      "description": "Game development environment with graphics and engine tools",
+      "category": "domain",
+      "tools": ["ffmpeg", "imagemagick"],
+      "system_packages": [],
+      "package_managers": {
+        "apt": ["blender", "gimp", "audacity"],
+        "yum": ["blender", "gimp", "audacity"],
+        "dnf": ["blender", "gimp", "audacity"]
+      },
+      "includes_bundles": ["intermediate"],
+      "tags": ["domain", "game-development", "graphics", "3d", "audio", "engine"]
+    },
+    {
       "name": "ai-coding-agent",
       "description": "AI-powered coding assistance and semantic code analysis tools",
       "category": "ai-assistant",
@@ -342,11 +475,57 @@
       "tags": ["ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]
     },
     {
+      "name": "debugging-tools",
+      "description": "Profilers, memory analyzers, and network debugging tools",
+      "category": "workflow",
+      "tools": ["bottom", "procs", "bandwhich", "hyperfine"],
+      "system_packages": ["gdb", "valgrind", "strace", "ltrace"],
+      "package_managers": {
+        "apt": ["gdb", "valgrind", "strace", "ltrace", "perf-tools-unstable"],
+        "yum": ["gdb", "valgrind", "strace", "ltrace", "perf"],
+        "dnf": ["gdb", "valgrind", "strace", "ltrace", "perf"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "debugging", "profiling", "memory", "performance", "network"]
+    },
+    {
+      "name": "deployment-tools",
+      "description": "CI/CD, containers, and cloud deployment tools",
+      "category": "workflow",
+      "tools": [],
+      "system_packages": ["docker.io", "docker-compose"],
+      "package_managers": {
+        "apt": ["docker.io", "docker-compose"],
+        "yum": ["docker", "docker-compose"],
+        "dnf": ["docker", "docker-compose"]
+      },
+      "post_install": [
+        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
+        "curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar -xz && sudo mv linux-amd64/helm /usr/local/bin/ || true"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "deployment", "ci-cd", "containers", "kubernetes", "helm"]
+    },
+    {
+      "name": "code-review-tools",
+      "description": "Code linting, formatting, and analysis tools (cross-language)",
+      "category": "workflow",
+      "tools": ["sd", "difftastic", "tokei"],
+      "system_packages": [],
+      "package_managers": {
+        "apt": [],
+        "yum": [],
+        "dnf": []
+      },
+      "includes_bundles": ["git-workflow"],
+      "tags": ["workflow", "code-review", "linting", "formatting", "analysis", "quality"]
+    },
+    {
       "name": "all",
       "description": "Install all available tools",
       "category": "complete",
       "tools": [],
-      "includes_bundles": ["rust-tools", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem", "ai-coding-agent"],
+      "includes_bundles": ["advanced", "frontend-dev", "backend-dev", "mobile-dev", "data-scientist", "devops-engineer", "security-researcher", "game-dev", "debugging-tools", "deployment-tools", "code-review-tools", "ai-coding-agent", "media"],
       "tags": ["complete", "all"]
     }
   ]

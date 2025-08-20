@@ -57,35 +57,34 @@ Install curated collections of tools with a single command:
 # Install essential tools bundle (core terminal productivity tools)
 gearbox install --bundle essential
 
-# Install complete developer toolkit (includes essential + git tools, fonts)
-gearbox install --bundle developer
+# 🎯 Foundation Tier - Start your journey here!
+gearbox install --bundle beginner      # New developers start here
+gearbox install --bundle intermediate  # Ready for git workflows and development tools
+gearbox install --bundle advanced      # High-performance development with debugging tools
 
-# Install complete Python development environment (Python + pipx, black, mypy, poetry + essential tools)
-gearbox install --bundle python-ecosystem
+# 🏗️ Domain Tier - Choose your role
+gearbox install --bundle frontend-dev       # HTML/CSS/JS + design tools
+gearbox install --bundle backend-dev        # APIs + databases + servers
+gearbox install --bundle data-scientist     # Data science + ML environment
+gearbox install --bundle devops-engineer    # Infrastructure + monitoring + deployment
+gearbox install --bundle security-researcher # Penetration testing + vulnerability scanning
+gearbox install --bundle mobile-dev         # Cross-platform mobile development
+gearbox install --bundle game-dev          # Game development + graphics tools
 
-# Install AI coding assistant (Serena MCP server for semantic code analysis)
-gearbox install --bundle ai-coding-agent
+# 🚀 Language Ecosystems - Choose your language
+gearbox install --bundle python-ecosystem  # Complete Python development environment
+gearbox install --bundle nodejs-ecosystem  # Complete Node.js development environment  
+gearbox install --bundle rust-ecosystem    # Complete Rust development environment
+gearbox install --bundle go-ecosystem      # Complete Go development environment
 
-# Install complete Node.js development environment (Node.js + TypeScript, Angular/Vue/React CLIs + essential tools)
-gearbox install --bundle nodejs-ecosystem
+# ⚙️ Workflow Tools - Add specialized capabilities
+gearbox install --bundle debugging-tools   # Profilers + memory analyzers + network debugging
+gearbox install --bundle deployment-tools  # CI/CD + containers + cloud deployment  
+gearbox install --bundle code-review-tools # Cross-language linting + formatting + analysis
 
-# Install complete Rust development environment (Rust + rustfmt, clippy, cargo tools + essential tools)
-gearbox install --bundle rust-ecosystem
-
-# Install complete Go development environment (Go + gopls, linters, build tools + essential tools)
-gearbox install --bundle go-ecosystem
-
-# Install data science tools (jq, xsv, choose, hyperfine, uv, ruff)
-gearbox install --bundle data-science
-
-# Install web development environment (includes nginx, nodejs via apt)
-gearbox install --bundle web-dev
-
-# Install Docker development setup (includes docker, docker-compose)
-gearbox install --bundle docker-dev
-
-# Install network administration toolkit (nmap, tcpdump, wireshark + monitoring tools)  
-gearbox install --bundle netadmin
+# 🤖 AI & Specialized Tools
+gearbox install --bundle ai-coding-agent   # AI-powered coding assistance
+gearbox install --bundle media            # Media processing tools
 
 # List all available bundles
 gearbox list bundles
@@ -96,7 +95,21 @@ gearbox show bundle web-dev
 
 **Available Bundles:**
 
-**🚀 Language Ecosystem Bundles (NEW!):**
+**🎯 Foundation Tier (User Journey):**
+- `beginner` - Perfect starting point for new developers (essential tools + beautiful terminal)
+- `intermediate` - Productive developer environment with git workflow and development tools
+- `advanced` - High-performance development environment with debugging and performance tools
+
+**🏗️ Domain Tier (Role-Based):**
+- `frontend-dev` - Complete frontend development (HTML/CSS/JS + design tools)
+- `backend-dev` - Complete backend development (APIs + databases + servers)
+- `mobile-dev` - Cross-platform mobile development environment
+- `data-scientist` - Data science and machine learning development environment
+- `devops-engineer` - Infrastructure, monitoring, and deployment toolkit
+- `security-researcher` - Security analysis, penetration testing, and vulnerability scanning toolkit
+- `game-dev` - Game development environment with graphics and engine tools
+
+**🚀 Language Ecosystem Tier:**
 - `python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
 - `nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
 - `go-ecosystem` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
@@ -105,42 +118,61 @@ gearbox show bundle web-dev
 - `ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
 - `cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
-**🤖 AI-Powered Development:**
-- `ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis (multi-language)
+**⚙️ Workflow Tier:**
+- `debugging-tools` - Profilers, memory analyzers, and network debugging tools
+- `deployment-tools` - CI/CD, containers, and cloud deployment tools
+- `code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
-**🔧 Core Development Bundles:**
+**🤖 AI & Specialized:**
+- `ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis
+- `media` - Media processing tools (ffmpeg, imagemagick, 7zip)
+
+**🔧 Legacy Core Bundles:**
 - `minimal` - Bare essentials (fd, ripgrep, fzf)
 - `essential` - Modern terminal essentials everyone should have
-- `developer` - Professional dev environment with beautiful terminal
-- `quickstart` - Recommended starter bundle
 
-**🌐 Infrastructure & DevOps:**
-- `web-dev` - Web development (nginx, nodejs, npm + gearbox tools)
-- `docker-dev` - Docker development (docker, docker-compose + git tools)
-- `database-admin` - Database tools (postgresql, mysql, redis clients)
-- `netadmin` - Network administration and monitoring toolkit
+**🎯 User Journey Architecture Design:**
 
-**🎯 Specialized Tools:**
-- `rust-tools` - High-performance tools written in Rust (useful for any development)
-- `data-science` - Data analysis and Python tools
-- `system-admin` - Local system monitoring tools
-- `terminal-enhancement` - Visual terminal enhancements (themes, fonts, prompts)
-- `file-management` - Advanced file operations (file manager, duplicates, disk analysis)
-- `text-processing` - Text and data processing utilities
-- `git-workflow` - Git productivity tools
-- `media` - Media processing tools
+The bundle system follows a **User Journey Architecture** that matches how developers actually work:
 
-**🆕 Language Ecosystem Design:**
-Each language ecosystem bundle includes:
-- **Language runtime/compiler** (python3, nodejs, rustc, go, etc.)
-- **Language-specific development tools** (linters, formatters, package managers)
-- **Essential universal tools** (fd, ripgrep, fzf, bat, eza, jq, zoxide) that enhance any development workflow
-- **System package support** via apt, yum, dnf for complete environments
+**Foundation Tier** - Progressive skill levels:
+- **Beginner**: New developers start with essential tools + beautiful terminal
+- **Intermediate**: Add git workflows and development productivity tools  
+- **Advanced**: Add performance tools, debugging, and system analysis
 
-**Notes:** 
-- Universal tools like `ripgrep` (written in Rust) are included in ALL language ecosystems because they enhance development regardless of the language you're coding in, not because of their implementation language.
-- The `python-dev` bundle is deprecated - use `python-ecosystem` instead for complete Python development environment.
-- The `rust-dev` bundle has been renamed to `rust-tools` to clarify it contains useful tools written in Rust, not Rust language development tools.
+**Domain Tier** - Role-based environments:
+- Choose bundles based on your primary role (frontend dev, backend dev, data scientist, etc.)
+- Each domain includes tools and packages specific to that workflow
+- Inherits from appropriate foundation level
+
+**Language Tier** - Complete language environments:
+- Each includes runtime + language-specific tools + testing frameworks
+- **Testing tools are included** in language ecosystems (not separate workflow) since they're language-specific
+
+**Workflow Tier** - Cross-language capabilities:
+- Add specialized workflows like debugging, deployment, code review
+- Work across multiple programming languages
+
+**Key Benefits:**
+- **Clear user journey** from beginner → advanced
+- **No tool duplication** - each tool appears once in logical place
+- **Role-based approach** - install what you actually need for your job
+- **Composable** - mix and match tiers as needed
+
+**Example User Journey:**
+```bash
+# New developer starting out
+gearbox install --bundle beginner
+
+# Ready for more productivity, choose your domain
+gearbox install --bundle frontend-dev  # or backend-dev, data-scientist, etc.
+
+# Add language-specific tools  
+gearbox install --bundle python-ecosystem
+
+# Add specialized workflows as needed
+gearbox install --bundle deployment-tools
+```
 
 # Check system health and disk usage
 gearbox doctor

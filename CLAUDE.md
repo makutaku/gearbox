@@ -17,9 +17,23 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install nerd-fonts --fonts="FiraCode"` - Install specific font via CLI
 - `gearbox install nerd-fonts --interactive` - Interactive font selection with previews
 
-### Bundle Installation (NEW!)
+### Bundle Installation - User Journey Architecture
 
-**Language Ecosystem Bundles:**
+**🎯 Foundation Tier (Start Your Journey):**
+- `gearbox install --bundle beginner` - Perfect starting point for new developers (essential tools + beautiful terminal)
+- `gearbox install --bundle intermediate` - Productive developer environment with git workflow and development tools
+- `gearbox install --bundle advanced` - High-performance development environment with debugging and performance tools
+
+**🏗️ Domain Tier (Choose Your Role):**
+- `gearbox install --bundle frontend-dev` - Complete frontend development (HTML/CSS/JS + design tools)
+- `gearbox install --bundle backend-dev` - Complete backend development (APIs + databases + servers)
+- `gearbox install --bundle mobile-dev` - Cross-platform mobile development environment
+- `gearbox install --bundle data-scientist` - Data science and machine learning development environment
+- `gearbox install --bundle devops-engineer` - Infrastructure, monitoring, and deployment toolkit
+- `gearbox install --bundle security-researcher` - Security analysis, penetration testing, and vulnerability scanning toolkit
+- `gearbox install --bundle game-dev` - Game development environment with graphics and engine tools
+
+**🚀 Language Ecosystem Tier:**
 - `gearbox install --bundle python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
 - `gearbox install --bundle nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
 - `gearbox install --bundle rust-ecosystem` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
@@ -28,33 +42,18 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
 - `gearbox install --bundle cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
-**AI-Powered Development:**
-- `gearbox install --bundle ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis (multi-language)
+**⚙️ Workflow Tier:**
+- `gearbox install --bundle debugging-tools` - Profilers, memory analyzers, and network debugging tools
+- `gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
+- `gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
-**Core Development Bundles:**
-- `gearbox install --bundle essential` - Install curated bundle of essential tools
-- `gearbox install --bundle developer` - Complete development environment
-- `gearbox install --bundle quickstart` - Recommended starter bundle
-
-**Infrastructure & DevOps Bundles:**
-- `gearbox install --bundle web-dev` - Web development (nginx, nodejs + tools)  
-- `gearbox install --bundle docker-dev` - Docker development environment
-- `gearbox install --bundle database-admin` - Database administration tools
-- `gearbox install --bundle netadmin` - Network administration and monitoring toolkit
-
-**Specialized Tool Bundles:**
-- `gearbox install --bundle rust-tools` - High-performance tools written in Rust (useful for any development)
-- `gearbox install --bundle system-admin` - Local system monitoring tools
-- `gearbox install --bundle terminal-enhancement` - Visual terminal enhancements (themes, fonts, prompts)
-- `gearbox install --bundle file-management` - Advanced file operations (file manager, duplicates, disk analysis)
-- `gearbox install --bundle text-processing` - Text and data processing utilities
-- `gearbox install --bundle git-workflow` - Git productivity tools
-- `gearbox install --bundle media` - Media processing tools
-- `gearbox install --bundle data-science` - Data analysis tools
+**🤖 AI & Specialized:**
+- `gearbox install --bundle ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis
+- `gearbox install --bundle media` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
 **Bundle Management:**
 - `gearbox list bundles` - Show available bundles with descriptions
-- `gearbox show bundle web-dev` - Show bundle contents including system packages
+- `gearbox show bundle frontend-dev` - Show bundle contents including system packages
 
 ### General Commands  
 - `gearbox list` - Show available tools with descriptions
