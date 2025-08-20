@@ -33,21 +33,30 @@ curl -fsSL https://raw.githubusercontent.com/makutaku/gearbox/main/install-minim
 
 ### 🔧 Manual Usage
 
+After cloning the repository:
+
 ```bash
+# Build the project
+make build
+
 # See what tools are available
-gearbox list
+./build/gearbox list
 
 # Install specific tools (recommended)
-gearbox install fd ripgrep fzf jq
+./build/gearbox install fd ripgrep fzf jq
 
 # Install with enhanced terminal experience
-gearbox install fd ripgrep fzf nerd-fonts starship
+./build/gearbox install fd ripgrep fzf nerd-fonts starship
 
 # Install all tools (with confirmation prompt)
-gearbox install
+./build/gearbox install
 
 # Fast builds for quick setup
-gearbox install --minimal fd ripgrep
+./build/gearbox install --minimal fd ripgrep
+
+# For convenience, install gearbox system-wide
+make install
+# Then use: gearbox list, gearbox install, etc.
 
 ### 📦 Tool Bundles
 
@@ -55,49 +64,49 @@ Install curated collections of tools with a single command:
 
 ```bash
 # Install essential tools bundle (core terminal productivity tools)
-gearbox install --bundle essential
+./build/gearbox install --bundle essential
 
 # 🎯 Foundation Tier - Start your journey here!
-gearbox install --bundle system-foundation  # Essential base system packages
-gearbox install --bundle beginner           # New developers start here
-gearbox install --bundle intermediate       # Ready for git workflows and development tools
-gearbox install --bundle advanced           # High-performance development with debugging tools
+./build/gearbox install --bundle system-foundation  # Essential base system packages
+./build/gearbox install --bundle beginner           # New developers start here
+./build/gearbox install --bundle intermediate       # Ready for git workflows and development tools
+./build/gearbox install --bundle advanced           # High-performance development with debugging tools
 
 # 🔄 Multi-Language Development Environment 
-gearbox install --bundle polyglot-dev               # Python + Node.js + Docker + Cloud + Editors
+./build/gearbox install --bundle polyglot-dev               # Python + Node.js + Docker + Cloud + Editors
 
 # 🏗️ Domain Tier - Choose your role
-gearbox install --bundle fullstack-dev      # Complete web development (frontend + backend + databases)
-gearbox install --bundle mobile-dev         # Cross-platform mobile development
-gearbox install --bundle data-dev           # Data science + ML environment
-gearbox install --bundle devops-dev         # Infrastructure + monitoring + deployment + container tools
-gearbox install --bundle security-dev       # Penetration testing + vulnerability scanning + container security
-gearbox install --bundle game-dev           # Game development + graphics tools
+./build/gearbox install --bundle fullstack-dev      # Complete web development (frontend + backend + databases)
+./build/gearbox install --bundle mobile-dev         # Cross-platform mobile development
+./build/gearbox install --bundle data-dev           # Data science + ML environment
+./build/gearbox install --bundle devops-dev         # Infrastructure + monitoring + deployment + container tools
+./build/gearbox install --bundle security-dev       # Penetration testing + vulnerability scanning + container security
+./build/gearbox install --bundle game-dev           # Game development + graphics tools
 
 # 🚀 Language Ecosystems - Choose your language
-gearbox install --bundle python-dev         # Complete Python development environment
-gearbox install --bundle nodejs-dev         # Complete Node.js development environment  
-gearbox install --bundle rust-dev           # Complete Rust development environment
-gearbox install --bundle go-dev             # Complete Go development environment
-gearbox install --bundle java-dev           # Complete Java development environment
-gearbox install --bundle ruby-dev           # Complete Ruby development environment
-gearbox install --bundle cpp-dev            # Complete C/C++ development environment
+./build/gearbox install --bundle python-dev         # Complete Python development environment
+./build/gearbox install --bundle nodejs-dev         # Complete Node.js development environment  
+./build/gearbox install --bundle rust-dev           # Complete Rust development environment
+./build/gearbox install --bundle go-dev             # Complete Go development environment
+./build/gearbox install --bundle java-dev           # Complete Java development environment
+./build/gearbox install --bundle ruby-dev           # Complete Ruby development environment
+./build/gearbox install --bundle cpp-dev            # Complete C/C++ development environment
 
 # ⚙️ Workflow Tools - Add specialized capabilities
-gearbox install --bundle debugging-tools    # Profilers + memory analyzers + network debugging
-gearbox install --bundle deployment-tools   # CI/CD + containers + cloud deployment  
-gearbox install --bundle code-review-tools  # Cross-language linting + formatting + analysis
-gearbox install --bundle ai-tools           # AI-powered coding assistance (serena + aider)
+./build/gearbox install --bundle debugging-tools    # Profilers + memory analyzers + network debugging
+./build/gearbox install --bundle deployment-tools   # CI/CD + containers + cloud deployment  
+./build/gearbox install --bundle code-review-tools  # Cross-language linting + formatting + analysis
+./build/gearbox install --bundle ai-tools           # AI-powered coding assistance (serena + aider)
 
 # 🏗️ Infrastructure Tools - System components
-gearbox install --bundle docker-official    # Docker CE from official repository (recommended)
-gearbox install --bundle docker-enhanced    # Complete Docker ecosystem with analysis tools
-gearbox install --bundle docker-rootless    # Maximum security with rootless mode
-gearbox install --bundle cloud-tools        # AWS CLI and cloud platform tools
-gearbox install --bundle editors            # Neovim and modern text editors
-gearbox install --bundle database-tools     # Database clients and management tools
-gearbox install --bundle network-tools      # Network monitoring and diagnostics
-gearbox install --bundle media-tools        # Media processing tools
+./build/gearbox install --bundle docker-official    # Docker CE from official repository (recommended)
+./build/gearbox install --bundle docker-enhanced    # Complete Docker ecosystem with analysis tools
+./build/gearbox install --bundle docker-rootless    # Maximum security with rootless mode
+./build/gearbox install --bundle cloud-tools        # AWS CLI and cloud platform tools
+./build/gearbox install --bundle editors            # Neovim and modern text editors
+./build/gearbox install --bundle database-tools     # Database clients and management tools
+./build/gearbox install --bundle network-tools      # Network monitoring and diagnostics
+./build/gearbox install --bundle media-tools        # Media processing tools
 
 # List all available bundles
 gearbox list bundles
@@ -208,13 +217,13 @@ The bundle system follows a **5-Tier Architecture** that matches how developers 
 sudo apt-get purge docker docker.io docker-compose
 
 # Install modern Docker
-gearbox install --bundle docker-official
+./build/gearbox install --bundle docker-official
 
 # Or for complete ecosystem
-gearbox install --bundle docker-enhanced
+./build/gearbox install --bundle docker-enhanced
 
 # For maximum security
-gearbox install --bundle docker-rootless
+./build/gearbox install --bundle docker-rootless
 ```
 
 **Key Differences:**
@@ -226,16 +235,16 @@ gearbox install --bundle docker-rootless
 **Example User Journey:**
 ```bash
 # New developer starting out
-gearbox install --bundle beginner
+./build/gearbox install --bundle beginner
 
 # Ready for more productivity, choose your domain
-gearbox install --bundle fullstack-dev  # or mobile-dev, data-dev, devops-dev, etc.
+./build/gearbox install --bundle fullstack-dev  # or mobile-dev, data-dev, devops-dev, etc.
 
 # Add language-specific tools  
-gearbox install --bundle python-dev
+./build/gearbox install --bundle python-dev
 
 # Add specialized workflows as needed
-gearbox install --bundle deployment-tools
+./build/gearbox install --bundle deployment-tools
 ```
 
 # Check system health and disk usage

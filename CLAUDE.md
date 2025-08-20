@@ -6,86 +6,103 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 This is an Essential Tools Installer - a collection of automated installation scripts for essential command-line tools on Debian Linux. The project focuses on building tools from source with various optimization levels and proper dependency management.
 
+## Getting Started
+
+### Quick Start
+After building the project, use the CLI from the build directory:
+```bash
+# Build the project
+make build
+
+# Use CLI from project root (recommended)
+./build/gearbox --help
+./build/gearbox list bundles
+./build/./build/gearbox install fd ripgrep fzf
+
+# Or install system-wide for global access
+make install
+gearbox --help
+```
+
 ## Common Commands
 
 ### Installation Commands
-- `gearbox install` - Show confirmation prompt and install all 42 tools
-- `gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
-- `gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
-- `gearbox install --maximum ffmpeg` - Install with full-featured builds
-- `gearbox install nerd-fonts` - Install standard font collection (8 fonts) with cross-tool suggestions
-- `gearbox install nerd-fonts --fonts="FiraCode"` - Install specific font via CLI
-- `gearbox install nerd-fonts --interactive` - Interactive font selection with previews
+- `./build/./build/gearbox install` - Show confirmation prompt and install all tools
+- `./build/./build/gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
+- `./build/./build/gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
+- `./build/./build/gearbox install --maximum ffmpeg` - Install with full-featured builds
+- `./build/./build/gearbox install nerd-fonts` - Install standard font collection (8 fonts) with cross-tool suggestions
+- `./build/./build/gearbox install nerd-fonts --fonts="FiraCode"` - Install specific font via CLI
+- `./build/./build/gearbox install nerd-fonts --interactive` - Interactive font selection with previews
 
 ### Bundle Installation - User Journey Architecture
 
 **🎯 Foundation Tier (Start Your Journey):**
-- `gearbox install --bundle beginner` - Perfect starting point for new developers (essential tools + beautiful terminal)
-- `gearbox install --bundle intermediate` - Productive developer environment with git workflow and development tools
-- `gearbox install --bundle advanced` - High-performance development environment with debugging and performance tools
+- `./build/./build/gearbox install --bundle beginner` - Perfect starting point for new developers (essential tools + beautiful terminal)
+- `./build/./build/gearbox install --bundle intermediate` - Productive developer environment with git workflow and development tools
+- `./build/./build/gearbox install --bundle advanced` - High-performance development environment with debugging and performance tools
 
 **🏗️ Domain Tier (Choose Your Role):**
-- `gearbox install --bundle polyglot-dev` - Multi-language development environment (Python + Node.js + Docker + Cloud + Editors)
-- `gearbox install --bundle fullstack-dev` - Complete web development (frontend + backend + databases)
-- `gearbox install --bundle mobile-dev` - Cross-platform mobile development environment
-- `gearbox install --bundle data-dev` - Data science and machine learning development environment
-- `gearbox install --bundle devops-dev` - Infrastructure, monitoring, deployment + modern container tools
-- `gearbox install --bundle security-dev` - Security analysis, penetration testing + container security
-- `gearbox install --bundle game-dev` - Game development environment with graphics and engine tools
+- `./build/./build/gearbox install --bundle polyglot-dev` - Multi-language development environment (Python + Node.js + Docker + Cloud + Editors)
+- `./build/./build/gearbox install --bundle fullstack-dev` - Complete web development (frontend + backend + databases)
+- `./build/./build/gearbox install --bundle mobile-dev` - Cross-platform mobile development environment
+- `./build/./build/gearbox install --bundle data-dev` - Data science and machine learning development environment
+- `./build/./build/gearbox install --bundle devops-dev` - Infrastructure, monitoring, deployment + modern container tools
+- `./build/./build/gearbox install --bundle security-dev` - Security analysis, penetration testing + container security
+- `./build/./build/gearbox install --bundle game-dev` - Game development environment with graphics and engine tools
 
 **🚀 Language Ecosystem Tier:**
-- `gearbox install --bundle python-dev` - Python runtime + uv, ruff, black, mypy, poetry, pytest, ipython + essential tools
-- `gearbox install --bundle nodejs-dev` - Node.js runtime + TypeScript, ESLint, yarn, pnpm, jest + essential tools
-- `gearbox install --bundle rust-dev` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
-- `gearbox install --bundle go-dev` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
-- `gearbox install --bundle java-dev` - Java 17 + Maven, Gradle + essential tools
-- `gearbox install --bundle ruby-dev` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
-- `gearbox install --bundle cpp-dev` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
+- `./build/./build/gearbox install --bundle python-dev` - Python runtime + uv, ruff, black, mypy, poetry, pytest, ipython + essential tools
+- `./build/./build/gearbox install --bundle nodejs-dev` - Node.js runtime + TypeScript, ESLint, yarn, pnpm, jest + essential tools
+- `./build/./build/gearbox install --bundle rust-dev` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
+- `./build/./build/gearbox install --bundle go-dev` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
+- `./build/./build/gearbox install --bundle java-dev` - Java 17 + Maven, Gradle + essential tools
+- `./build/./build/gearbox install --bundle ruby-dev` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
+- `./build/./build/gearbox install --bundle cpp-dev` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
 **⚙️ Workflow Tier:**
-- `gearbox install --bundle debugging-tools` - Profilers, memory analyzers, and network debugging tools
-- `gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
-- `gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
+- `./build/./build/gearbox install --bundle debugging-tools` - Profilers, memory analyzers, and network debugging tools
+- `./build/./build/gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
+- `./build/./build/gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
 **🐳 Container Development (2024 Best Practice):**
-- `gearbox install --bundle docker-official` - Docker CE from official repository (recommended)
-- `gearbox install --bundle docker-enhanced` - Complete Docker ecosystem (docker-official + analysis tools)
-- `gearbox install --bundle docker-rootless` - Maximum security with rootless mode
+- `./build/./build/gearbox install --bundle docker` - Complete Docker development environment with security and analysis tools
+- `./build/./build/gearbox install --bundle docker-rootless` - Docker CE with rootless mode (maximum security)
 
 **🤖 AI & Infrastructure:**
-- `gearbox install --bundle ai-tools` - AI-powered coding assistance (serena + aider + mise + just)
-- `gearbox install --bundle cloud-tools` - AWS CLI v2 and cloud platform tools
-- `gearbox install --bundle editors` - Neovim and modern text editors
-- `gearbox install --bundle media-tools` - Media processing tools (ffmpeg, imagemagick, 7zip)
+- `./build/./build/gearbox install --bundle ai-tools` - AI-powered coding assistance (serena + aider + mise + just)
+- `./build/./build/gearbox install --bundle cloud-tools` - AWS CLI v2 and cloud platform tools
+- `./build/./build/gearbox install --bundle editors` - Neovim and modern text editors
+- `./build/./build/gearbox install --bundle media-tools` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
 **Bundle Management:**
-- `gearbox list bundles` - Show available bundles with descriptions
-- `gearbox show bundle fullstack-dev` - Show bundle contents including system packages
+- `./build/gearbox list bundles` - Show available bundles with descriptions
+- `./build/gearbox show bundle fullstack-dev` - Show bundle contents including system packages
 
 ### General Commands  
-- `gearbox list` - Show available tools with descriptions
-- `gearbox help` - Show detailed help and usage information
+- `./build/gearbox list` - Show available tools with descriptions
+- `./build/gearbox help` - Show detailed help and usage information
 
 ### Configuration Management
-- `gearbox config show` - Display current configuration settings
-- `gearbox config set DEFAULT_BUILD_TYPE maximum` - Set configuration values
-- `gearbox config wizard` - Interactive configuration setup
-- `gearbox config reset` - Reset to default configuration
-- `gearbox config help` - Show configuration help
+- `./build/gearbox config show` - Display current configuration settings
+- `./build/gearbox config set DEFAULT_BUILD_TYPE maximum` - Set configuration values
+- `./build/gearbox config wizard` - Interactive configuration setup
+- `./build/gearbox config reset` - Reset to default configuration
+- `./build/gearbox config help` - Show configuration help
 
 ### Health Checks & Diagnostics
-- `gearbox doctor` - Run comprehensive health checks
-- `gearbox doctor nerd-fonts` - Advanced font diagnostics (cache, terminal, VS Code, starship)
-- `gearbox status nerd-fonts` - Detailed font status with individual fonts and disk usage
-- `gearbox doctor system` - Check system requirements only
-- `gearbox doctor tools` - Check installed tools status
-- `gearbox doctor env` - Check environment variables
-- `gearbox doctor help` - Show diagnostic help
+- `./build/gearbox doctor` - Run comprehensive health checks
+- `./build/gearbox doctor nerd-fonts` - Advanced font diagnostics (cache, terminal, VS Code, starship)
+- `./build/gearbox status nerd-fonts` - Detailed font status with individual fonts and disk usage
+- `./build/gearbox doctor system` - Check system requirements only
+- `./build/gearbox doctor tools` - Check installed tools status
+- `./build/gearbox doctor env` - Check environment variables
+- `./build/gearbox doctor help` - Show diagnostic help
 
 ### Advanced Options
-- `gearbox install --skip-common-deps` - Skip common dependency installation
-- `gearbox install --run-tests` - Run test suites for tools that support it
-- `gearbox install --no-shell` - Skip shell integration setup (fzf)
+- `./build/gearbox install --skip-common-deps` - Skip common dependency installation
+- `./build/gearbox install --run-tests` - Run test suites for tools that support it
+- `./build/gearbox install --no-shell` - Skip shell integration setup (fzf)
 
 ### Building
 - `make build` - Build all components (CLI and tools)
@@ -106,12 +123,12 @@ This is an Essential Tools Installer - a collection of automated installation sc
 
 ### Individual Tool Installation
 Use the main CLI for all installations (recommended):
-- `gearbox install fd` - Install fd with standard build
-- `gearbox install ripgrep --maximum` - Install ripgrep with optimized build
-- `gearbox install fzf --no-shell` - Install fzf without shell integration
-- `gearbox install nerd-fonts --minimal` - Install essential fonts (3 fonts)
-- `gearbox install nerd-fonts` - Install standard font collection (8 fonts)  
-- `gearbox install nerd-fonts --maximum` - Install complete font collection (15+ fonts)
+- `./build/gearbox install fd` - Install fd with standard build
+- `./build/gearbox install ripgrep --maximum` - Install ripgrep with optimized build
+- `./build/gearbox install fzf --no-shell` - Install fzf without shell integration
+- `./build/gearbox install nerd-fonts --minimal` - Install essential fonts (3 fonts)
+- `./build/gearbox install nerd-fonts` - Install standard font collection (8 fonts)  
+- `./build/gearbox install nerd-fonts --maximum` - Install complete font collection (15+ fonts)
 
 Direct scripts are available for advanced use cases but discouraged for normal usage.
 
@@ -122,27 +139,27 @@ The nerd-fonts implementation provides sophisticated font management with profes
 #### Installation Modes & Build Types
 ```bash
 # CLI-based installations (recommended)
-gearbox install nerd-fonts                    # Standard collection (8 fonts, ~80MB)
-gearbox install nerd-fonts --minimal          # Essential fonts (3 fonts, ~30MB) 
-gearbox install nerd-fonts --maximum          # Complete collection (15+ fonts, ~200MB)
+./build/gearbox install nerd-fonts                    # Standard collection (8 fonts, ~80MB)
+./build/gearbox install nerd-fonts --minimal          # Essential fonts (3 fonts, ~30MB) 
+./build/gearbox install nerd-fonts --maximum          # Complete collection (15+ fonts, ~200MB)
 
 # Advanced font selection via CLI
-gearbox install nerd-fonts --fonts="FiraCode"               # Install specific font
-gearbox install nerd-fonts --fonts="FiraCode,JetBrainsMono" # Install multiple fonts
-gearbox install nerd-fonts --interactive                    # Interactive selection with previews
-gearbox install nerd-fonts --preview --fonts="FiraCode"     # Preview before installation
+./build/gearbox install nerd-fonts --fonts="FiraCode"               # Install specific font
+./build/gearbox install nerd-fonts --fonts="FiraCode,JetBrainsMono" # Install multiple fonts
+./build/gearbox install nerd-fonts --interactive                    # Interactive selection with previews
+./build/gearbox install nerd-fonts --preview --fonts="FiraCode"     # Preview before installation
 
 # Combined options
-gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Install + auto-configure apps
-gearbox install nerd-fonts --interactive --configure-apps       # Interactive + configuration
-gearbox install nerd-fonts --dry-run --fonts="Hack"             # Preview specific font
+./build/gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Install + auto-configure apps
+./build/gearbox install nerd-fonts --interactive --configure-apps       # Interactive + configuration
+./build/gearbox install nerd-fonts --dry-run --fonts="Hack"             # Preview specific font
 ```
 
 #### Smart Application Configuration
 ```bash
 # CLI with automatic application configuration
-gearbox install nerd-fonts --configure-apps                     # Install + configure apps
-gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Specific font + configure
+./build/gearbox install nerd-fonts --configure-apps                     # Install + configure apps
+./build/gearbox install nerd-fonts --fonts="FiraCode" --configure-apps  # Specific font + configure
 gearbox status nerd-fonts                                       # Check installation status and health
 
 # Configuration examples (automatically applied with --configure-apps):
@@ -197,12 +214,12 @@ scripts/install-nerd-fonts.sh --interactive
 #### Advanced Health Checks & Diagnostics
 ```bash
 # Comprehensive nerd-fonts health check
-gearbox doctor nerd-fonts                     # CLI integration
-./bin/orchestrator doctor nerd-fonts          # Direct orchestrator access
+./build/gearbox doctor nerd-fonts             # CLI integration
+./build/orchestrator doctor nerd-fonts        # Direct orchestrator access
 
 # Status with detailed font information
-gearbox status nerd-fonts                     # Shows installed fonts, disk usage
-./bin/orchestrator status nerd-fonts          # Detailed status display
+./build/gearbox status nerd-fonts             # Shows installed fonts, disk usage
+./build/orchestrator status nerd-fonts        # Detailed status display
 ```
 
 **Health Check Coverage:**
@@ -217,14 +234,14 @@ gearbox status nerd-fonts                     # Shows installed fonts, disk usag
 #### Cross-Tool Dependency Intelligence
 ```bash
 # Smart suggestions during installation
-gearbox install nerd-fonts --dry-run
+./build/gearbox install nerd-fonts --dry-run
 # → Suggests: "⭐ Consider adding 'starship' - A customizable prompt that works great with Nerd Fonts"
 
-gearbox install starship --dry-run  
+./build/gearbox install starship --dry-run  
 # → Suggests: "🎨 Consider adding 'nerd-fonts' - Starship displays icons and symbols much better with Nerd Fonts"
 
 # Bundle suggestions for related tools
-gearbox install fzf --dry-run
+./build/gearbox install fzf --dry-run
 # → Suggests terminal enhancement bundle (bat, eza) for complete experience
 ```
 
@@ -307,25 +324,34 @@ substitutions = { "~" = "󰜴" }
   * `categories/text/` - bat, sd, xsv, tealdeer, eza, choose
   * `categories/media/` - ffmpeg, imagemagick, 7zip
   * `categories/ui/` - nerd-fonts, starship, yazi
-- `cmd/gearbox/` - Go CLI source code (Cobra framework):
-  * `main.go` - CLI entry point with version info and global flags
-  * `commands/` - Command implementations (install, list, config, doctor, status, generate)
-  * `internal/` - Internal packages (config, tools, ui)
-  * `pkg/` - Shared packages for CLI functionality
-- `tools/` - Go tools source code:
-  * `orchestrator/` - Advanced installation orchestrator
-  * `script-generator/` - Template-based script generator  
-  * `config-manager/` - Configuration management tool
+- `cmd/` - Go command entry points:
+  * `gearbox/` - Main CLI source code (Cobra framework)
+  * `orchestrator/` - Advanced installation orchestrator entry point
+  * `script-generator/` - Template-based script generator entry point
+  * `config-manager/` - Configuration management tool entry point
+- `pkg/` - Go packages (shared, reusable code):
+  * `orchestrator/` - Installation orchestration logic
+  * `generator/` - Script generation functionality
+  * `config/` - Configuration management
+  * `manifest/` - Installation tracking and state management
+  * `uninstall/` - Safe removal engine
+  * `errors/` - Structured error handling
+  * `logger/` - Centralized logging
+  * `validation/` - Input validation utilities
+- `build/` - **Compiled binaries directory (Go best practice)**:
+  * `gearbox` - Main CLI binary
+  * `orchestrator` - Installation orchestrator
+  * `script-generator` - Template generator
+  * `config-manager` - Configuration tool
 - `templates/` - Script generation templates:
   * `base.sh.tmpl` - Base template for all installation scripts
   * Language-specific templates: `rust.sh.tmpl`, `go.sh.tmpl`, `c.sh.tmpl`, `python.sh.tmpl`
 - `config/` - Configuration files:
   * `tools.json` - Tool definitions with metadata, build types, and dependencies
-- `bin/` - Compiled Go binaries (orchestrator, script-generator, config-manager)
-- `gearbox` - Main CLI binary (Go) with commands: install, list, config, doctor, help, status, generate
+  * `bundles.json` - Bundle definitions and relationships
 - `docs/` - Documentation files
 - `examples/` - Example usage scripts
-- `tests/` - Basic validation tests
+- `tests/` - Comprehensive test suite
 
 ### Build System Architecture
 
@@ -438,7 +464,7 @@ The system supports three build types across all tools:
 - **maximum**: Full-featured builds with all optimizations
 
 Default build type can be configured via:
-- `gearbox config set DEFAULT_BUILD_TYPE maximum`
+- `./build/gearbox config set DEFAULT_BUILD_TYPE maximum`
 - Interactive wizard: `gearbox config wizard`
 - Configuration file: `~/.gearboxrc`
 
@@ -518,7 +544,7 @@ All installation scripts follow consistent patterns:
 ### CLI Interface Design
 - **Safety first**: No command auto-executes without user awareness
 - **Confirmation prompts**: Installing all tools shows impact and requires confirmation  
-- **Specific over general**: `gearbox install fd ripgrep` recommended over `gearbox install`
+- **Specific over general**: `./build/gearbox install fd ripgrep` recommended over `./build/gearbox install`
 - **Clear help**: `gearbox list` shows all tools, `gearbox help` shows usage
 - **Configuration-aware**: Respects user preferences from `~/.gearboxrc`
 - **Comprehensive diagnostics**: `gearbox doctor` provides health checks and recommendations
