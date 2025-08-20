@@ -9,7 +9,18 @@ REPO_DIR="$(dirname "$SCRIPT_DIR")"
 echo "Testing installation scripts..."
 
 # Test that all scripts are executable
-for script in "$REPO_DIR/scripts"/install-*.sh; do
+# Check categorized scripts
+find "$REPO_DIR/scripts/categories" -name "install-*.sh" -type f | while read -r script; do
+    if [[ -x "$script" ]]; then
+        echo "✓ $(basename "$script") is executable"
+    else
+        echo "✗ $(basename "$script") is not executable"
+        exit 1
+    fi
+done
+
+# Check common scripts
+find "$REPO_DIR/scripts/common" -name "install-*.sh" -type f | while read -r script; do
     if [[ -x "$script" ]]; then
         echo "✓ $(basename "$script") is executable"
     else
