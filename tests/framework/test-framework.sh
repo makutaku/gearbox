@@ -26,10 +26,10 @@ BLUE='\033[0;34m'
 NC='\033[0m' # No Color
 
 # Source the common library for testing
-if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
-    source "$REPO_DIR/lib/common.sh"
+if [[ -f "$REPO_DIR/scripts/lib/common.sh" ]]; then
+    source "$REPO_DIR/scripts/lib/common.sh"
 else
-    echo "ERROR: Cannot load common.sh for testing" >&2
+    echo "ERROR: Cannot load scripts/lib/common.sh for testing" >&2
     exit 1
 fi
 

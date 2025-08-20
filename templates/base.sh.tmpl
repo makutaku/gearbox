@@ -12,10 +12,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
 # Source common library for shared functions
-if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
-    source "$REPO_DIR/lib/common.sh"
+if [[ -f "$REPO_DIR/scripts/lib/common.sh" ]]; then
+    source "$REPO_DIR/scripts/lib/common.sh"
 else
-    echo "ERROR: common.sh not found in $REPO_DIR/lib/" >&2
+    echo "ERROR: common.sh not found in $REPO_DIR/scripts/lib/" >&2
     exit 1
 fi
 

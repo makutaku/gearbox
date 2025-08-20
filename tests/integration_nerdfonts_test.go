@@ -2,6 +2,7 @@ package tests
 
 import (
 	"bytes"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -231,6 +232,11 @@ exit 0
 			
 			stderrStr := stderr.String()
 			
+			// Check for execution error first
+			if err != nil {
+				t.Logf("Command execution error (may be expected): %v", err)
+			}
+			
 			// The monitor script should succeed if no contamination occurs
 			if strings.Contains(stderrStr, "ERROR: Received suspicious numeric argument") {
 				t.Errorf("Argument contamination detected: %s", stderrStr)
@@ -344,5 +350,3 @@ func copyFile(src, dst string) error {
 	}
 	return os.WriteFile(dst, data, 0755)
 }
-
-import "fmt"

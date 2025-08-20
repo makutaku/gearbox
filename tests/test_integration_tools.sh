@@ -12,7 +12,7 @@ setup() {
     mkdir -p test_env/{scripts,config,lib,tools}
     
     # Copy essential files
-    cp -r "$REPO_DIR/lib" test_env/
+    cp -r "$REPO_DIR/scripts/lib" test_env/
     cp -r "$REPO_DIR/config" test_env/
     cp "$REPO_DIR/gearbox" test_env/
     
@@ -36,8 +36,8 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$SCRIPT_DIR")"
 
-if [[ -f "$REPO_DIR/lib/common.sh" ]]; then
-    source "$REPO_DIR/lib/common.sh"
+if [[ -f "$REPO_DIR/scripts/lib/common.sh" ]]; then
+    source "$REPO_DIR/scripts/lib/common.sh"
 else
     echo "ERROR: common.sh not found" >&2
     exit 1
@@ -174,9 +174,9 @@ test_error_conditions() {
     cd test_env
     
     # Test with missing library
-    mv lib/common.sh lib/common.sh.backup
+    mv scripts/lib/common.sh scripts/lib/common.sh.backup
     assert_command_failure "./scripts/install-test-tool.sh" "Should fail when common.sh missing"
-    mv lib/common.sh.backup lib/common.sh
+    mv scripts/lib/common.sh.backup scripts/lib/common.sh
     
     cd - >/dev/null
 }
@@ -237,7 +237,7 @@ test_gearbox_cli() {
     assert_command_success "./gearbox list" "Gearbox list should work"
     
     # Test config command
-    if [[ -f lib/config.sh ]]; then
+    if [[ -f scripts/lib/config.sh ]]; then
         assert_command_success "./gearbox config show" "Config show should work"
     else
         test_skip "test_gearbox_cli::config" "Config system not available"
@@ -317,8 +317,8 @@ test_build_cache() {
     ./scripts/install-test-tool.sh
     
     # Verify cache operations work (basic functionality)
-    assert_command_success "source lib/common.sh && cache_build 'test-tool' 'standard' '$HOME/.local/bin/test-tool'" "Cache build should work"
-    assert_command_success "source lib/common.sh && is_cached 'test-tool' 'standard'" "Cache check should work"
+    assert_command_success "source scripts/lib/common.sh && cache_build 'test-tool' 'standard' '$HOME/.local/bin/test-tool'" "Cache build should work"
+    assert_command_success "source scripts/lib/common.sh && is_cached 'test-tool' 'standard'" "Cache check should work"
     
     cd - >/dev/null
 }
@@ -328,10 +328,10 @@ test_health_checks() {
     cd test_env
     
     # Test doctor functionality if available
-    if [[ -f lib/doctor.sh ]]; then
+    if [[ -f scripts/lib/doctor.sh ]]; then
         # Source doctor functions and test basic health checks
-        assert_command_success "source lib/doctor.sh && check_system_requirements" "System requirements check should work"
-        assert_command_success "source lib/doctor.sh && check_disk_space" "Disk space check should work"
+        assert_command_success "source scripts/lib/doctor.sh && check_system_requirements" "System requirements check should work"
+        assert_command_success "source scripts/lib/doctor.sh && check_disk_space" "Disk space check should work"
     else
         test_skip "test_health_checks" "Doctor system not available"
     fi

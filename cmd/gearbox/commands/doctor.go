@@ -256,7 +256,7 @@ func runDiskUsageReport(repoDir string) error {
 	// Run shell function for disk usage
 	script := fmt.Sprintf(`
 		cd %s
-		source lib/common.sh
+		source scripts/lib/common.sh
 		show_disk_usage
 	`, repoDir)
 
@@ -327,7 +327,7 @@ func estimateCleanupSize(repoDir, tool, mode string) int64 {
 func runShellCleanup(repoDir, tool, mode string) int64 {
 	script := fmt.Sprintf(`
 		cd %s
-		source lib/common.sh
+		source scripts/lib/common.sh
 		cleanup_build_artifacts "%s" "%s"
 	`, repoDir, tool, mode)
 

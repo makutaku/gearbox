@@ -10,7 +10,7 @@ echo "Testing installation scripts..."
 
 # Test that all scripts are executable
 # Check categorized scripts
-find "$REPO_DIR/scripts/categories" -name "install-*.sh" -type f | while read -r script; do
+find "$REPO_DIR/scripts/installation/categories" -name "install-*.sh" -type f | while read -r script; do
     if [[ -x "$script" ]]; then
         echo "✓ $(basename "$script") is executable"
     else
@@ -20,7 +20,7 @@ find "$REPO_DIR/scripts/categories" -name "install-*.sh" -type f | while read -r
 done
 
 # Check common scripts
-find "$REPO_DIR/scripts/common" -name "install-*.sh" -type f | while read -r script; do
+find "$REPO_DIR/scripts/installation/common" -name "install-*.sh" -type f | while read -r script; do
     if [[ -x "$script" ]]; then
         echo "✓ $(basename "$script") is executable"
     else
@@ -30,10 +30,10 @@ find "$REPO_DIR/scripts/common" -name "install-*.sh" -type f | while read -r scr
 done
 
 # Test configuration loading
-if source "$REPO_DIR/lib/config.sh"; then
-    echo "✓ lib/config.sh loads successfully"
+if source "$REPO_DIR/scripts/lib/config.sh"; then
+    echo "✓ scripts/lib/config.sh loads successfully"
 else
-    echo "✗ lib/config.sh failed to load"
+    echo "✗ scripts/lib/config.sh failed to load"
     exit 1
 fi
 

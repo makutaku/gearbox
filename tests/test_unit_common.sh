@@ -1,6 +1,6 @@
 #!/bin/bash
 
-# Unit Tests for lib/common.sh functions
+# Unit Tests for scripts/lib/common.sh functions
 # Tests core shared library functionality
 
 # Test setup

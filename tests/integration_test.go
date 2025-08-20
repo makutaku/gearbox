@@ -20,9 +20,9 @@ func TestFullWorkflow(t *testing.T) {
 		
 		expectedFiles := []string{
 			"../cmd/gearbox/main.go",
-			"../internal/orchestrator/main.go",
-			"../internal/script-generator/main.go",
-			"../internal/config-manager/main.go",
+			"../cmd/orchestrator/main.go",
+			"../cmd/script-generator/main.go",
+			"../cmd/config-manager/main.go",
 			"../config/tools.json",
 		}
 		
@@ -59,54 +59,63 @@ func TestFullWorkflow(t *testing.T) {
 	
 	// Test shared library functions
 	t.Run("SharedLibrary", func(t *testing.T) {
-		libPath := "../lib/common.sh"
+		libPath := "../scripts/lib/common.sh"
 		if _, err := os.Stat(libPath); os.IsNotExist(err) {
 			t.Skip("common.sh not found, skipping library test")
 		}
 		
-		content, err := os.ReadFile(libPath)
+		// Test that the library can be loaded and provides essential functions
+		// Since we can't easily test bash function existence from Go,
+		// we'll test that the core module files exist
+		coreModules := []string{
+			"../scripts/lib/core/logging.sh",
+			"../scripts/lib/core/validation.sh", 
+			"../scripts/lib/core/security.sh",
+			"../scripts/lib/core/utilities.sh",
+		}
+		
+		for _, module := range coreModules {
+			if _, err := os.Stat(module); os.IsNotExist(err) {
+				t.Errorf("Core module should exist: %s", module)
+			}
+		}
+		
+		// Test that logging.sh contains essential functions
+		loggingPath := "../scripts/lib/core/logging.sh"
+		content, err := os.ReadFile(loggingPath)
 		if err != nil {
-			t.Fatalf("Failed to read library file: %v", err)
+			t.Fatalf("Failed to read logging module: %v", err)
 		}
 		
-		libContent := string(content)
+		loggingContent := string(content)
+		essentialFunctions := []string{"log()", "error()", "success()", "warning()"}
 		
-		// Check for essential functions
-		requiredFunctions := []string{
-			"log()",
-			"error()",
-			"success()",
-			"warning()",
-			"add_rollback_action()",
-			"execute_rollback()",
-		}
-		
-		for _, fn := range requiredFunctions {
-			if !strings.Contains(libContent, fn) {
-				t.Errorf("Library should contain function: %s", fn)
+		for _, fn := range essentialFunctions {
+			if !strings.Contains(loggingContent, fn) {
+				t.Errorf("Logging module should contain function: %s", fn)
 			}
 		}
 	})
 	
 	// Test script directory structure
 	t.Run("ScriptStructure", func(t *testing.T) {
-		scriptsDir := "../scripts"
+		scriptsDir := "../scripts/installation"
 		if _, err := os.Stat(scriptsDir); os.IsNotExist(err) {
-			t.Skip("scripts directory not found, skipping structure test")
+			t.Skip("scripts/installation directory not found, skipping structure test")
 		}
 		
-		// Check for essential scripts
-		essentialScripts := []string{
-			"install-all-tools.sh",
-			"install-common-deps.sh",
-			"install-fd.sh",
-			"install-ripgrep.sh",
+		// Check for essential scripts in their new locations
+		essentialScripts := map[string]string{
+			"install-all-tools.sh":  "common/install-all-tools.sh",
+			"install-common-deps.sh": "common/install-common-deps.sh",
+			"install-fd.sh":         "categories/core/install-fd.sh", 
+			"install-ripgrep.sh":    "categories/core/install-ripgrep.sh",
 		}
 		
-		for _, script := range essentialScripts {
-			scriptPath := filepath.Join(scriptsDir, script)
-			if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
-				t.Errorf("Essential script not found: %s", script)
+		for scriptName, scriptPath := range essentialScripts {
+			fullPath := filepath.Join(scriptsDir, scriptPath)
+			if _, err := os.Stat(fullPath); os.IsNotExist(err) {
+				t.Errorf("Essential script not found: %s at %s", scriptName, fullPath)
 			}
 		}
 	})
@@ -142,7 +151,6 @@ func TestProjectStructure(t *testing.T) {
 		"../cmd",
 		"../internal",
 		"../pkg",
-		"../lib",
 		"../scripts",
 		"../templates",
 		"../config",

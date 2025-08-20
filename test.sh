@@ -45,8 +45,8 @@ echo "----------------------------"
 # Test basic script execution
 run_test "gearbox help" "./gearbox help"
 run_test "gearbox list" "./gearbox list"
-run_test "lib/config.sh loading" "source lib/config.sh"
-run_test "lib/common.sh loading" "source lib/common.sh"
+run_test "scripts/lib/config.sh loading" "source scripts/lib/config.sh"
+run_test "scripts/lib/common.sh loading" "source scripts/lib/common.sh"
 
 # Test script executability
 echo -e "\n${BLUE}🔧 Script Validation${NC}"
