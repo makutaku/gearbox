@@ -29,8 +29,8 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle backend-dev` - Complete backend development (APIs + databases + servers)
 - `gearbox install --bundle mobile-dev` - Cross-platform mobile development environment
 - `gearbox install --bundle data-scientist` - Data science and machine learning development environment
-- `gearbox install --bundle devops-engineer` - Infrastructure, monitoring, and deployment toolkit
-- `gearbox install --bundle security-researcher` - Security analysis, penetration testing, and vulnerability scanning toolkit
+- `gearbox install --bundle devops-engineer` - Infrastructure, monitoring, deployment + modern container tools (podman, ctop, trivy)
+- `gearbox install --bundle security-researcher` - Security analysis, penetration testing + container security (trivy, dive)
 - `gearbox install --bundle game-dev` - Game development environment with graphics and engine tools
 
 **🚀 Language Ecosystem Tier:**
@@ -46,6 +46,10 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle debugging-tools` - Profilers, memory analyzers, and network debugging tools
 - `gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
 - `gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
+
+**🐳 Container Development:**
+- `gearbox install --bundle docker-dev` - Essential Docker development with security scanning (docker + dive + trivy)
+- `gearbox install --bundle docker-enhanced` - Complete Docker ecosystem (dive, trivy, lazydocker, hadolint, ctop)
 
 **🤖 AI & Modern Development:**
 - `gearbox install --bundle ai-coding-agent` - AI-powered coding assistance (serena + aider)

@@ -66,10 +66,14 @@ gearbox install --bundle advanced      # High-performance development with debug
 gearbox install --bundle frontend-dev       # HTML/CSS/JS + design tools
 gearbox install --bundle backend-dev        # APIs + databases + servers
 gearbox install --bundle data-scientist     # Data science + ML environment
-gearbox install --bundle devops-engineer    # Infrastructure + monitoring + deployment
-gearbox install --bundle security-researcher # Penetration testing + vulnerability scanning
+gearbox install --bundle devops-engineer    # Infrastructure + monitoring + deployment + container tools
+gearbox install --bundle security-researcher # Penetration testing + vulnerability scanning + container security
 gearbox install --bundle mobile-dev         # Cross-platform mobile development
 gearbox install --bundle game-dev          # Game development + graphics tools
+
+# 🐳 Container Development
+gearbox install --bundle docker-dev         # Essential Docker + security scanning
+gearbox install --bundle docker-enhanced    # Complete Docker ecosystem with analysis tools
 
 # 🚀 Language Ecosystems - Choose your language
 gearbox install --bundle python-ecosystem  # Complete Python development environment
@@ -106,9 +110,13 @@ gearbox show bundle web-dev
 - `backend-dev` - Complete backend development (APIs + databases + servers)
 - `mobile-dev` - Cross-platform mobile development environment
 - `data-scientist` - Data science and machine learning development environment
-- `devops-engineer` - Infrastructure, monitoring, and deployment toolkit
-- `security-researcher` - Security analysis, penetration testing, and vulnerability scanning toolkit
+- `devops-engineer` - Infrastructure, monitoring, deployment + modern container tools (podman, ctop, trivy)
+- `security-researcher` - Security analysis, penetration testing + container security (trivy, dive)
 - `game-dev` - Game development environment with graphics and engine tools
+
+**🐳 Container Development:**
+- `docker-dev` - Essential Docker development with security scanning (docker + dive + trivy)
+- `docker-enhanced` - Complete Docker ecosystem (dive, trivy, lazydocker, hadolint, ctop)
 
 **🚀 Language Ecosystem Tier:**
 - `python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
@@ -269,6 +277,12 @@ The one-line installer provides:
 | **mise** | Multi-language version manager | Replaces nvm/pyenv/rbenv, unified tooling |
 | **just** | Modern command runner | Simpler Make alternative, intuitive syntax |
 | **aider** | AI pair programming assistant | Terminal-based AI coding, git integration |
+| **dive** | Docker image layer analyzer | Optimize image sizes, inspect layers |
+| **trivy** | Container vulnerability scanner | Security scanning for containers and filesystems |
+| **podman** | Docker alternative container engine | Rootless, daemonless container management |
+| **lazydocker** | Docker TUI management tool | Terminal interface for Docker operations |
+| **hadolint** | Dockerfile linter | Best practices and security for Dockerfiles |
+| **ctop** | Container monitoring TUI | Real-time container resource monitoring |
 | **uv** | Python package manager | 10-100x faster than pip, unified tooling |
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |

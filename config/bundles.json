@@ -139,17 +139,28 @@
     },
     {
       "name": "docker-dev",
-      "description": "Docker development environment",
+      "description": "Essential Docker development environment with security scanning",
       "category": "development",
-      "tools": ["lazygit", "gh"],
+      "tools": ["lazygit", "gh", "dive", "trivy"],
       "system_packages": ["docker.io", "docker-compose"],
       "package_managers": {
         "apt": ["docker.io", "docker-compose"],
         "yum": ["docker", "docker-compose"],
         "dnf": ["docker", "docker-compose"]
       },
+      "post_install": [
+        "echo 'Docker development environment ready:'",
+        "echo '  🐳 Docker + Compose for container orchestration'",
+        "echo '  🔍 dive: Analyze Docker image layers'",
+        "echo '  🛡️  trivy: Security vulnerability scanning'",
+        "echo '  📝 Git workflow: lazygit + gh integration'",
+        "echo ''",
+        "echo 'Essential commands:'",
+        "echo '  dive <image>        # Optimize image layers'", 
+        "echo '  trivy image <image> # Security scan before deploy'"
+      ],
       "includes_bundles": ["essential"],
-      "tags": ["docker", "containers", "development"]
+      "tags": ["docker", "containers", "development", "security"]
     },
     {
       "name": "database-admin",
@@ -408,9 +419,9 @@
     },
     {
       "name": "devops-engineer",
-      "description": "Infrastructure, monitoring, and deployment toolkit",
+      "description": "Infrastructure, monitoring, and deployment toolkit with modern container tools",
       "category": "domain",
-      "tools": ["bandwhich", "dust"],
+      "tools": ["bandwhich", "dust", "podman", "ctop", "trivy"],
       "system_packages": ["docker.io", "docker-compose"],
       "package_managers": {
         "apt": ["docker.io", "docker-compose", "awscli"],
@@ -418,24 +429,42 @@
         "dnf": ["docker", "docker-compose", "awscli"]
       },
       "post_install": [
-        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true"
+        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
+        "echo 'DevOps container toolkit ready:'",
+        "echo '  🐳 Docker + Podman (rootless alternative)'", 
+        "echo '  📊 ctop: Container monitoring TUI'",
+        "echo '  🛡️  trivy: Security scanning for deployments'",
+        "echo '  🌐 Network monitoring: bandwhich'",
+        "echo '  ☸️  Kubernetes: kubectl ready'"
       ],
       "includes_bundles": ["advanced"],
-      "tags": ["domain", "devops", "infrastructure", "monitoring", "deployment", "kubernetes", "docker"]
+      "tags": ["domain", "devops", "infrastructure", "monitoring", "deployment", "kubernetes", "docker", "podman"]
     },
     {
       "name": "security-researcher",
-      "description": "Security analysis, penetration testing, and vulnerability scanning toolkit",
+      "description": "Security analysis, penetration testing, and container vulnerability scanning toolkit",
       "category": "domain",
-      "tools": [],
+      "tools": ["trivy", "dive"],
       "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
       "package_managers": {
         "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "nikto", "sqlmap", "hydra"],
         "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois"],
         "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois"]
       },
+      "post_install": [
+        "echo 'Security research toolkit ready:'",
+        "echo '  🌐 Network: nmap, tcpdump, wireshark, mtr'",
+        "echo '  🐳 Container Security: trivy (vulnerability scanning)'",
+        "echo '  🔍 Container Analysis: dive (image inspection)'",
+        "echo '  🕷️  Web: nikto, sqlmap, hydra (apt-based systems)'",
+        "echo ''",
+        "echo 'Container security commands:'",
+        "echo '  trivy image <image>    # Scan container for vulnerabilities'",
+        "echo '  trivy fs <path>        # Scan filesystem for issues'",
+        "echo '  dive <image>           # Analyze image layers for secrets'"
+      ],
       "includes_bundles": ["advanced"],
-      "tags": ["domain", "security", "penetration-testing", "vulnerability-scanning", "network-analysis"]
+      "tags": ["domain", "security", "penetration-testing", "vulnerability-scanning", "network-analysis", "container-security"]
     },
     {
       "name": "game-dev",
@@ -450,6 +479,36 @@
       },
       "includes_bundles": ["intermediate"],
       "tags": ["domain", "game-development", "graphics", "3d", "audio", "engine"]
+    },
+    {
+      "name": "docker-enhanced",
+      "description": "Complete modern Docker development environment with security and analysis tools",
+      "category": "development",
+      "tools": ["dive", "trivy", "lazydocker", "hadolint", "ctop"],
+      "system_packages": ["docker.io", "docker-compose", "docker-buildx"],
+      "package_managers": {
+        "apt": ["docker.io", "docker-compose", "docker-buildx-plugin"],
+        "yum": ["docker", "docker-compose"],
+        "dnf": ["docker", "docker-compose"]
+      },
+      "post_install": [
+        "echo 'Enhanced Docker environment installed:'",
+        "echo '  📦 Core: docker, docker-compose, buildx'",
+        "echo '  🔍 Analysis: dive (image layers), trivy (security scan)'",
+        "echo '  🖥️  Management: lazydocker (TUI), ctop (container monitoring)'",
+        "echo '  ✅ Quality: hadolint (Dockerfile linting)'",
+        "echo ''",
+        "echo 'Quick start:'",
+        "echo '  dive <image>          # Analyze image layers'",
+        "echo '  trivy image <image>   # Scan for vulnerabilities'",
+        "echo '  lazydocker           # Docker TUI interface'",
+        "echo '  ctop                 # Container monitoring'",
+        "echo '  hadolint Dockerfile  # Lint Dockerfile'",
+        "echo ''",
+        "echo 'Security tip: Always scan images with trivy before deployment!'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["docker", "containers", "security", "analysis", "development", "enhanced"]
     },
     {
       "name": "modern-dev",
@@ -512,9 +571,9 @@
     },
     {
       "name": "deployment-tools",
-      "description": "CI/CD, containers, and cloud deployment tools",
+      "description": "CI/CD, containers, and cloud deployment tools with security scanning",
       "category": "workflow",
-      "tools": [],
+      "tools": ["trivy", "hadolint"],
       "system_packages": ["docker.io", "docker-compose"],
       "package_managers": {
         "apt": ["docker.io", "docker-compose"],
@@ -523,10 +582,21 @@
       },
       "post_install": [
         "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
-        "curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar -xz && sudo mv linux-amd64/helm /usr/local/bin/ || true"
+        "curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar -xz && sudo mv linux-amd64/helm /usr/local/bin/ || true",
+        "echo 'Deployment toolkit with security ready:'",
+        "echo '  🐳 Docker + Compose for containerization'",
+        "echo '  ☸️  Kubernetes: kubectl + helm'",
+        "echo '  🛡️  Security: trivy vulnerability scanning'",
+        "echo '  ✅ Quality: hadolint Dockerfile linting'",
+        "echo ''",
+        "echo 'Secure deployment workflow:'",
+        "echo '  1. hadolint Dockerfile    # Lint before build'",
+        "echo '  2. docker build -t app .'",
+        "echo '  3. trivy image app        # Security scan'",
+        "echo '  4. kubectl apply -f k8s/  # Deploy if secure'"
       ],
       "includes_bundles": ["essential"],
-      "tags": ["workflow", "deployment", "ci-cd", "containers", "kubernetes", "helm"]
+      "tags": ["workflow", "deployment", "ci-cd", "containers", "kubernetes", "helm", "security"]
     },
     {
       "name": "code-review-tools",

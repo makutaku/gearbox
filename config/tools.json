@@ -669,6 +669,131 @@
       "test_command": "--version"
     },
     {
+      "name": "dive",
+      "description": "Docker image layer analyzer (Go)",
+      "category": "development",
+      "repository": "https://github.com/wagoodman/dive.git",
+      "binary_name": "dive",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r", 
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "trivy",
+      "description": "Vulnerability scanner for containers (Go)",
+      "category": "development",
+      "repository": "https://github.com/aquasecurity/trivy.git",
+      "binary_name": "trivy",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "podman",
+      "description": "Docker alternative container engine (Go)",
+      "category": "development", 
+      "repository": "https://github.com/containers/podman.git",
+      "binary_name": "podman",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential",
+        "libgpgme-dev",
+        "libassuan-dev",
+        "libbtrfs-dev",
+        "libdevmapper-dev",
+        "pkg-config"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "lazydocker",
+      "description": "Docker TUI management tool (Go)",
+      "category": "development",
+      "repository": "https://github.com/jesseduffield/lazydocker.git",
+      "binary_name": "lazydocker",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "hadolint",
+      "description": "Dockerfile linter (Haskell)",
+      "category": "development",
+      "repository": "https://github.com/hadolint/hadolint.git",
+      "binary_name": "hadolint",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "ctop",
+      "description": "Container monitoring TUI (Go)",
+      "category": "system",
+      "repository": "https://github.com/bcicen/ctop.git",
+      "binary_name": "ctop",
+      "language": "go",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
       "name": "7zip",
       "description": "Compression tool (C/C++)",
       "category": "media",
