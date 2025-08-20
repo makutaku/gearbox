@@ -28,6 +28,8 @@ Supports parallel installation, dependency resolution, and comprehensive health 
 
 	// Add commands
 	rootCmd.AddCommand(commands.NewInstallCmd())
+	rootCmd.AddCommand(commands.NewUninstallCmd())
+	rootCmd.AddCommand(commands.NewPlanCmd())
 	rootCmd.AddCommand(commands.NewListCmd())
 	rootCmd.AddCommand(commands.NewShowCmd())
 	rootCmd.AddCommand(commands.NewConfigCmd())
