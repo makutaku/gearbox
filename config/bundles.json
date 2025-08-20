@@ -30,12 +30,12 @@
       "tags": ["development", "git", "terminal", "fonts", "productivity", "professional"]
     },
     {
-      "name": "rust-dev",
-      "description": "Rust developer toolkit with all Rust-based tools",
-      "category": "development",
+      "name": "rust-tools",
+      "description": "Collection of high-performance tools written in Rust (useful for any development)",
+      "category": "tools",
       "tools": ["bottom", "procs", "dust", "bandwhich", "hyperfine", "tealdeer", "difftastic", "fclones"],
       "includes_bundles": ["developer"],
-      "tags": ["rust", "development", "performance"]
+      "tags": ["rust-based", "performance", "tools", "monitoring", "productivity"]
     },
     {
       "name": "data-science",
@@ -46,11 +46,11 @@
     },
     {
       "name": "system-admin",
-      "description": "System monitoring and administration tools",
+      "description": "Local system monitoring and administration tools",
       "category": "system",
-      "tools": ["bottom", "procs", "bandwhich", "dust", "sd", "tealdeer"],
-      "includes_bundles": ["minimal"],
-      "tags": ["system", "monitoring", "admin", "network"]
+      "tools": ["bottom", "procs", "dust"],
+      "includes_bundles": ["essential"],
+      "tags": ["system", "monitoring", "admin", "local", "processes", "resources"]
     },
     {
       "name": "media",
@@ -61,17 +61,19 @@
     },
     {
       "name": "terminal-enhancement",
-      "description": "Tools to enhance terminal experience",
+      "description": "Visual and UX enhancements for terminal (themes, fonts, prompts)",
       "category": "terminal",
-      "tools": ["bat", "eza", "delta", "starship", "nerd-fonts", "zoxide", "fzf"],
-      "tags": ["terminal", "ux", "productivity"]
+      "tools": ["starship", "nerd-fonts", "delta"],
+      "includes_bundles": ["essential"],
+      "tags": ["terminal", "ux", "visual", "themes", "fonts", "prompts"]
     },
     {
       "name": "file-management",
-      "description": "Advanced file management and navigation",
+      "description": "Advanced file operations (file manager, duplicate detection, disk analysis)",
       "category": "files",
-      "tools": ["fd", "ripgrep", "fzf", "yazi", "zoxide", "fclones", "dust"],
-      "tags": ["files", "search", "navigation", "duplicate"]
+      "tools": ["yazi", "fclones", "dust"],
+      "includes_bundles": ["essential"],
+      "tags": ["files", "advanced", "file-manager", "duplicates", "disk-analysis"]
     },
     {
       "name": "text-processing",
@@ -90,11 +92,11 @@
     },
     {
       "name": "python-dev",
-      "description": "Python development environment",
+      "description": "Python development environment (DEPRECATED - use python-ecosystem instead)",
       "category": "development",
-      "tools": ["serena", "uv", "ruff"],
+      "tools": ["uv", "ruff"],
       "includes_bundles": ["essential"],
-      "tags": ["python", "development", "linting", "packaging"]
+      "tags": ["python", "development", "linting", "packaging", "deprecated"]
     },
     {
       "name": "quickstart",
@@ -108,14 +110,14 @@
       "name": "web-dev",
       "description": "Complete web development environment",
       "category": "development", 
-      "tools": ["serena", "uv", "ruff"],
+      "tools": [],
       "system_packages": ["nginx", "nodejs", "npm"],
       "package_managers": {
         "apt": ["nginx", "nodejs", "npm"],
         "yum": ["nginx", "nodejs", "npm"],
         "dnf": ["nginx", "nodejs", "npm"]
       },
-      "includes_bundles": ["essential"],
+      "includes_bundles": ["nodejs-ecosystem"],
       "tags": ["web", "development", "nginx", "nodejs"]
     },
     {
@@ -150,14 +152,14 @@
       "name": "netadmin",
       "description": "Network administration and monitoring toolkit",
       "category": "network",
-      "tools": ["bandwhich", "bottom", "procs", "dust", "jq", "xsv", "hyperfine"],
+      "tools": ["bandwhich", "jq"],
       "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
       "package_managers": {
         "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
         "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
         "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"]
       },
-      "includes_bundles": ["essential"],
+      "includes_bundles": ["system-admin"],
       "tags": ["network", "admin", "monitoring", "security", "diagnostics", "performance"]
     },
     {
@@ -344,7 +346,7 @@
       "description": "Install all available tools",
       "category": "complete",
       "tools": [],
-      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem", "ai-coding-agent"],
+      "includes_bundles": ["rust-tools", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem", "ai-coding-agent"],
       "tags": ["complete", "all"]
     }
   ]

@@ -42,7 +42,17 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle database-admin` - Database administration tools
 - `gearbox install --bundle netadmin` - Network administration and monitoring toolkit
 
-**Specialized Bundles:**
+**Specialized Tool Bundles:**
+- `gearbox install --bundle rust-tools` - High-performance tools written in Rust (useful for any development)
+- `gearbox install --bundle system-admin` - Local system monitoring tools
+- `gearbox install --bundle terminal-enhancement` - Visual terminal enhancements (themes, fonts, prompts)
+- `gearbox install --bundle file-management` - Advanced file operations (file manager, duplicates, disk analysis)
+- `gearbox install --bundle text-processing` - Text and data processing utilities
+- `gearbox install --bundle git-workflow` - Git productivity tools
+- `gearbox install --bundle media` - Media processing tools
+- `gearbox install --bundle data-science` - Data analysis tools
+
+**Bundle Management:**
 - `gearbox list bundles` - Show available bundles with descriptions
 - `gearbox show bundle web-dev` - Show bundle contents including system packages
 

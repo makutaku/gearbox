@@ -121,10 +121,12 @@ gearbox show bundle web-dev
 - `netadmin` - Network administration and monitoring toolkit
 
 **🎯 Specialized Tools:**
-- `rust-dev` - All Rust-based tools
+- `rust-tools` - High-performance tools written in Rust (useful for any development)
 - `data-science` - Data analysis and Python tools
-- `system-admin` - System monitoring tools
-- `terminal-enhancement` - Better terminal experience
+- `system-admin` - Local system monitoring tools
+- `terminal-enhancement` - Visual terminal enhancements (themes, fonts, prompts)
+- `file-management` - Advanced file operations (file manager, duplicates, disk analysis)
+- `text-processing` - Text and data processing utilities
 - `git-workflow` - Git productivity tools
 - `media` - Media processing tools
 
@@ -135,7 +137,10 @@ Each language ecosystem bundle includes:
 - **Essential universal tools** (fd, ripgrep, fzf, bat, eza, jq, zoxide) that enhance any development workflow
 - **System package support** via apt, yum, dnf for complete environments
 
-**Note:** Universal tools like `ripgrep` (written in Rust) are included in ALL language ecosystems because they enhance development regardless of the language you're coding in, not because of their implementation language.
+**Notes:** 
+- Universal tools like `ripgrep` (written in Rust) are included in ALL language ecosystems because they enhance development regardless of the language you're coding in, not because of their implementation language.
+- The `python-dev` bundle is deprecated - use `python-ecosystem` instead for complete Python development environment.
+- The `rust-dev` bundle has been renamed to `rust-tools` to clarify it contains useful tools written in Rust, not Rust language development tools.
 
 # Check system health and disk usage
 gearbox doctor
