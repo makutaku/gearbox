@@ -58,119 +58,135 @@ Install curated collections of tools with a single command:
 gearbox install --bundle essential
 
 # 🎯 Foundation Tier - Start your journey here!
-gearbox install --bundle beginner      # New developers start here
-gearbox install --bundle intermediate  # Ready for git workflows and development tools
-gearbox install --bundle advanced      # High-performance development with debugging tools
+gearbox install --bundle system-foundation  # Essential base system packages
+gearbox install --bundle beginner           # New developers start here
+gearbox install --bundle intermediate       # Ready for git workflows and development tools
+gearbox install --bundle advanced           # High-performance development with debugging tools
+
+# 🔄 Multi-Language Development Environment 
+gearbox install --bundle polyglot-dev               # Python + Node.js + Docker + Cloud + Editors
 
 # 🏗️ Domain Tier - Choose your role
-gearbox install --bundle frontend-dev       # HTML/CSS/JS + design tools
-gearbox install --bundle backend-dev        # APIs + databases + servers
-gearbox install --bundle data-scientist     # Data science + ML environment
-gearbox install --bundle devops-engineer    # Infrastructure + monitoring + deployment + container tools
-gearbox install --bundle security-researcher # Penetration testing + vulnerability scanning + container security
+gearbox install --bundle fullstack-dev      # Complete web development (frontend + backend + databases)
 gearbox install --bundle mobile-dev         # Cross-platform mobile development
-gearbox install --bundle game-dev          # Game development + graphics tools
+gearbox install --bundle data-dev           # Data science + ML environment
+gearbox install --bundle devops-dev         # Infrastructure + monitoring + deployment + container tools
+gearbox install --bundle security-dev       # Penetration testing + vulnerability scanning + container security
+gearbox install --bundle game-dev           # Game development + graphics tools
 
-# 🐳 Container Development (2024 Official Docker CE)
+# 🚀 Language Ecosystems - Choose your language
+gearbox install --bundle python-dev         # Complete Python development environment
+gearbox install --bundle nodejs-dev         # Complete Node.js development environment  
+gearbox install --bundle rust-dev           # Complete Rust development environment
+gearbox install --bundle go-dev             # Complete Go development environment
+gearbox install --bundle java-dev           # Complete Java development environment
+gearbox install --bundle ruby-dev           # Complete Ruby development environment
+gearbox install --bundle cpp-dev            # Complete C/C++ development environment
+
+# ⚙️ Workflow Tools - Add specialized capabilities
+gearbox install --bundle debugging-tools    # Profilers + memory analyzers + network debugging
+gearbox install --bundle deployment-tools   # CI/CD + containers + cloud deployment  
+gearbox install --bundle code-review-tools  # Cross-language linting + formatting + analysis
+gearbox install --bundle ai-tools           # AI-powered coding assistance (serena + aider)
+
+# 🏗️ Infrastructure Tools - System components
 gearbox install --bundle docker-official    # Docker CE from official repository (recommended)
 gearbox install --bundle docker-enhanced    # Complete Docker ecosystem with analysis tools
 gearbox install --bundle docker-rootless    # Maximum security with rootless mode
-
-# 🚀 Language Ecosystems - Choose your language
-gearbox install --bundle python-ecosystem  # Complete Python development environment
-gearbox install --bundle nodejs-ecosystem  # Complete Node.js development environment  
-gearbox install --bundle rust-ecosystem    # Complete Rust development environment
-gearbox install --bundle go-ecosystem      # Complete Go development environment
-
-# ⚙️ Workflow Tools - Add specialized capabilities
-gearbox install --bundle debugging-tools   # Profilers + memory analyzers + network debugging
-gearbox install --bundle deployment-tools  # CI/CD + containers + cloud deployment  
-gearbox install --bundle code-review-tools # Cross-language linting + formatting + analysis
-
-# 🤖 AI & Modern Development
-gearbox install --bundle ai-coding-agent   # AI-powered coding assistance (serena + aider)
-gearbox install --bundle modern-dev        # Modern workflow tools (mise + just + aider)
-gearbox install --bundle media            # Media processing tools
+gearbox install --bundle cloud-tools        # AWS CLI and cloud platform tools
+gearbox install --bundle editors            # Neovim and modern text editors
+gearbox install --bundle database-tools     # Database clients and management tools
+gearbox install --bundle network-tools      # Network monitoring and diagnostics
+gearbox install --bundle media-tools        # Media processing tools
 
 # List all available bundles
 gearbox list bundles
 
 # Show what's in a bundle (including system packages)
-gearbox show bundle web-dev
+gearbox show bundle fullstack-dev
 ```
 
-**Available Bundles:**
+**Available Bundles (31 total, organized by tier):**
 
-**🎯 Foundation Tier (User Journey):**
+**🎯 Foundation Tier (4 bundles) - User Journey:**
+- `system-foundation` - Essential base system packages for development environments
 - `beginner` - Perfect starting point for new developers (essential tools + beautiful terminal)
 - `intermediate` - Productive developer environment with git workflow and development tools
 - `advanced` - High-performance development environment with debugging and performance tools
 
-**🏗️ Domain Tier (Role-Based):**
-- `frontend-dev` - Complete frontend development (HTML/CSS/JS + design tools)
-- `backend-dev` - Complete backend development (APIs + databases + servers)
+**🏗️ Domain Tier (7 bundles) - Choose Your Role:**
+- `polyglot-dev` - Multi-language development environment (Python + Node.js + Docker + Cloud + Editors)
+- `fullstack-dev` - Complete web development (frontend + backend + databases)
 - `mobile-dev` - Cross-platform mobile development environment
-- `data-scientist` - Data science and machine learning development environment
-- `devops-engineer` - Infrastructure, monitoring, deployment + modern container tools (podman, ctop, trivy)
-- `security-researcher` - Security analysis, penetration testing + container security (trivy, dive)
+- `data-dev` - Data science and machine learning development environment
+- `devops-dev` - Infrastructure, monitoring, deployment + modern container tools
+- `security-dev` - Security analysis, penetration testing + container security
 - `game-dev` - Game development environment with graphics and engine tools
 
-**🐳 Container Development (2024 Best Practice):**
-- `docker-official` - Docker CE from official repository (recommended for all users)
-- `docker-enhanced` - Complete Docker ecosystem (docker-official + analysis tools)
-- `docker-rootless` - Maximum security with rootless mode
-- `docker-dev` - ⚠️ DEPRECATED (use docker-official instead)
+**🚀 Language Tier (7 bundles) - Complete Ecosystems:**
+- `python-dev` - Python runtime + uv, ruff, black, mypy, poetry, pytest, ipython + essential tools
+- `nodejs-dev` - Node.js runtime + TypeScript, ESLint, yarn, pnpm, jest + essential tools
+- `go-dev` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
+- `rust-dev` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools  
+- `java-dev` - Java 17 + Maven, Gradle + essential tools
+- `ruby-dev` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
+- `cpp-dev` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
-**🚀 Language Ecosystem Tier:**
-- `python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
-- `nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
-- `go-ecosystem` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
-- `rust-ecosystem` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools  
-- `java-ecosystem` - Java 17 + Maven, Gradle + essential tools
-- `ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
-- `cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
-
-**⚙️ Workflow Tier:**
+**⚙️ Workflow Tier (4 bundles) - Specialized Capabilities:**
 - `debugging-tools` - Profilers, memory analyzers, and network debugging tools
-- `deployment-tools` - CI/CD, containers, and cloud deployment tools
+- `deployment-tools` - CI/CD, containers, and cloud deployment tools with security
 - `code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
+- `ai-tools` - AI-powered coding assistance (serena + aider + mise + just)
 
-**🤖 AI & Modern Development:**
-- `ai-coding-agent` - AI-powered coding assistance (serena + aider) 
-- `modern-dev` - Modern workflow tools (mise + just + aider)
-- `media` - Media processing tools (ffmpeg, imagemagick, 7zip)
+**🏗️ Infrastructure Tier (7 bundles) - System Components:**
+- `docker-official` - Docker CE from official repository (2024 best practice)
+- `docker-enhanced` - Complete Docker ecosystem with analysis and security tools
+- `docker-rootless` - Maximum security with rootless Docker mode
+- `cloud-tools` - AWS CLI v2 and cloud platform tools
+- `editors` - Neovim and modern text editors
+- `database-tools` - Database clients and management tools
+- `network-tools` - Network monitoring and diagnostics toolkit
+- `media-tools` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
-**🔧 Legacy Core Bundles:**
+**🔧 Legacy Tier (2 bundles) - Simple Essentials:**
 - `minimal` - Bare essentials (fd, ripgrep, fzf)
 - `essential` - Modern terminal essentials everyone should have
 
 **🎯 User Journey Architecture Design:**
 
-The bundle system follows a **User Journey Architecture** that matches how developers actually work:
+The bundle system follows a **5-Tier Architecture** that matches how developers actually work:
 
 **Foundation Tier** - Progressive skill levels:
-- **Beginner**: New developers start with essential tools + beautiful terminal
-- **Intermediate**: Add git workflows and development productivity tools  
-- **Advanced**: Add performance tools, debugging, and system analysis
+- **system-foundation**: Base system packages for any development
+- **beginner**: New developers start with essential tools + beautiful terminal
+- **intermediate**: Add git workflows and development productivity tools  
+- **advanced**: Add performance tools, debugging, and system analysis
 
 **Domain Tier** - Role-based environments:
-- Choose bundles based on your primary role (frontend dev, backend dev, data scientist, etc.)
+- Choose bundles based on your primary role (fullstack, data, devops, security, etc.)
 - Each domain includes tools and packages specific to that workflow
-- Inherits from appropriate foundation level
+- Inherits from appropriate foundation level for complete environments
 
-**Language Tier** - Complete language environments:
+**Language Tier** - Complete language ecosystems:
 - Each includes runtime + language-specific tools + testing frameworks
-- **Testing tools are included** in language ecosystems (not separate workflow) since they're language-specific
+- **Professional tooling included** (linting, formatting, testing, debugging)
+- Self-contained ecosystems for productive development
 
 **Workflow Tier** - Cross-language capabilities:
-- Add specialized workflows like debugging, deployment, code review
-- Work across multiple programming languages
+- Add specialized workflows like debugging, deployment, code review, AI assistance
+- Work across multiple programming languages and domains
+
+**Infrastructure Tier** - System components:
+- Docker variants, cloud tools, editors, database tools, network tools
+- Mix and match based on your infrastructure needs
+- Can be added to any development environment
 
 **Key Benefits:**
-- **Clear user journey** from beginner → advanced
-- **No tool duplication** - each tool appears once in logical place
+- **Clear progression path** from beginner → advanced → specialized
+- **No tool duplication** - each tool appears once in its logical tier
 - **Role-based approach** - install what you actually need for your job
-- **Composable** - mix and match tiers as needed
+- **Highly composable** - mix and match tiers for custom environments
+- **30 focused bundles** instead of 44+ overlapping ones
 
 ## 🐳 Docker Installation Migration (2024 Update)
 
@@ -213,10 +229,10 @@ gearbox install --bundle docker-rootless
 gearbox install --bundle beginner
 
 # Ready for more productivity, choose your domain
-gearbox install --bundle frontend-dev  # or backend-dev, data-scientist, etc.
+gearbox install --bundle fullstack-dev  # or mobile-dev, data-dev, devops-dev, etc.
 
 # Add language-specific tools  
-gearbox install --bundle python-ecosystem
+gearbox install --bundle python-dev
 
 # Add specialized workflows as needed
 gearbox install --bundle deployment-tools

@@ -4,94 +4,74 @@
     {
       "name": "minimal",
       "description": "Bare minimum essentials for productivity",
-      "category": "core",
+      "category": "legacy",
       "tools": ["fd", "ripgrep", "fzf"],
       "tags": ["essential", "search", "productivity"]
     },
     {
       "name": "essential",
       "description": "Modern terminal essentials that everyone should have",
-      "category": "core",
+      "category": "legacy",
       "tools": ["fd", "ripgrep", "fzf", "bat", "eza", "jq", "zoxide"],
       "tags": ["essential", "terminal", "productivity", "search", "navigation"]
     },
     {
-      "name": "developer",
-      "description": "Professional development environment with beautiful terminal and git workflow",
-      "category": "development",
-      "tools": ["starship", "nerd-fonts", "delta", "lazygit", "gh", "tokei", "sd", "tealdeer", "hyperfine"],
-      "system_packages": ["git", "curl", "wget", "tree"],
+      "name": "system-foundation",
+      "description": "Essential base system packages for development environments",
+      "category": "foundation",
+      "tools": [],
+      "system_packages": [
+        "build-essential", "git", "curl", "wget", "gnupg", "lsb-release", 
+        "software-properties-common", "ca-certificates", "locales", "unzip", "sudo",
+        "cmake", "ninja-build", "gdb", "strace", "ltrace", "lsof", "xclip", 
+        "tmux", "zsh", "fish", "universal-ctags", "silversearcher-ag"
+      ],
       "package_managers": {
-        "apt": ["git", "curl", "wget", "tree"],
-        "yum": ["git", "curl", "wget", "tree"],
-        "dnf": ["git", "curl", "wget", "tree"]
+        "apt": [
+          "build-essential", "git", "curl", "wget", "gnupg", "lsb-release", 
+          "software-properties-common", "ca-certificates", "locales", "unzip", "sudo",
+          "cmake", "ninja-build", "gdb", "strace", "ltrace", "lsof", "xclip", 
+          "tmux", "zsh", "fish", "universal-ctags", "silversearcher-ag"
+        ],
+        "yum": [
+          "@Development Tools", "git", "curl", "wget", "gnupg2", "redhat-lsb-core",
+          "ca-certificates", "glibc-locale-source", "unzip", "sudo",
+          "cmake", "ninja-build", "gdb", "strace", "ltrace", "lsof", "xclip",
+          "tmux", "zsh", "fish", "ctags", "the_silver_searcher"
+        ],
+        "dnf": [
+          "@Development Tools", "git", "curl", "wget", "gnupg2", "redhat-lsb-core", 
+          "ca-certificates", "glibc-locale-source", "unzip", "sudo",
+          "cmake", "ninja-build", "gdb", "strace", "ltrace", "lsof", "xclip",
+          "tmux", "zsh", "fish", "ctags", "the_silver_searcher"
+        ]
       },
-      "includes_bundles": ["essential"],
-      "tags": ["development", "git", "terminal", "fonts", "productivity", "professional"]
-    },
-    {
-      "name": "rust-tools",
-      "description": "Collection of high-performance tools written in Rust (useful for any development)",
-      "category": "tools",
-      "tools": ["bottom", "procs", "dust", "bandwhich", "hyperfine", "tealdeer", "difftastic", "fclones"],
-      "includes_bundles": ["developer"],
-      "tags": ["rust-based", "performance", "tools", "monitoring", "productivity"]
-    },
-    {
-      "name": "data-science",
-      "description": "Tools for data analysis and processing",
-      "category": "data",
-      "tools": ["jq", "xsv", "choose", "hyperfine", "uv", "ruff"],
-      "includes_bundles": ["essential"],
-      "tags": ["data", "analysis", "python", "csv", "json"]
-    },
-    {
-      "name": "system-admin",
-      "description": "Local system monitoring and administration tools",
-      "category": "system",
-      "tools": ["bottom", "procs", "dust"],
-      "includes_bundles": ["essential"],
-      "tags": ["system", "monitoring", "admin", "local", "processes", "resources"]
-    },
-    {
-      "name": "media",
-      "description": "Media processing and manipulation tools",
-      "category": "media",
-      "tools": ["ffmpeg", "imagemagick", "7zip"],
-      "includes_bundles": ["essential"],
-      "tags": ["media", "video", "audio", "image", "compression"]
-    },
-    {
-      "name": "terminal-enhancement",
-      "description": "Visual and UX enhancements for terminal (themes, fonts, prompts)",
-      "category": "terminal",
-      "tools": ["starship", "nerd-fonts", "delta"],
-      "includes_bundles": ["essential"],
-      "tags": ["terminal", "ux", "visual", "themes", "fonts", "prompts"]
-    },
-    {
-      "name": "file-management",
-      "description": "Advanced file operations (file manager, duplicate detection, disk analysis)",
-      "category": "files",
-      "tools": ["yazi", "fclones", "dust"],
-      "includes_bundles": ["essential"],
-      "tags": ["files", "advanced", "file-manager", "duplicates", "disk-analysis"]
-    },
-    {
-      "name": "text-processing",
-      "description": "Text and data processing utilities",
-      "category": "text",
-      "tools": ["sd", "xsv", "choose", "jq", "bat", "delta"],
-      "includes_bundles": ["essential"],
-      "tags": ["text", "regex", "csv", "json", "diff"]
-    },
-    {
-      "name": "git-workflow",
-      "description": "Complete git workflow enhancement",
-      "category": "git",
-      "tools": ["delta", "lazygit", "gh", "difftastic"],
-      "includes_bundles": ["minimal"],
-      "tags": ["git", "github", "diff", "workflow"]
+      "post_install": [
+        "echo '🏗️  System foundation installed successfully!'",
+        "echo ''",
+        "echo '📦 Development essentials:'",
+        "echo '  🔨 build-essential: C/C++ compilation tools'",
+        "echo '  📁 git: Version control system'", 
+        "echo '  🌐 curl/wget: Download utilities'",
+        "echo '  🔑 gnupg: GPG signing and verification'",
+        "echo ''",
+        "echo '🛠️  Development tools:'",
+        "echo '  🏗️  cmake/ninja: Build systems'",
+        "echo '  🐛 gdb/strace/ltrace: Debugging tools'",
+        "echo '  📊 lsof: Process monitoring'",
+        "echo '  📋 xclip: Clipboard access'",
+        "echo ''",
+        "echo '🐚 Shell environments:'",
+        "echo '  🐚 zsh: Modern shell'",
+        "echo '  🐟 fish: User-friendly shell'",
+        "echo '  📺 tmux: Terminal multiplexer'",
+        "echo ''",
+        "echo 'Next steps:'",
+        "echo '  gearbox install --bundle python-dev   # Python development'",
+        "echo '  gearbox install --bundle nodejs-dev  # Node.js development'",
+        "echo '  gearbox install --bundle docker-official   # Container development'"
+      ],
+      "tags": ["foundation", "base", "development", "system"]
     },
     {
       "name": "beginner",
@@ -124,108 +104,15 @@
       "tags": ["foundation", "advanced", "user-journey", "performance", "debugging"]
     },
     {
-      "name": "web-dev",
-      "description": "Complete web development environment",
-      "category": "development", 
-      "tools": [],
-      "system_packages": ["nginx", "nodejs", "npm"],
-      "package_managers": {
-        "apt": ["nginx", "nodejs", "npm"],
-        "yum": ["nginx", "nodejs", "npm"],
-        "dnf": ["nginx", "nodejs", "npm"]
-      },
-      "includes_bundles": ["nodejs-ecosystem"],
-      "tags": ["web", "development", "nginx", "nodejs"]
-    },
-    {
-      "name": "docker-dev",
-      "description": "Essential Docker development environment with security scanning (DEPRECATED - use docker-official or docker-enhanced)",
-      "category": "development",
-      "tools": ["lazygit", "gh", "dive", "trivy"],
-      "includes_bundles": ["docker-official"],
-      "post_install": [
-        "echo '⚠️  DEPRECATION WARNING: docker-dev bundle is deprecated!'",
-        "echo '📋 Recommended alternatives:'",
-        "echo '  docker-official   # Modern Docker CE installation (2024 best practice)'",
-        "echo '  docker-enhanced   # Complete Docker ecosystem with tools'",
-        "echo '  docker-rootless   # Maximum security with rootless mode'",
-        "echo ''",
-        "echo 'Docker development environment ready:'",
-        "echo '  🐳 Docker + Compose for container orchestration'",
-        "echo '  🔍 dive: Analyze Docker image layers'",
-        "echo '  🛡️  trivy: Security vulnerability scanning'",
-        "echo '  📝 Git workflow: lazygit + gh integration'",
-        "echo ''",
-        "echo 'Essential commands:'",
-        "echo '  dive <image>        # Optimize image layers'", 
-        "echo '  trivy image <image> # Security scan before deploy'"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["docker", "containers", "development", "security"]
-    },
-    {
-      "name": "database-admin",
-      "description": "Database administration tools",
-      "category": "system",
+      "name": "fullstack-dev",
+      "description": "Complete fullstack web development environment (frontend + backend + databases)",
+      "category": "domain",
       "tools": ["jq", "xsv"],
-      "system_packages": ["postgresql-client", "mysql-client", "redis-tools"],
+      "system_packages": ["nodejs", "npm", "postgresql-client", "mysql-client", "redis-tools", "nginx"],
       "package_managers": {
-        "apt": ["postgresql-client", "mysql-client", "redis-tools"],
-        "yum": ["postgresql", "mysql", "redis"],
-        "dnf": ["postgresql", "mysql", "redis"]
-      },
-      "includes_bundles": ["minimal"],
-      "tags": ["database", "admin", "postgresql", "mysql", "redis"]
-    },
-    {
-      "name": "netadmin",
-      "description": "Network administration and monitoring toolkit",
-      "category": "network",
-      "tools": ["bandwhich", "jq"],
-      "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
-      "package_managers": {
-        "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
-        "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
-        "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"]
-      },
-      "includes_bundles": ["system-admin"],
-      "tags": ["network", "admin", "monitoring", "security", "diagnostics", "performance"]
-    },
-    {
-      "name": "python-ecosystem",
-      "description": "Complete Python development environment with modern tooling",
-      "category": "language-ecosystem",
-      "tools": ["uv", "ruff"],
-      "system_packages": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
-      "package_managers": {
-        "apt": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
-        "yum": ["python3", "python3-pip", "python3-devel", "python3-pipx"],
-        "dnf": ["python3", "python3-pip", "python3-devel", "pipx"]
-      },
-      "post_install": [
-        "pipx ensurepath",
-        "pipx install black",
-        "pipx install flake8", 
-        "pipx install mypy",
-        "pipx install poetry",
-        "pipx install pre-commit",
-        "pipx install pytest",
-        "pipx install ipython",
-        "pipx install jupyter"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["python", "ecosystem", "development", "data-science", "web", "ml"]
-    },
-    {
-      "name": "nodejs-ecosystem",
-      "description": "Complete Node.js development environment with TypeScript and modern tooling",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["nodejs", "npm"],
-      "package_managers": {
-        "apt": ["nodejs", "npm"],
-        "yum": ["nodejs", "npm"],
-        "dnf": ["nodejs", "npm"]
+        "apt": ["nodejs", "npm", "postgresql-client", "mysql-client", "redis-tools", "nginx"],
+        "yum": ["nodejs", "npm", "postgresql", "mysql", "redis", "nginx"],
+        "dnf": ["nodejs", "npm", "postgresql", "mysql", "redis", "nginx"]
       },
       "post_install": [
         "npm install -g typescript",
@@ -239,156 +126,21 @@
         "npm install -g pnpm",
         "npm install -g nodemon",
         "npm install -g jest",
-        "npm install -g webpack-cli"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["nodejs", "javascript", "typescript", "ecosystem", "web", "frontend"]
-    },
-    {
-      "name": "go-ecosystem",
-      "description": "Complete Go development environment with essential tools",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["golang-go"],
-      "package_managers": {
-        "apt": ["golang-go"],
-        "yum": ["golang"],
-        "dnf": ["golang"]
-      },
-      "post_install": [
-        "go install golang.org/x/tools/gopls@latest",
-        "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
-        "go install github.com/air-verse/air@latest",
-        "go install honnef.co/go/tools/cmd/staticcheck@latest",
-        "go install github.com/spf13/cobra-cli@latest",
-        "go install github.com/go-delve/delve/cmd/dlv@latest",
-        "go install github.com/goreleaser/goreleaser@latest"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["go", "golang", "ecosystem", "development", "backend", "cli"]
-    },
-    {
-      "name": "rust-ecosystem",
-      "description": "Complete Rust development environment with cargo ecosystem",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["rustc", "cargo"],
-      "package_managers": {
-        "apt": ["rustc", "cargo"],
-        "yum": ["rust", "cargo"],
-        "dnf": ["rust", "cargo"]
-      },
-      "post_install": [
-        "rustup component add rustfmt",
-        "rustup component add clippy",
-        "rustup component add rust-analyzer",
-        "cargo install cargo-watch",
-        "cargo install cargo-edit",
-        "cargo install cargo-audit",
-        "cargo install cargo-outdated",
-        "cargo install sccache",
-        "cargo install cargo-expand",
-        "cargo install cargo-nextest"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["rust", "ecosystem", "development", "performance", "systems", "cli"]
-    },
-    {
-      "name": "java-ecosystem",
-      "description": "Complete Java development environment with Maven and Gradle",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["openjdk-17-jdk", "maven", "gradle"],
-      "package_managers": {
-        "apt": ["openjdk-17-jdk", "maven", "gradle"],
-        "yum": ["java-17-openjdk-devel", "maven", "gradle"],
-        "dnf": ["java-17-openjdk-devel", "maven", "gradle"]
-      },
-      "post_install": [
-        "update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java || true",
-        "echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["java", "ecosystem", "development", "enterprise", "jvm", "maven", "gradle"]
-    },
-    {
-      "name": "ruby-ecosystem",
-      "description": "Complete Ruby development environment with rbenv and gems",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["ruby", "ruby-dev", "bundler"],
-      "package_managers": {
-        "apt": ["ruby", "ruby-dev", "bundler", "libssl-dev", "zlib1g-dev", "bison", "libffi-dev", "libyaml-dev"],
-        "yum": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"],
-        "dnf": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"]
-      },
-      "post_install": [
-        "gem install rails",
-        "gem install rspec",
-        "gem install rubocop",
-        "gem install bundler-audit",
-        "gem install solargraph",
-        "gem install pry",
-        "gem install minitest"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["ruby", "ecosystem", "development", "web", "rails", "gem"]
-    },
-    {
-      "name": "cpp-ecosystem",
-      "description": "Complete C/C++ development environment with modern tooling",
-      "category": "language-ecosystem",
-      "tools": [],
-      "system_packages": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind"],
-      "package_managers": {
-        "apt": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkg-config", "autoconf", "automake", "libtool", "clang-format", "clang-tidy"],
-        "yum": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"],
-        "dnf": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool", "clang-tools-extra"]
-      },
-      "post_install": [
-        "pip3 install conan || true",
-        "curl -sSL https://github.com/microsoft/vcpkg/archive/master.tar.gz | tar -xz -C /opt && mv /opt/vcpkg-master /opt/vcpkg || true"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["cpp", "c", "ecosystem", "development", "systems", "performance", "native"]
-    },
-    {
-      "name": "frontend-dev",
-      "description": "Complete frontend development environment (HTML/CSS/JS + design tools)",
-      "category": "domain",
-      "tools": [],
-      "system_packages": ["nodejs", "npm"],
-      "package_managers": {
-        "apt": ["nodejs", "npm"],
-        "yum": ["nodejs", "npm"],
-        "dnf": ["nodejs", "npm"]
-      },
-      "post_install": [
-        "npm install -g @angular/cli",
-        "npm install -g @vue/cli",
-        "npm install -g create-react-app",
-        "npm install -g vite",
-        "npm install -g sass",
-        "npm install -g postcss-cli",
         "npm install -g webpack-cli",
-        "npm install -g parcel"
+        "echo ''",
+        "echo '🌐 Fullstack web development environment ready!'",
+        "echo '   📦 Frontend: TypeScript, React, Vue, Angular'",
+        "echo '   🔧 Tools: ESLint, Prettier, Jest, Webpack'",
+        "echo '   🗄️  Backend: Node.js + database clients'",
+        "echo '   🌐 Server: nginx for reverse proxy'",
+        "echo ''",
+        "echo '🚀 Quick start:'",
+        "echo '   npx create-react-app my-app    # React project'",
+        "echo '   npm create vue@latest my-vue   # Vue project'",
+        "echo '   ng new my-angular-app          # Angular project'"
       ],
       "includes_bundles": ["intermediate"],
-      "tags": ["domain", "frontend", "web", "html", "css", "javascript", "design"]
-    },
-    {
-      "name": "backend-dev",
-      "description": "Complete backend development environment (APIs + databases + servers)",
-      "category": "domain",
-      "tools": ["jq", "xsv"],
-      "system_packages": ["postgresql-client", "mysql-client", "redis-tools", "nginx"],
-      "package_managers": {
-        "apt": ["postgresql-client", "mysql-client", "redis-tools", "nginx", "curl", "wget"],
-        "yum": ["postgresql", "mysql", "redis", "nginx", "curl", "wget"],
-        "dnf": ["postgresql", "mysql", "redis", "nginx", "curl", "wget"]
-      },
-      "includes_bundles": ["intermediate"],
-      "tags": ["domain", "backend", "api", "database", "server", "microservices"]
+      "tags": ["domain", "fullstack", "web", "frontend", "backend", "database"]
     },
     {
       "name": "mobile-dev",
@@ -411,42 +163,55 @@
       "tags": ["domain", "mobile", "react-native", "ionic", "cordova", "cross-platform"]
     },
     {
-      "name": "data-scientist",
+      "name": "data-dev",
       "description": "Data science and machine learning development environment", 
       "category": "domain",
       "tools": ["jq", "xsv", "choose", "hyperfine"],
-      "includes_bundles": ["python-ecosystem"],
+      "includes_bundles": ["python-dev"],
+      "post_install": [
+        "pipx install jupyter",
+        "pipx install pandas",
+        "pipx install numpy",
+        "pipx install matplotlib",
+        "pipx install seaborn",
+        "pipx install scikit-learn",
+        "echo ''",
+        "echo '📊 Data science environment ready!'",
+        "echo '   🐍 Python + essential data libraries'",
+        "echo '   📓 Jupyter notebooks for interactive analysis'",
+        "echo '   📈 Visualization: matplotlib, seaborn'",
+        "echo '   🤖 ML: scikit-learn ready'",
+        "echo '   🔧 Data tools: jq (JSON), xsv (CSV), choose (text)'",
+        "echo ''",
+        "echo '🚀 Quick start:'",
+        "echo '   jupyter notebook          # Start Jupyter'",
+        "echo '   python -c \"import pandas\"  # Test installation'"
+      ],
       "tags": ["domain", "data-science", "machine-learning", "analysis", "jupyter", "pandas"]
     },
     {
-      "name": "devops-engineer",
-      "description": "Infrastructure, monitoring, and deployment toolkit with modern container tools",
+      "name": "devops-dev",
+      "description": "Infrastructure, monitoring, and deployment toolkit with cloud and container tools",
       "category": "domain",
       "tools": ["bandwhich", "dust", "podman", "ctop", "trivy"],
-      "system_packages": ["awscli"],
-      "package_managers": {
-        "apt": ["awscli"],
-        "yum": ["awscli"],
-        "dnf": ["awscli"]
-      },
-      "includes_bundles": ["docker-official", "advanced"],
+      "includes_bundles": ["docker-official", "cloud-tools", "advanced"],
       "post_install": [
         "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
-        "echo 'DevOps container toolkit ready:'",
+        "echo '🚀 DevOps container toolkit ready:'",
         "echo '  🐳 Docker + Podman (rootless alternative)'", 
         "echo '  📊 ctop: Container monitoring TUI'",
         "echo '  🛡️  trivy: Security scanning for deployments'",
         "echo '  🌐 Network monitoring: bandwhich'",
-        "echo '  ☸️  Kubernetes: kubectl ready'"
+        "echo '  ☸️  Kubernetes: kubectl ready'",
+        "echo '  ☁️  Cloud: AWS CLI v2'"
       ],
-      "includes_bundles": ["advanced"],
       "tags": ["domain", "devops", "infrastructure", "monitoring", "deployment", "kubernetes", "docker", "podman"]
     },
     {
-      "name": "security-researcher",
+      "name": "security-dev",
       "description": "Security analysis, penetration testing, and container vulnerability scanning toolkit",
       "category": "domain",
-      "tools": ["trivy", "dive"],
+      "tools": ["trivy", "dive", "bandwhich"],
       "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
       "package_managers": {
         "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "nikto", "sqlmap", "hydra"],
@@ -454,10 +219,11 @@
         "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois"]
       },
       "post_install": [
-        "echo 'Security research toolkit ready:'",
+        "echo '🛡️  Security research toolkit ready:'",
         "echo '  🌐 Network: nmap, tcpdump, wireshark, mtr'",
         "echo '  🐳 Container Security: trivy (vulnerability scanning)'",
         "echo '  🔍 Container Analysis: dive (image inspection)'",
+        "echo '  📡 Network Monitoring: bandwhich (bandwidth)'",
         "echo '  🕷️  Web: nikto, sqlmap, hydra (apt-based systems)'",
         "echo ''",
         "echo 'Container security commands:'",
@@ -483,9 +249,250 @@
       "tags": ["domain", "game-development", "graphics", "3d", "audio", "engine"]
     },
     {
+      "name": "python-dev",
+      "description": "Complete Python development environment with modern tooling",
+      "category": "language",
+      "tools": ["uv", "ruff"],
+      "system_packages": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
+      "package_managers": {
+        "apt": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
+        "yum": ["python3", "python3-pip", "python3-devel", "python3-pipx"],
+        "dnf": ["python3", "python3-pip", "python3-devel", "pipx"]
+      },
+      "post_install": [
+        "pipx ensurepath",
+        "pipx install black",
+        "pipx install flake8", 
+        "pipx install mypy",
+        "pipx install poetry",
+        "pipx install pre-commit",
+        "pipx install pytest",
+        "pipx install ipython",
+        "echo ''",
+        "echo '🐍 Python ecosystem ready!'",
+        "echo '   📦 Package management: uv (fastest), poetry (full-featured)'",
+        "echo '   🔍 Code quality: ruff (linting), black (formatting), mypy (typing)'",
+        "echo '   🧪 Testing: pytest'",
+        "echo '   📓 Interactive: ipython'",
+        "echo '   🔄 Workflow: pre-commit hooks'",
+        "echo ''",
+        "echo '🚀 Quick start:'",
+        "echo '   uv init myproject     # Create new project'",
+        "echo '   cd myproject && uv add requests  # Add dependencies'",
+        "echo '   uv run python main.py # Run with dependencies'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "python", "development", "data-science", "web", "ml"]
+    },
+    {
+      "name": "nodejs-dev",
+      "description": "Complete Node.js development environment with TypeScript and modern tooling",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["nodejs", "npm"],
+      "package_managers": {
+        "apt": ["nodejs", "npm"],
+        "yum": ["nodejs", "npm"],
+        "dnf": ["nodejs", "npm"]
+      },
+      "post_install": [
+        "npm install -g typescript",
+        "npm install -g ts-node",
+        "npm install -g eslint",
+        "npm install -g prettier",
+        "npm install -g yarn",
+        "npm install -g pnpm",
+        "npm install -g nodemon",
+        "npm install -g jest",
+        "echo ''",
+        "echo '⚡ Node.js ecosystem ready!'",
+        "echo '   📦 Package managers: npm, yarn, pnpm'",
+        "echo '   🔧 TypeScript: typescript, ts-node'",
+        "echo '   🎨 Code quality: eslint, prettier'",
+        "echo '   🧪 Testing: jest'",
+        "echo '   🔥 Development: nodemon'",
+        "echo ''",
+        "echo '🚀 Quick start:'",
+        "echo '   npm init -y && npm install express'",
+        "echo '   tsc --init  # TypeScript project'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "nodejs", "javascript", "typescript", "web", "frontend"]
+    },
+    {
+      "name": "go-dev",
+      "description": "Complete Go development environment with essential tools",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["golang-go"],
+      "package_managers": {
+        "apt": ["golang-go"],
+        "yum": ["golang"],
+        "dnf": ["golang"]
+      },
+      "post_install": [
+        "go install golang.org/x/tools/gopls@latest",
+        "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
+        "go install github.com/air-verse/air@latest",
+        "go install honnef.co/go/tools/cmd/staticcheck@latest",
+        "go install github.com/spf13/cobra-cli@latest",
+        "go install github.com/go-delve/delve/cmd/dlv@latest",
+        "go install github.com/goreleaser/goreleaser@latest"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "go", "golang", "development", "backend", "cli"]
+    },
+    {
+      "name": "rust-dev",
+      "description": "Complete Rust development environment with cargo ecosystem",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["rustc", "cargo"],
+      "package_managers": {
+        "apt": ["rustc", "cargo"],
+        "yum": ["rust", "cargo"],
+        "dnf": ["rust", "cargo"]
+      },
+      "post_install": [
+        "rustup component add rustfmt",
+        "rustup component add clippy",
+        "rustup component add rust-analyzer",
+        "cargo install cargo-watch",
+        "cargo install cargo-edit",
+        "cargo install cargo-audit",
+        "cargo install cargo-outdated",
+        "cargo install sccache",
+        "cargo install cargo-expand",
+        "cargo install cargo-nextest"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "rust", "development", "performance", "systems", "cli"]
+    },
+    {
+      "name": "java-dev",
+      "description": "Complete Java development environment with Maven and Gradle",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["openjdk-17-jdk", "maven", "gradle"],
+      "package_managers": {
+        "apt": ["openjdk-17-jdk", "maven", "gradle"],
+        "yum": ["java-17-openjdk-devel", "maven", "gradle"],
+        "dnf": ["java-17-openjdk-devel", "maven", "gradle"]
+      },
+      "post_install": [
+        "update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java || true",
+        "echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "java", "development", "enterprise", "jvm", "maven", "gradle"]
+    },
+    {
+      "name": "ruby-dev",
+      "description": "Complete Ruby development environment with rbenv and gems",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["ruby", "ruby-dev", "bundler"],
+      "package_managers": {
+        "apt": ["ruby", "ruby-dev", "bundler", "libssl-dev", "zlib1g-dev", "bison", "libffi-dev", "libyaml-dev"],
+        "yum": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"],
+        "dnf": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"]
+      },
+      "post_install": [
+        "gem install rails",
+        "gem install rspec",
+        "gem install rubocop",
+        "gem install bundler-audit",
+        "gem install solargraph",
+        "gem install pry",
+        "gem install minitest"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "ruby", "development", "web", "rails", "gem"]
+    },
+    {
+      "name": "cpp-dev",
+      "description": "Complete C/C++ development environment with modern tooling",
+      "category": "language",
+      "tools": [],
+      "system_packages": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind"],
+      "package_managers": {
+        "apt": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkg-config", "autoconf", "automake", "libtool", "clang-format", "clang-tidy"],
+        "yum": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"],
+        "dnf": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool", "clang-tools-extra"]
+      },
+      "post_install": [
+        "pip3 install conan || true",
+        "curl -sSL https://github.com/microsoft/vcpkg/archive/master.tar.gz | tar -xz -C /opt && mv /opt/vcpkg-master /opt/vcpkg || true"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["language", "cpp", "c", "development", "systems", "performance", "native"]
+    },
+    {
+      "name": "debugging-tools",
+      "description": "Profilers, memory analyzers, and network debugging tools",
+      "category": "workflow",
+      "tools": ["bottom", "procs", "bandwhich", "hyperfine"],
+      "system_packages": ["gdb", "valgrind", "strace", "ltrace"],
+      "package_managers": {
+        "apt": ["gdb", "valgrind", "strace", "ltrace", "perf-tools-unstable"],
+        "yum": ["gdb", "valgrind", "strace", "ltrace", "perf"],
+        "dnf": ["gdb", "valgrind", "strace", "ltrace", "perf"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "debugging", "profiling", "memory", "performance", "network"]
+    },
+    {
+      "name": "deployment-tools",
+      "description": "CI/CD, containers, and cloud deployment tools with security scanning",
+      "category": "workflow",
+      "tools": ["trivy", "hadolint"],
+      "includes_bundles": ["docker-official", "essential"],
+      "post_install": [
+        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
+        "curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar -xz && sudo mv linux-amd64/helm /usr/local/bin/ || true",
+        "echo 'Deployment toolkit with security ready:'",
+        "echo '  🐳 Docker CE + Compose v2 for containerization'",
+        "echo '  ☸️  Kubernetes: kubectl + helm'",
+        "echo '  🛡️  Security: trivy vulnerability scanning'",
+        "echo '  ✅ Quality: hadolint Dockerfile linting'",
+        "echo ''",
+        "echo 'Secure deployment workflow:'",
+        "echo '  1. hadolint Dockerfile    # Lint before build'",
+        "echo '  2. docker build -t app .'",
+        "echo '  3. trivy image app        # Security scan'",
+        "echo '  4. kubectl apply -f k8s/  # Deploy if secure'"
+      ],
+      "tags": ["workflow", "deployment", "ci-cd", "containers", "kubernetes", "helm", "security"]
+    },
+    {
+      "name": "code-review-tools",
+      "description": "Code linting, formatting, and analysis tools (cross-language)",
+      "category": "workflow",
+      "tools": ["sd", "difftastic", "tokei", "delta", "lazygit", "gh"],
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "code-review", "linting", "formatting", "analysis", "quality"]
+    },
+    {
+      "name": "ai-tools",
+      "description": "AI-powered coding assistance and semantic code analysis tools",
+      "category": "workflow",
+      "tools": ["serena", "aider", "mise", "just"],
+      "post_install": [
+        "echo 'AI coding tools installed:'",
+        "echo '  🤖 Serena MCP server: configure with your preferred AI assistant (Claude, etc.)'",
+        "echo '  🧠 Aider: AI pair programming in terminal'",
+        "echo '  🔧 mise: Multi-language version manager'",
+        "echo '  ⚡ just: Modern command runner'",
+        "echo 'See https://github.com/oraios/serena for Serena integration'",
+        "echo 'See https://github.com/paul-gauthier/aider for Aider setup'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]
+    },
+    {
       "name": "docker-official",
       "description": "Docker CE from official repository (2024 best practice with proper user permissions)",
-      "category": "development",
+      "category": "infrastructure",
       "tools": [],
       "system_packages": [],
       "package_managers": {
@@ -532,17 +539,15 @@
         "echo '  docker buildx version    # Check BuildX (included)'",
         "echo ''",
         "echo '⚠️  IMPORTANT: Log out and back in for Docker group permissions to take effect!'",
-        "echo '    Or run: newgrp docker'",
-        "echo ''",
-        "echo '🛡️  Security: For maximum security, consider docker-rootless bundle'"
+        "echo '    Or run: newgrp docker'"
       ],
       "includes_bundles": ["essential"],
-      "tags": ["docker", "containers", "official", "2024", "security", "best-practice"]
+      "tags": ["infrastructure", "docker", "containers", "official", "2024", "security", "best-practice"]
     },
     {
       "name": "docker-rootless",
       "description": "Docker CE with rootless mode (maximum security - 2024 best practice)",
-      "category": "development",
+      "category": "infrastructure",
       "tools": ["dive", "trivy"],
       "system_packages": [],
       "package_managers": {
@@ -582,18 +587,15 @@
         "echo '  docker version           # Check rootless Docker'",
         "echo '  docker run hello-world   # Test installation'",
         "echo '  dive <image>            # Analyze image layers'",
-        "echo '  trivy image <image>     # Security scan'",
-        "echo ''",
-        "echo '⚠️  IMPORTANT: Source ~/.bashrc or restart terminal for environment changes!'",
-        "echo '    Or run: source ~/.bashrc'"
+        "echo '  trivy image <image>     # Security scan'"
       ],
       "includes_bundles": ["essential"],
-      "tags": ["docker", "rootless", "security", "containers", "2024", "maximum-security"]
+      "tags": ["infrastructure", "docker", "rootless", "security", "containers", "2024", "maximum-security"]
     },
     {
       "name": "docker-enhanced",
       "description": "Complete modern Docker development environment with security and analysis tools",
-      "category": "development",
+      "category": "infrastructure",
       "tools": ["dive", "trivy", "lazydocker", "hadolint", "ctop"],
       "includes_bundles": ["docker-official"],
       "post_install": [
@@ -608,117 +610,135 @@
         "echo '  trivy image <image>   # Scan for vulnerabilities'",
         "echo '  lazydocker           # Docker TUI interface'",
         "echo '  ctop                 # Container monitoring'",
-        "echo '  hadolint Dockerfile  # Lint Dockerfile'",
+        "echo '  hadolint Dockerfile  # Lint Dockerfile'"
+      ],
+      "tags": ["infrastructure", "docker", "containers", "security", "analysis", "development", "enhanced"]
+    },
+    {
+      "name": "cloud-tools",
+      "description": "Cloud platform CLI tools (AWS, Azure, GCP)",
+      "category": "infrastructure",
+      "tools": ["aws-cli"],
+      "post_install": [
+        "echo '☁️  Cloud tools installed successfully!'",
         "echo ''",
-        "echo 'Security tip: Always scan images with trivy before deployment!'"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["docker", "containers", "security", "analysis", "development", "enhanced"]
-    },
-    {
-      "name": "modern-dev",
-      "description": "Modern development workflow tools (version management, task running, AI assistance)",
-      "category": "workflow",
-      "tools": ["mise", "just", "aider"],
-      "system_packages": [],
-      "package_managers": {
-        "apt": [],
-        "yum": [],
-        "dnf": []
-      },
-      "post_install": [
-        "echo 'Modern development tools installed:'",
-        "echo '  - mise: Multi-language version manager (replaces nvm, pyenv, rbenv)'",
-        "echo '  - just: Modern command runner (simpler Make alternative)'",
-        "echo '  - aider: AI pair programming assistant'",
-        "echo 'Quick start:'",
-        "echo '  mise install node@latest python@latest'",
-        "echo '  echo \"test:\\n\\techo Hello World\" > justfile && just test'",
-        "echo '  aider --help  # See AI coding options'"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["workflow", "modern", "version-management", "task-runner", "ai", "productivity"]
-    },
-    {
-      "name": "ai-coding-agent",
-      "description": "AI-powered coding assistance and semantic code analysis tools",
-      "category": "ai-assistant",
-      "tools": ["serena", "aider"],
-      "system_packages": [],
-      "package_managers": {
-        "apt": [],
-        "yum": [],
-        "dnf": []
-      },
-      "post_install": [
-        "echo 'AI coding tools installed:'",
-        "echo '  - Serena MCP server: configure with your preferred AI assistant (Claude, etc.)'",
-        "echo '  - Aider: AI pair programming in terminal'",
-        "echo 'See https://github.com/oraios/serena for Serena integration'",
-        "echo 'See https://github.com/paul-gauthier/aider for Aider setup'"
-      ],
-      "includes_bundles": ["essential"],
-      "tags": ["ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]
-    },
-    {
-      "name": "debugging-tools",
-      "description": "Profilers, memory analyzers, and network debugging tools",
-      "category": "workflow",
-      "tools": ["bottom", "procs", "bandwhich", "hyperfine"],
-      "system_packages": ["gdb", "valgrind", "strace", "ltrace"],
-      "package_managers": {
-        "apt": ["gdb", "valgrind", "strace", "ltrace", "perf-tools-unstable"],
-        "yum": ["gdb", "valgrind", "strace", "ltrace", "perf"],
-        "dnf": ["gdb", "valgrind", "strace", "ltrace", "perf"]
-      },
-      "includes_bundles": ["essential"],
-      "tags": ["workflow", "debugging", "profiling", "memory", "performance", "network"]
-    },
-    {
-      "name": "deployment-tools",
-      "description": "CI/CD, containers, and cloud deployment tools with security scanning",
-      "category": "workflow",
-      "tools": ["trivy", "hadolint"],
-      "includes_bundles": ["docker-official", "essential"],
-      "post_install": [
-        "curl -LO https://storage.googleapis.com/kubernetes-release/release/$(curl -s https://storage.googleapis.com/kubernetes-release/release/stable.txt)/bin/linux/amd64/kubectl && chmod +x kubectl && sudo mv kubectl /usr/local/bin/ || true",
-        "curl -fsSL https://get.helm.sh/helm-v3.12.0-linux-amd64.tar.gz | tar -xz && sudo mv linux-amd64/helm /usr/local/bin/ || true",
-        "echo 'Deployment toolkit with security ready:'",
-        "echo '  🐳 Docker CE + Compose v2 for containerization'",
-        "echo '  ☸️  Kubernetes: kubectl + helm'",
-        "echo '  🛡️  Security: trivy vulnerability scanning'",
-        "echo '  ✅ Quality: hadolint Dockerfile linting'",
+        "echo '🔧 Available cloud CLIs:'",
+        "echo '  aws --version        # AWS CLI v2'",
         "echo ''",
-        "echo 'Secure deployment workflow:'",
-        "echo '  1. hadolint Dockerfile    # Lint before build'",
-        "echo '  2. docker build -t app .'",
-        "echo '  3. trivy image app        # Security scan'",
-        "echo '  4. kubectl apply -f k8s/  # Deploy if secure'"
+        "echo '⚙️  Configuration:'",
+        "echo '  aws configure        # Set up AWS credentials'",
+        "echo '  aws sts get-caller-identity  # Test AWS access'",
+        "echo ''",
+        "echo '📚 Quick start:'",
+        "echo '  aws s3 ls           # List S3 buckets'",
+        "echo '  aws ec2 describe-instances  # List EC2 instances'"
       ],
       "includes_bundles": ["essential"],
-      "tags": ["workflow", "deployment", "ci-cd", "containers", "kubernetes", "helm", "security"]
+      "tags": ["infrastructure", "cloud", "aws", "cli", "devops"]
     },
     {
-      "name": "code-review-tools",
-      "description": "Code linting, formatting, and analysis tools (cross-language)",
-      "category": "workflow",
-      "tools": ["sd", "difftastic", "tokei"],
-      "system_packages": [],
+      "name": "editors",
+      "description": "Modern text editors and IDEs",
+      "category": "infrastructure", 
+      "tools": ["neovim"],
+      "post_install": [
+        "echo '📝 Editors installed successfully!'",
+        "echo ''",
+        "echo '🔧 Available editors:'",
+        "echo '  nvim --version      # Neovim (latest)'",
+        "echo ''",
+        "echo '⚙️  Configuration:'",
+        "echo '  nvim                # Launch Neovim'",
+        "echo '  :help               # Built-in help system'",
+        "echo ''",
+        "echo '🚀 Pro tips:'",
+        "echo '  - Install a Neovim configuration like LazyVim or NvChad'",
+        "echo '  - Use :Tutor for interactive Vim tutorial'",
+        "echo '  - Configure with ~/.config/nvim/init.lua'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["infrastructure", "editors", "neovim", "ide", "development", "vim"]
+    },
+    {
+      "name": "database-tools",
+      "description": "Database administration and client tools",
+      "category": "infrastructure",
+      "tools": ["jq", "xsv"],
+      "system_packages": ["postgresql-client", "mysql-client", "redis-tools"],
       "package_managers": {
-        "apt": [],
-        "yum": [],
-        "dnf": []
+        "apt": ["postgresql-client", "mysql-client", "redis-tools"],
+        "yum": ["postgresql", "mysql", "redis"],
+        "dnf": ["postgresql", "mysql", "redis"]
       },
-      "includes_bundles": ["git-workflow"],
-      "tags": ["workflow", "code-review", "linting", "formatting", "analysis", "quality"]
+      "includes_bundles": ["essential"],
+      "tags": ["infrastructure", "database", "postgresql", "mysql", "redis", "admin"]
     },
     {
-      "name": "all",
-      "description": "Install all available tools",
-      "category": "complete",
+      "name": "network-tools",
+      "description": "Network administration and monitoring toolkit",
+      "category": "infrastructure",
+      "tools": ["bandwhich", "jq"],
+      "system_packages": ["nmap", "tcpdump", "wireshark-cli", "netstat", "ss", "dig", "nslookup", "ping", "traceroute", "iperf3", "mtr", "whois"],
+      "package_managers": {
+        "apt": ["nmap", "tcpdump", "tshark", "net-tools", "dnsutils", "iputils-ping", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
+        "yum": ["nmap", "tcpdump", "wireshark", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"],
+        "dnf": ["nmap", "tcpdump", "wireshark-cli", "net-tools", "bind-utils", "iputils", "traceroute", "iperf3", "mtr", "whois", "curl", "wget"]
+      },
+      "includes_bundles": ["essential"],
+      "tags": ["infrastructure", "network", "monitoring", "security", "diagnostics", "performance"]
+    },
+    {
+      "name": "media-tools",
+      "description": "Media processing and manipulation tools",
+      "category": "infrastructure",
+      "tools": ["ffmpeg", "imagemagick", "7zip"],
+      "includes_bundles": ["essential"],
+      "tags": ["infrastructure", "media", "video", "audio", "image", "compression"]
+    },
+    {
+      "name": "polyglot-dev",
+      "description": "Multi-language development environment (Python + Node.js + Docker + Cloud + Editors)",
+      "category": "domain",
       "tools": [],
-      "includes_bundles": ["advanced", "frontend-dev", "backend-dev", "mobile-dev", "data-scientist", "devops-engineer", "security-researcher", "game-dev", "debugging-tools", "deployment-tools", "code-review-tools", "ai-coding-agent", "media"],
-      "tags": ["complete", "all"]
+      "includes_bundles": [
+        "system-foundation", 
+        "python-dev", 
+        "nodejs-dev",
+        "docker-official",
+        "cloud-tools",
+        "editors"
+      ],
+      "post_install": [
+        "echo ''",
+        "echo '🎉 Development environment setup complete!'",
+        "echo ''",
+        "echo '📋 What was installed (complete professional development environment):'",
+        "echo ''",
+        "echo '🏗️  System Foundation:'",
+        "echo '   ✅ Build tools, Git, debugging tools, shell environments'",
+        "echo ''",
+        "echo '🐍 Python Development:'",
+        "echo '   ✅ Python 3 + pipx + professional tools (black, mypy, pytest)'",
+        "echo '   ✅ Modern: uv (10-100x faster) + ruff (10-100x faster linting)'",
+        "echo ''",
+        "echo '⚡ Node.js Development:'",
+        "echo '   ✅ Node.js LTS + TypeScript + ESLint + Prettier'",
+        "echo ''",
+        "echo '🐳 Container Development:'",
+        "echo '   ✅ Docker CE (official repository) + Compose v2'",
+        "echo ''",
+        "echo '☁️  Cloud Tools:'",
+        "echo '   ✅ AWS CLI v2 (latest binary installation)'",
+        "echo ''",
+        "echo '📝 Editors:'",
+        "echo '   ✅ Neovim (latest official binary)'",
+        "echo ''",
+        "echo '⚠️  IMPORTANT: Log out and back in for all permissions to take effect'",
+        "echo ''",
+        "echo '🎯 Complete professional development environment ready!'",
+        "echo '   Modern tooling + comprehensive language support + container development'"
+      ],
+      "tags": ["domain", "polyglot", "multi-language", "python", "nodejs", "comprehensive"]
     }
   ]
 }

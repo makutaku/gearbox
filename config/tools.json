@@ -794,6 +794,48 @@
       "test_command": "--version"
     },
     {
+      "name": "aws-cli",
+      "description": "AWS Command Line Interface v2",
+      "category": "development",
+      "repository": "https://github.com/aws/aws-cli.git",
+      "binary_name": "aws",
+      "language": "python",
+      "build_types": {
+        "minimal": "--official-binary",
+        "standard": "--official-binary",
+        "maximum": "--official-binary"
+      },
+      "dependencies": [
+        "curl",
+        "unzip"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "neovim",
+      "description": "Modern Vim-based editor",
+      "category": "development",
+      "repository": "https://github.com/neovim/neovim.git",
+      "binary_name": "nvim",
+      "language": "c",
+      "build_types": {
+        "minimal": "--official-binary",
+        "standard": "--official-binary", 
+        "maximum": "--build-from-source"
+      },
+      "dependencies": [
+        "curl",
+        "unzip",
+        "make",
+        "gcc"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
       "name": "7zip",
       "description": "Compression tool (C/C++)",
       "category": "media",
