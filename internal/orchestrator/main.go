@@ -111,6 +111,16 @@ func Main() {
 	rootCmd.AddCommand(statusCmd())
 	rootCmd.AddCommand(verifyCmd())
 	rootCmd.AddCommand(doctorCmd())
+	
+	// Add tracking commands
+	rootCmd.AddCommand(trackInstallationCmd())
+	rootCmd.AddCommand(trackBundleCmd())
+	rootCmd.AddCommand(isTrackedCmd())
+	rootCmd.AddCommand(trackPreexistingCmd())
+	rootCmd.AddCommand(initManifestCmd())
+	rootCmd.AddCommand(manifestStatusCmd())
+	rootCmd.AddCommand(listDependentsCmd())
+	rootCmd.AddCommand(canRemoveCmd())
 
 	// Global flags
 	rootCmd.PersistentFlags().StringVarP(&configPath, "config", "c", "", "Path to tools.json configuration file")
@@ -1866,4 +1876,95 @@ func isToolInConfig(toolName string) bool {
 	// Simple check - try to find the tool binary in PATH
 	cmd := exec.Command("which", toolName)
 	return cmd.Run() == nil
+}
+
+// Tracking command implementations
+func trackInstallationCmd() *cobra.Command {
+	cmd := &cobra.Command{
+		Use:                "track-installation TOOL_NAME METHOD VERSION [OPTIONS...]",
+		Short:              "Track a tool installation in the manifest",
+		Args:               cobra.MinimumNArgs(3),
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleTrackInstallation(args)
+		},
+	}
+	return cmd
+}
+
+func trackBundleCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "track-bundle BUNDLE_NAME TOOLS [OPTIONS...]",
+		Short:              "Track a bundle installation in the manifest",
+		Args:               cobra.MinimumNArgs(2),
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleTrackBundle(args)
+		},
+	}
+}
+
+func isTrackedCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "is-tracked TOOL_NAME",
+		Short: "Check if a tool is tracked in the manifest",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleIsTracked(args)
+		},
+	}
+}
+
+func trackPreexistingCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:                "track-preexisting TOOL_NAME BINARY_PATH VERSION",
+		Short:              "Track a pre-existing tool installation",
+		Args:               cobra.ExactArgs(3),
+		DisableFlagParsing: true,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleTrackPreexisting(args)
+		},
+	}
+}
+
+func initManifestCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init-manifest",
+		Short: "Initialize a new installation manifest",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleInitManifest(args)
+		},
+	}
+}
+
+func manifestStatusCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "manifest-status",
+		Short: "Show installation manifest status",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleManifestStatus(args)
+		},
+	}
+}
+
+func listDependentsCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "list-dependents TOOL_NAME",
+		Short: "List tools that depend on the given tool",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleListDependents(args)
+		},
+	}
+}
+
+func canRemoveCmd() *cobra.Command {
+	return &cobra.Command{
+		Use:   "can-remove TOOL_NAME",
+		Short: "Check if a tool can be safely removed",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return handleCanRemove(args)
+		},
+	}
 }

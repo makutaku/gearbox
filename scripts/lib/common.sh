@@ -69,6 +69,9 @@ load_module "core/validation.sh" || exit 1
 load_module "core/security.sh" || exit 1
 load_module "core/utilities.sh" || exit 1
 
+# Load tracking module
+load_module "tracking.sh" || exit 1
+
 # Load configuration management
 if [[ -f "$GEARBOX_LIB_DIR/config.sh" ]]; then
     source "$GEARBOX_LIB_DIR/config.sh"
