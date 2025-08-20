@@ -47,7 +47,7 @@ func runStatus(cmd *cobra.Command, args []string) error {
 	}
 	
 	repoDir := filepath.Dir(execPath)
-	orchestratorPath := filepath.Join(repoDir, "bin", "orchestrator")
+	orchestratorPath := filepath.Join(repoDir, "orchestrator")
 
 	// This command requires the orchestrator for proper status tracking
 	if _, err := os.Stat(orchestratorPath); err == nil {

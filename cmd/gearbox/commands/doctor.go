@@ -94,7 +94,7 @@ func runDoctor(cmd *cobra.Command, args []string) error {
 	}
 	
 	// Try to use advanced orchestrator health checks if available for general checks
-	orchestratorPath := filepath.Join(repoDir, "bin", "orchestrator")
+	orchestratorPath := filepath.Join(repoDir, "orchestrator")
 	if _, err := os.Stat(orchestratorPath); err == nil {
 		return runWithOrchestratorDoctor(orchestratorPath, cmd, args)
 	}

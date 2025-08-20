@@ -56,7 +56,7 @@ func runPlan(cmd *cobra.Command, args []string) error {
 	}
 	
 	repoDir := filepath.Dir(execPath)
-	orchestratorPath := filepath.Join(repoDir, "bin", "orchestrator")
+	orchestratorPath := filepath.Join(repoDir, "orchestrator")
 
 	// Check if the orchestrator is available
 	if _, err := os.Stat(orchestratorPath); err != nil {
