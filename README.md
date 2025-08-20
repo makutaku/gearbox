@@ -60,16 +60,16 @@ gearbox install --bundle essential
 # Install complete developer toolkit (includes essential + git tools, fonts)
 gearbox install --bundle developer
 
-# Install complete Python development environment (with black, mypy, poetry)
+# Install complete Python development environment (Python + pipx, black, mypy, poetry + essential tools)
 gearbox install --bundle python-ecosystem
 
-# Install complete Node.js development environment (with TypeScript, Angular/Vue/React CLIs)
+# Install complete Node.js development environment (Node.js + TypeScript, Angular/Vue/React CLIs + essential tools)
 gearbox install --bundle nodejs-ecosystem
 
-# Install complete Rust development environment (with all Rust tools + cargo ecosystem)
+# Install complete Rust development environment (Rust + rustfmt, clippy, cargo tools + essential tools)
 gearbox install --bundle rust-ecosystem
 
-# Install complete Go development environment (with gopls, linters, build tools)
+# Install complete Go development environment (Go + gopls, linters, build tools + essential tools)
 gearbox install --bundle go-ecosystem
 
 # Install data science tools (jq, xsv, choose, hyperfine, serena, uv, ruff)
@@ -94,13 +94,13 @@ gearbox show bundle web-dev
 **Available Bundles:**
 
 **🚀 Language Ecosystem Bundles (NEW!):**
-- `python-ecosystem` - Complete Python development with pipx, black, flake8, mypy, poetry
-- `nodejs-ecosystem` - Complete Node.js with TypeScript, ESLint, Angular/Vue/React CLIs
-- `go-ecosystem` - Complete Go development with gopls, golangci-lint, air, staticcheck
-- `rust-ecosystem` - Complete Rust development with rustfmt, clippy, rust-analyzer, cargo tools  
-- `java-ecosystem` - Complete Java development with OpenJDK 17, Maven, Gradle
-- `ruby-ecosystem` - Complete Ruby development with Rails, RSpec, RuboCop, Solargraph
-- `cpp-ecosystem` - Complete C/C++ development with GCC, Clang, CMake, Conan, vcpkg
+- `python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
+- `nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
+- `go-ecosystem` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
+- `rust-ecosystem` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools  
+- `java-ecosystem` - Java 17 + Maven, Gradle + essential tools
+- `ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
+- `cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
 **🔧 Core Development Bundles:**
 - `minimal` - Bare essentials (fd, ripgrep, fzf)
@@ -122,8 +122,14 @@ gearbox show bundle web-dev
 - `git-workflow` - Git productivity tools
 - `media` - Media processing tools
 
-**🆕 System Package Support:**
-Bundles can now include system packages (installed via apt, yum, dnf) alongside gearbox tools. Perfect for complete development environments!
+**🆕 Language Ecosystem Design:**
+Each language ecosystem bundle includes:
+- **Language runtime/compiler** (python3, nodejs, rustc, go, etc.)
+- **Language-specific development tools** (linters, formatters, package managers)
+- **Essential universal tools** (fd, ripgrep, fzf, bat, eza, jq, zoxide) that enhance any development workflow
+- **System package support** via apt, yum, dnf for complete environments
+
+**Note:** Universal tools like `ripgrep` (written in Rust) are included in ALL language ecosystems because they enhance development regardless of the language you're coding in, not because of their implementation language.
 
 # Check system health and disk usage
 gearbox doctor

@@ -177,16 +177,19 @@
         "pipx install flake8", 
         "pipx install mypy",
         "pipx install poetry",
-        "pipx install pre-commit"
+        "pipx install pre-commit",
+        "pipx install pytest",
+        "pipx install ipython",
+        "pipx install jupyter"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["python", "ecosystem", "development", "data-science", "web", "ml"]
     },
     {
       "name": "nodejs-ecosystem",
       "description": "Complete Node.js development environment with TypeScript and modern tooling",
       "category": "language-ecosystem",
-      "tools": ["gh", "sd", "jq"],
+      "tools": [],
       "system_packages": ["nodejs", "npm"],
       "package_managers": {
         "apt": ["nodejs", "npm"],
@@ -202,16 +205,19 @@
         "npm install -g @vue/cli",
         "npm install -g create-react-app",
         "npm install -g yarn",
-        "npm install -g pnpm"
+        "npm install -g pnpm",
+        "npm install -g nodemon",
+        "npm install -g jest",
+        "npm install -g webpack-cli"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["nodejs", "javascript", "typescript", "ecosystem", "web", "frontend"]
     },
     {
       "name": "go-ecosystem",
       "description": "Complete Go development environment with essential tools",
       "category": "language-ecosystem",
-      "tools": ["fzf", "lazygit", "gh"],
+      "tools": [],
       "system_packages": ["golang-go"],
       "package_managers": {
         "apt": ["golang-go"],
@@ -223,16 +229,18 @@
         "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
         "go install github.com/air-verse/air@latest",
         "go install honnef.co/go/tools/cmd/staticcheck@latest",
-        "go install github.com/spf13/cobra-cli@latest"
+        "go install github.com/spf13/cobra-cli@latest",
+        "go install github.com/go-delve/delve/cmd/dlv@latest",
+        "go install github.com/goreleaser/goreleaser@latest"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["go", "golang", "ecosystem", "development", "backend", "cli"]
     },
     {
       "name": "rust-ecosystem",
       "description": "Complete Rust development environment with cargo ecosystem",
       "category": "language-ecosystem",
-      "tools": ["fd", "ripgrep", "bat", "eza", "delta", "bottom", "procs", "dust", "bandwhich", "hyperfine", "tealdeer", "difftastic", "fclones", "tokei", "sd", "choose", "xsv"],
+      "tools": [],
       "system_packages": ["rustc", "cargo"],
       "package_managers": {
         "apt": ["rustc", "cargo"],
@@ -247,16 +255,18 @@
         "cargo install cargo-edit",
         "cargo install cargo-audit",
         "cargo install cargo-outdated",
-        "cargo install sccache"
+        "cargo install sccache",
+        "cargo install cargo-expand",
+        "cargo install cargo-nextest"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["rust", "ecosystem", "development", "performance", "systems", "cli"]
     },
     {
       "name": "java-ecosystem",
       "description": "Complete Java development environment with Maven and Gradle",
       "category": "language-ecosystem",
-      "tools": ["gh", "jq", "hyperfine"],
+      "tools": [],
       "system_packages": ["openjdk-17-jdk", "maven", "gradle"],
       "package_managers": {
         "apt": ["openjdk-17-jdk", "maven", "gradle"],
@@ -267,14 +277,14 @@
         "update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java || true",
         "echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["java", "ecosystem", "development", "enterprise", "jvm", "maven", "gradle"]
     },
     {
       "name": "ruby-ecosystem",
       "description": "Complete Ruby development environment with rbenv and gems",
       "category": "language-ecosystem",
-      "tools": ["gh", "sd", "jq"],
+      "tools": [],
       "system_packages": ["ruby", "ruby-dev", "bundler"],
       "package_managers": {
         "apt": ["ruby", "ruby-dev", "bundler", "libssl-dev", "zlib1g-dev", "bison", "libffi-dev", "libyaml-dev"],
@@ -286,27 +296,29 @@
         "gem install rspec",
         "gem install rubocop",
         "gem install bundler-audit",
-        "gem install solargraph"
+        "gem install solargraph",
+        "gem install pry",
+        "gem install minitest"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["ruby", "ecosystem", "development", "web", "rails", "gem"]
     },
     {
       "name": "cpp-ecosystem",
       "description": "Complete C/C++ development environment with modern tooling",
       "category": "language-ecosystem",
-      "tools": ["ffmpeg", "imagemagick", "7zip", "jq", "hyperfine"],
+      "tools": [],
       "system_packages": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind"],
       "package_managers": {
-        "apt": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkg-config", "autoconf", "automake", "libtool"],
+        "apt": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkg-config", "autoconf", "automake", "libtool", "clang-format", "clang-tidy"],
         "yum": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"],
-        "dnf": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"]
+        "dnf": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool", "clang-tools-extra"]
       },
       "post_install": [
         "pip3 install conan || true",
         "curl -sSL https://github.com/microsoft/vcpkg/archive/master.tar.gz | tar -xz -C /opt && mv /opt/vcpkg-master /opt/vcpkg || true"
       ],
-      "includes_bundles": ["minimal"],
+      "includes_bundles": ["essential"],
       "tags": ["cpp", "c", "ecosystem", "development", "systems", "performance", "native"]
     },
     {

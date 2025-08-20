@@ -20,13 +20,13 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ### Bundle Installation (NEW!)
 
 **Language Ecosystem Bundles:**
-- `gearbox install --bundle python-ecosystem` - Complete Python development (pipx, black, flake8, mypy, poetry, pre-commit)
-- `gearbox install --bundle nodejs-ecosystem` - Complete Node.js development (TypeScript, ESLint, Angular/Vue/React CLIs)
-- `gearbox install --bundle rust-ecosystem` - Complete Rust development (rustfmt, clippy, rust-analyzer, cargo tools)
-- `gearbox install --bundle go-ecosystem` - Complete Go development (gopls, golangci-lint, air, staticcheck)
-- `gearbox install --bundle java-ecosystem` - Complete Java development (OpenJDK 17, Maven, Gradle)
-- `gearbox install --bundle ruby-ecosystem` - Complete Ruby development (Rails, RSpec, RuboCop, Solargraph)
-- `gearbox install --bundle cpp-ecosystem` - Complete C/C++ development (GCC, Clang, CMake, Conan, vcpkg)
+- `gearbox install --bundle python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
+- `gearbox install --bundle nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
+- `gearbox install --bundle rust-ecosystem` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
+- `gearbox install --bundle go-ecosystem` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
+- `gearbox install --bundle java-ecosystem` - Java 17 + Maven, Gradle + essential tools
+- `gearbox install --bundle ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
+- `gearbox install --bundle cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
 **Core Development Bundles:**
 - `gearbox install --bundle essential` - Install curated bundle of essential tools
