@@ -2040,6 +2040,7 @@ Analyzes dependencies and provides a removal plan before execution.`,
 	cmd.Flags().BoolVar(&opts.DryRun, "dry-run", false, "Show what would be removed without executing")
 	cmd.Flags().BoolVar(&opts.Backup, "backup", true, "Create backup before removal")
 	cmd.Flags().StringVar(&opts.BackupSuffix, "backup-suffix", "", "Suffix for backup files")
+	cmd.Flags().BoolVar(&opts.RemoveBundleContents, "bundle-contents", false, "Remove all tools in bundle, not just bundle tracking")
 
 	return cmd
 }

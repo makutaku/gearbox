@@ -130,6 +130,11 @@ func (r *RemovalEngine) PlanRemoval(targets []string, options RemovalOptions) (*
 
 // analyzeTarget analyzes a single target for removal
 func (r *RemovalEngine) analyzeTarget(target string, plan *RemovalPlan, options RemovalOptions) error {
+	// Check if target is a bundle first
+	if r.isBundle(target) {
+		return r.analyzeBundleTarget(target, plan, options)
+	}
+	
 	// Check if target is tracked
 	record, exists := r.tracker.GetInstallation(target)
 	if !exists {
@@ -306,12 +311,13 @@ func (r *RemovalEngine) generateSummary(plan *RemovalPlan) {
 
 // RemovalOptions configures how removal should be performed
 type RemovalOptions struct {
-	Force        bool   // Force removal even if there are dependents
-	Cascade      bool   // Remove unused dependencies
-	RemoveConfig bool   // Remove configuration files
-	DryRun       bool   // Only plan, don't execute
-	Backup       bool   // Create backup before removal
-	BackupSuffix string // Suffix for backup files
+	Force               bool   // Force removal even if there are dependents
+	Cascade             bool   // Remove unused dependencies
+	RemoveConfig        bool   // Remove configuration files
+	DryRun              bool   // Only plan, don't execute
+	Backup              bool   // Create backup before removal
+	BackupSuffix        string // Suffix for backup files
+	RemoveBundleContents bool   // Remove all tools in bundle, not just bundle tracking
 }
 
 // ValidatePlan checks if a removal plan is safe to execute
@@ -389,4 +395,75 @@ func GetRemovalMethodDescription(method RemovalMethod) string {
 	default:
 		return "Unknown removal method"
 	}
+}
+
+// isBundle checks if a target is a bundle
+func (r *RemovalEngine) isBundle(target string) bool {
+	// Check if the target is tracked as a bundle
+	record, exists := r.tracker.GetInstallation(target)
+	if exists && record.Method == manifest.MethodBundle {
+		return true
+	}
+	
+	// Check if it's a known bundle suffix
+	if strings.HasSuffix(target, "_bundle") || strings.HasSuffix(target, "-bundle") {
+		return true
+	}
+	
+	return false
+}
+
+// analyzeBundleTarget analyzes a bundle for removal
+func (r *RemovalEngine) analyzeBundleTarget(bundleName string, plan *RemovalPlan, options RemovalOptions) error {
+	// Get bundle record
+	record, exists := r.tracker.GetInstallation(bundleName)
+	if !exists {
+		plan.Warnings = append(plan.Warnings, SafetyWarning{
+			Target:  bundleName,
+			Level:   "info",
+			Message: "Bundle is not tracked by gearbox",
+		})
+		return nil
+	}
+	
+	if record.Method != manifest.MethodBundle {
+		plan.Warnings = append(plan.Warnings, SafetyWarning{
+			Target:  bundleName,
+			Level:   "warning",
+			Message: "Target is not a bundle",
+		})
+		return nil
+	}
+	
+	// Add bundle removal action
+	action := RemovalAction{
+		Target:       bundleName,
+		Method:       RemovalBundle,
+		Paths:        []string{}, // Bundles don't have file paths
+		Dependencies: record.Dependencies,
+		IsSafe:       true, // Bundle removal is generally safe
+		Reason:       "User requested bundle removal",
+	}
+	plan.ToRemove = append(plan.ToRemove, action)
+	
+	// If removing bundle tools is requested, analyze each tool in the bundle
+	if options.RemoveBundleContents {
+		for _, toolName := range record.Dependencies {
+			if err := r.analyzeTarget(toolName, plan, options); err != nil {
+				return fmt.Errorf("failed to analyze bundle tool %s: %w", toolName, err)
+			}
+		}
+	} else {
+		// Just removing bundle tracking, warn about contained tools
+		if len(record.Dependencies) > 0 {
+			plan.Warnings = append(plan.Warnings, SafetyWarning{
+				Target:  bundleName,
+				Level:   "info",
+				Message: fmt.Sprintf("Bundle contains %d tools that will remain installed: %s", 
+					len(record.Dependencies), strings.Join(record.Dependencies, ", ")),
+			})
+		}
+	}
+	
+	return nil
 }

@@ -39,6 +39,9 @@ It ensures that removing tools won't break other installed tools unless forced.`
 	cmd.Flags().Bool("no-backup", false, "Skip backup creation")
 	cmd.Flags().String("backup-suffix", "", "Suffix for backup files")
 
+	// Bundle options
+	cmd.Flags().Bool("bundle-contents", false, "Remove all tools in bundle, not just bundle tracking")
+
 	// Safety options
 	cmd.Flags().String("safety", "standard", "Safety level (conservative, standard, aggressive)")
 
@@ -110,6 +113,10 @@ func runUninstallWithOrchestrator(orchestratorPath string, cmd *cobra.Command, a
 	
 	if backupSuffix, _ := cmd.Flags().GetString("backup-suffix"); backupSuffix != "" {
 		orchestratorCmd.Args = append(orchestratorCmd.Args, "--backup-suffix", backupSuffix)
+	}
+	
+	if bundleContents, _ := cmd.Flags().GetBool("bundle-contents"); bundleContents {
+		orchestratorCmd.Args = append(orchestratorCmd.Args, "--bundle-contents")
 	}
 
 	// Add global flags
