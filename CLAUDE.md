@@ -47,9 +47,10 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
 - `gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
-**🐳 Container Development:**
-- `gearbox install --bundle docker-dev` - Essential Docker development with security scanning (docker + dive + trivy)
-- `gearbox install --bundle docker-enhanced` - Complete Docker ecosystem (dive, trivy, lazydocker, hadolint, ctop)
+**🐳 Container Development (2024 Best Practice):**
+- `gearbox install --bundle docker-official` - Docker CE from official repository (recommended)
+- `gearbox install --bundle docker-enhanced` - Complete Docker ecosystem (docker-official + analysis tools)
+- `gearbox install --bundle docker-rootless` - Maximum security with rootless mode
 
 **🤖 AI & Modern Development:**
 - `gearbox install --bundle ai-coding-agent` - AI-powered coding assistance (serena + aider)

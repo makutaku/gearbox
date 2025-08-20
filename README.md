@@ -71,9 +71,10 @@ gearbox install --bundle security-researcher # Penetration testing + vulnerabili
 gearbox install --bundle mobile-dev         # Cross-platform mobile development
 gearbox install --bundle game-dev          # Game development + graphics tools
 
-# 🐳 Container Development
-gearbox install --bundle docker-dev         # Essential Docker + security scanning
+# 🐳 Container Development (2024 Official Docker CE)
+gearbox install --bundle docker-official    # Docker CE from official repository (recommended)
 gearbox install --bundle docker-enhanced    # Complete Docker ecosystem with analysis tools
+gearbox install --bundle docker-rootless    # Maximum security with rootless mode
 
 # 🚀 Language Ecosystems - Choose your language
 gearbox install --bundle python-ecosystem  # Complete Python development environment
@@ -114,9 +115,11 @@ gearbox show bundle web-dev
 - `security-researcher` - Security analysis, penetration testing + container security (trivy, dive)
 - `game-dev` - Game development environment with graphics and engine tools
 
-**🐳 Container Development:**
-- `docker-dev` - Essential Docker development with security scanning (docker + dive + trivy)
-- `docker-enhanced` - Complete Docker ecosystem (dive, trivy, lazydocker, hadolint, ctop)
+**🐳 Container Development (2024 Best Practice):**
+- `docker-official` - Docker CE from official repository (recommended for all users)
+- `docker-enhanced` - Complete Docker ecosystem (docker-official + analysis tools)
+- `docker-rootless` - Maximum security with rootless mode
+- `docker-dev` - ⚠️ DEPRECATED (use docker-official instead)
 
 **🚀 Language Ecosystem Tier:**
 - `python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
@@ -168,6 +171,41 @@ The bundle system follows a **User Journey Architecture** that matches how devel
 - **No tool duplication** - each tool appears once in logical place
 - **Role-based approach** - install what you actually need for your job
 - **Composable** - mix and match tiers as needed
+
+## 🐳 Docker Installation Migration (2024 Update)
+
+**IMPORTANT: Gearbox Docker support has been modernized to follow 2024 best practices.**
+
+### **What Changed:**
+- ❌ **Old**: `docker.io` package (Ubuntu repository, outdated)
+- ✅ **New**: `docker-ce` from official Docker repository (latest, secure)
+- ❌ **Old**: `docker-compose` v1 (deprecated)
+- ✅ **New**: `docker compose` v2 (built into Docker CE)
+- ❌ **Old**: Manual sudo required
+- ✅ **New**: Proper user permissions (docker group)
+
+### **Migration Guide:**
+
+**If you previously used docker bundles:**
+```bash
+# Remove old Docker installation
+sudo apt-get purge docker docker.io docker-compose
+
+# Install modern Docker
+gearbox install --bundle docker-official
+
+# Or for complete ecosystem
+gearbox install --bundle docker-enhanced
+
+# For maximum security
+gearbox install --bundle docker-rootless
+```
+
+**Key Differences:**
+- Uses `docker compose` (space) instead of `docker-compose` (hyphen)
+- No sudo required after proper installation
+- Latest security updates from Docker's official repository
+- Built-in BuildX and Compose v2 support
 
 **Example User Journey:**
 ```bash
