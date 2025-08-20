@@ -14,38 +14,62 @@ Complete technical guide for understanding the architecture and contributing to 
 
 ## Architecture Overview
 
-### Three-Tier System
+### Modern Modular System
 
-The installer follows a clean three-tier architecture:
+The installer follows a modern modular architecture with comprehensive testing:
 
-#### 1. Configuration Layer (`config.sh`)
-- Defines build directories, cache paths, install prefixes
-- Provides shared logging functions and color definitions
-- Contains utility functions for path and version management
-- Single source of configuration truth
+#### 1. Modular Library System (`scripts/lib/`)
+- **Core Modules**: Essential functions (logging, validation, security, utilities)
+- **Build Modules**: Build system functions (dependencies, execution, cache, cleanup)  
+- **System Modules**: System integration (installation, backup, environment)
+- **Configuration**: User preferences and system configuration management
+- **Lazy Loading**: Efficient module loading for optimal performance
 
-#### 2. Orchestration Layer (`scripts/install-all-tools.sh`)
-- Manages installation order for optimal dependency sharing
+#### 2. Orchestration Layer (`scripts/installation/common/`)
+- `install-all-tools.sh` - Manages installation order for optimal dependency sharing
+- `install-common-deps.sh` - Coordinates shared dependency installation
 - Handles build type flags and common options
-- Coordinates common dependency installation
 - Provides unified interface for multiple tools
 
-#### 3. Individual Tool Scripts (`scripts/install-*.sh`)
-- Each tool has a dedicated script following consistent patterns
-- Supports standard command-line interface
-- Handles tool-specific build configurations
-- Maintains independence while leveraging shared infrastructure
+#### 3. Categorized Tool Scripts (`scripts/installation/categories/`)
+- **Core Tools** (`core/`): fd, ripgrep, fzf, jq, zoxide
+- **Development Tools** (`development/`): gh, lazygit, delta, difftastic, etc.
+- **System Tools** (`system/`): bottom, procs, bandwhich, dust, fclones
+- **Text Tools** (`text/`): bat, sd, xsv, tealdeer, eza, choose
+- **Media Tools** (`media/`): ffmpeg, imagemagick, 7zip
+- **UI Tools** (`ui/`): nerd-fonts, starship, yazi
+- Each tool follows consistent patterns while leveraging modular infrastructure
+
+#### 4. Comprehensive Testing System (`tests/`)
+- **Core Function Tests**: Essential function validation (14 functions)
+- **Unit Tests**: Complete coverage (50+ functions across all modules)
+- **Integration Tests**: Multi-tool workflow validation
+- **Performance Benchmarks**: Timing and resource usage analysis
+- **Security Tests**: Protection against attacks and vulnerabilities
 
 ### Directory Strategy
 
 ```
-~/tools/build/     # Source repositories (temporary)
-~/tools/cache/     # Downloads and cache files
-/usr/local/bin/    # Installed binaries (system-wide)
-~/gearbox/         # This repository (scripts)
+~/tools/build/              # Source repositories (temporary)
+~/tools/cache/              # Downloads and cache files  
+/usr/local/bin/             # Installed binaries (system-wide)
+~/gearbox/                  # This repository root
+├── scripts/                # All shell code
+│   ├── lib/               # Modular shared libraries
+│   │   ├── core/          # Essential modules (logging, validation, security, utilities)
+│   │   ├── build/         # Build system modules
+│   │   ├── system/        # System integration modules
+│   │   └── *.sh           # Configuration and diagnostics
+│   └── installation/      # Installation scripts by category
+│       ├── common/        # Shared installation scripts
+│       └── categories/    # Tool scripts organized by functionality
+├── tests/                 # Comprehensive testing system
+├── cmd/                   # Go CLI source code
+├── templates/             # Script generation templates  
+└── docs/                  # Documentation
 ```
 
-This separation keeps the scripts repository clean while organizing build artifacts logically.
+This modular organization provides clean separation of concerns while maintaining shared infrastructure.
 
 ### Dependency Management Philosophy
 

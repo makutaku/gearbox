@@ -253,11 +253,24 @@ substitutions = { "~" = "󰜴" }
 ## Architecture
 
 ### Directory Structure
-- `scripts/` - Individual installation scripts for each tool (31+ scripts)
-- `lib/` - Shared library modules:
-  * `common.sh` - Core shared functions, logging, and utilities
+- `scripts/` - All shell code organized in logical structure:
+  * `lib/` - Modular shared libraries with lazy loading system
+  * `installation/` - All installation scripts categorized by functionality
+- `scripts/lib/` - Modular shared library system:
+  * `common.sh` - Modular entry point with lazy loading
+  * `core/` - Essential modules (logging, validation, security, utilities)
+  * `build/` - Build system modules (dependencies, execution, cache, cleanup)
+  * `system/` - System integration modules (installation, backup, environment)
   * `config.sh` - Configuration management system (~/.gearboxrc)
   * `doctor.sh` - Health check and diagnostic system
+- `scripts/installation/` - Installation scripts organized by category:
+  * `common/` - install-all-tools.sh, install-common-deps.sh
+  * `categories/core/` - fd, ripgrep, fzf, jq, zoxide
+  * `categories/development/` - gh, lazygit, delta, difftastic, etc.
+  * `categories/system/` - bottom, procs, bandwhich, dust, fclones
+  * `categories/text/` - bat, sd, xsv, tealdeer, eza, choose
+  * `categories/media/` - ffmpeg, imagemagick, 7zip
+  * `categories/ui/` - nerd-fonts, starship, yazi
 - `cmd/gearbox/` - Go CLI source code (Cobra framework):
   * `main.go` - CLI entry point with version info and global flags
   * `commands/` - Command implementations (install, list, config, doctor, status, generate)
@@ -280,19 +293,31 @@ substitutions = { "~" = "󰜴" }
 
 ### Build System Architecture
 
-**Shared Library System (`lib/`)**:
-- `lib/common.sh` - Central shared library for all scripts:
-  * Unified logging functions (log, error, warning, success)
-  * Build utilities (get_optimal_jobs, parallel execution)
-  * Progress indicators and status reporting
-  * Build cache system for performance optimization
-  * Safe command execution (prevents injection attacks)
-  * Cleanup and error handling with traps
-- `lib/config.sh` - Configuration management system:
+**Modular Library System (`scripts/lib/`)**:
+- `scripts/lib/common.sh` - Modular entry point with lazy loading:
+  * Load essential core modules automatically (logging, validation, security, utilities)
+  * Lazy loading functions for optional modules (build, system)
+  * Module loading validation and duplicate prevention
+  * Comprehensive error handling and module status tracking
+- `scripts/lib/core/` - Essential core modules:
+  * `logging.sh` - Unified logging (log, error, warning, success, debug, progress, spinners)
+  * `validation.sh` - Input validation (tool names, file paths, URLs, versions, sanitization)
+  * `security.sh` - Security functions (root prevention, safe execution, injection protection)
+  * `utilities.sh` - Core utilities (optimal jobs, file operations, human readable sizes)
+- `scripts/lib/build/` - Build system modules:
+  * `dependencies.sh` - Dependency management and installation
+  * `execution.sh` - Safe command execution with caching
+  * `cache.sh` - Build cache system for performance optimization
+  * `cleanup.sh` - Build artifact cleanup and management
+- `scripts/lib/system/` - System integration modules:
+  * `installation.sh` - Installation patterns and verification
+  * `backup.sh` - File backup and rollback functionality
+  * `environment.sh` - Environment setup and validation
+- `scripts/lib/config.sh` - Configuration management system:
   * User preferences in ~/.gearboxrc (10 configurable settings)
   * Default build types, parallel job limits, caching options
   * Interactive configuration wizard and CLI management
-- `lib/doctor.sh` - Health check and diagnostic system:
+- `scripts/lib/doctor.sh` - Health check and diagnostic system:
   * Comprehensive system validation (OS, memory, disk, internet)
   * Installed tool verification and coverage analysis
   * Environment and permission checks
@@ -306,15 +331,16 @@ substitutions = { "~" = "󰜴" }
 - Includes confirmation prompt when installing all tools (30-60 minute process)
 - Configuration-aware defaults (respects user preferences)
 
-**Individual Tool Scripts (`scripts/install-*.sh`)**:
+**Individual Tool Scripts (`scripts/installation/categories/*/install-*.sh`)**:
 - Each tool has a dedicated installation script following consistent patterns
-- All scripts migrated to use lib/common.sh (eliminated code duplication)
+- All scripts use modular `scripts/lib/common.sh` system (eliminated code duplication)
+- Organized by category: core, development, system, text, media, ui
 - Common command-line interface with build type flags (-m, -r, -o, etc.)
 - Support for --skip-deps, --run-tests, --force flags
 - Build from source with proper dependency validation
 - Integrated build cache system for faster reinstallations
 - Safe command execution (no eval usage, array-based commands)
-- Root prevention checks for security
+- Root prevention checks and comprehensive security validation
 
 ### Available Tools (31 total)
 
@@ -412,8 +438,16 @@ Default build type can be configured via:
   * Actionable recommendations for issues
 
 ### Testing Strategy
-- **Shell Testing Framework**: Comprehensive testing system (`tests/framework/test-framework.sh`)
-  * Unit tests for shared library functions (`test_unit_common.sh`)
+- **Comprehensive Test Suite**: Multi-layered testing system with 50+ function coverage
+  * `test_core_functions.sh` - Quick validation of essential functions across all modules
+  * `test_unit_comprehensive.sh` - Detailed unit tests for all shell functions
+  * `test_workflow_integration.sh` - Multi-tool workflow and integration testing
+  * `test_performance_benchmarks.sh` - Performance analysis and optimization identification
+  * `test_error_handling.sh` - Security and resilience testing with 25+ scenarios
+- **Security Testing**: Command injection, path traversal, privilege escalation prevention
+- **Performance Benchmarking**: Function timing, memory usage, parallel execution analysis
+- **Shell Testing Framework**: Test framework system (`tests/framework/test-framework.sh`)
+  * Unit tests for shared library functions
   * Integration tests for tool installations (`test_integration_tools.sh`)
   * Template validation tests (`test_template_validation.sh`)
   * Test result tracking with pass/fail/skip counts and timing
@@ -427,20 +461,23 @@ Default build type can be configured via:
 
 ### Script Structure
 All installation scripts follow consistent patterns:
-- Source `lib/common.sh` for shared functions, logging, and utilities
+- Source `scripts/lib/common.sh` for modular shared functions and utilities
+- Automatic loading of core modules (logging, validation, security, utilities)
+- Lazy loading of optional modules (build, system) when needed
 - Standardized command-line argument parsing with build type flags
-- Root user prevention checks for security
+- Root user prevention checks and comprehensive security validation
 - Build cache integration for performance optimization
-- Safe command execution (no eval, array-based commands)
+- Safe command execution (no eval, array-based commands, injection protection)
 - Parallel build support with optimal CPU utilization
-- Progress indicators for user feedback
-- Error handling with cleanup traps
+- Progress indicators and real-time status reporting
+- Error handling with cleanup traps and rollback functionality
 - Install dependencies (unless `--skip-deps` specified)
 - Clone source to build directories outside script directory
 - Configure build based on build type (minimal/standard/maximum, configurable)
 - Build and install to `/usr/local/bin/` or `~/.cargo/bin/`
-- Cache successful builds for future use
+- Cache successful builds for future use with integrity verification
 - Optional post-install testing and shell integration
+- Comprehensive input validation and sanitization
 
 ### CLI Interface Design
 - **Safety first**: No command auto-executes without user awareness
@@ -472,7 +509,7 @@ Script generation via Go templates (`templates/`):
 - **Language-specific templates**: Specialized patterns for Rust, Go, C/C++, Python tools
 - **Metadata-driven**: Tool definitions in `config/tools.json` drive template rendering
 - **Template variables**: Tool name, repository, build types, dependencies, shell integration
-- **Generated scripts**: Follow same patterns as hand-written scripts, use `lib/common.sh`
+- **Generated scripts**: Follow same patterns as hand-written scripts, use modular `scripts/lib/common.sh`
 - **Validation**: Template output validated by test framework
 
 ### Advanced Tool Patterns

@@ -106,7 +106,7 @@ gearbox doctor cleanup --all --mode standard
 
 ## Building from Source
 
-The gearbox CLI is built from Go source code. Build instructions:
+The gearbox CLI is built from Go source code with comprehensive testing. Build instructions:
 
 ```bash
 # Build the CLI binary
@@ -117,6 +117,9 @@ make build
 
 # Development setup (install dependencies)
 make dev-setup
+
+# Run comprehensive test suite
+make test
 
 # Clean and rebuild
 make clean
@@ -129,6 +132,31 @@ make build
 - Standard build tools (gcc, make)
 
 **After building:** The `gearbox` binary will be available in the project root.
+
+### Testing & Quality Assurance
+
+Gearbox includes comprehensive testing infrastructure:
+
+```bash
+# Run all tests (Go + Shell)
+make test
+
+# Run specific test suites
+./tests/test_core_functions.sh           # Core function validation
+./tests/test_workflow_integration.sh     # Multi-tool workflows  
+./tests/test_performance_benchmarks.sh   # Performance analysis
+./tests/test_error_handling.sh          # Security & resilience
+
+# Run basic script validation
+./tests/test-runner.sh
+```
+
+**Test Coverage:**
+- 🔒 **Security Testing**: Command injection, path traversal, privilege escalation prevention
+- ⚡ **Performance Benchmarking**: Function timing, memory usage, parallel execution analysis
+- 🛡️ **Error Resilience**: Graceful failure handling, cleanup, rollback functionality
+- 🔧 **Integration Testing**: Multi-tool workflows, dependency chains, CLI delegation
+- ✅ **50+ Functions Tested**: Comprehensive validation across all modules
 
 ## Installation Features
 
@@ -255,6 +283,12 @@ gearbox doctor cleanup --auto-cleanup
 - **Comprehensive CLI**: Unified interface for installation, health checks, and cleanup
 - **Extensive documentation**: Guides for users, troubleshooting, and developers
 - **Clean architecture**: Source builds in `~/tools/build/`, binaries in `/usr/local/bin/`
+
+### Modern Architecture
+- **Modular Design**: Separated core functions (logging, validation, security, utilities)
+- **Organized Structure**: Installation scripts categorized by functionality (core, development, system, text, media, ui)  
+- **Lazy Loading**: Efficient module loading for optimal performance
+- **Comprehensive Testing**: 50+ functions tested with security, performance, and integration validation
 
 ## Requirements
 
