@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gearbox/internal/config"
+	"gearbox/pkg/config"
 )
 
 func main() {

@@ -92,7 +92,7 @@ exit 0
 			}
 
 			// Run the CLI command
-			gearboxPath := filepath.Join(projectRoot, "gearbox")
+			gearboxPath := filepath.Join(projectRoot, "build", "gearbox")
 			cmd := exec.Command(gearboxPath, tt.cliArgs...)
 			
 			var stdout, stderr bytes.Buffer
@@ -217,7 +217,7 @@ exit 0
 		{"install", "nerd-fonts", "--minimal", "--skip-common-deps", "--dry-run"},
 	}
 
-	gearboxPath := filepath.Join(projectRoot, "gearbox")
+	gearboxPath := filepath.Join(projectRoot, "build", "gearbox")
 	
 	for i, cmdArgs := range testCommands {
 		t.Run(fmt.Sprintf("contamination_test_%d", i), func(t *testing.T) {

@@ -149,13 +149,13 @@ func TestFullWorkflow(t *testing.T) {
 func TestProjectStructure(t *testing.T) {
 	expectedDirectories := []string{
 		"../cmd",
-		"../internal",
 		"../pkg",
 		"../scripts",
 		"../templates",
 		"../config",
 		"../tests",
 		"../docs",
+		"../build",
 	}
 	
 	for _, dir := range expectedDirectories {

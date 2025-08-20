@@ -17,7 +17,7 @@ FAILED=0
 # Get the directory of this script
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 GEARBOX_DIR="$(dirname "$SCRIPT_DIR")"
-GEARBOX_BIN="$GEARBOX_DIR/gearbox"
+GEARBOX_BIN="$GEARBOX_DIR/build/gearbox"
 
 # Function to print test result
 print_result() {

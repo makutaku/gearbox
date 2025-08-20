@@ -258,13 +258,13 @@ test_cli_to_script_workflow() {
     # Test that the main CLI can delegate to scripts
     # This tests the integration between Go CLI and shell scripts
     
-    if [[ -f "$REPO_DIR/gearbox" ]]; then
+    if [[ -f "$REPO_DIR/build/gearbox" ]]; then
         # Test basic CLI commands
-        assert_command_success "$REPO_DIR/gearbox help" "CLI help should work"
-        assert_command_success "$REPO_DIR/gearbox list" "CLI list should work"
+        assert_command_success "$REPO_DIR/build/gearbox help" "CLI help should work"
+        assert_command_success "$REPO_DIR/build/gearbox list" "CLI list should work"
         
         # Test configuration commands
-        assert_command_success "$REPO_DIR/gearbox config show" "CLI config show should work"
+        assert_command_success "$REPO_DIR/build/gearbox config show" "CLI config show should work"
         
         # Note: We don't test actual installation via CLI to avoid side effects
         # But we verify the CLI can load and process commands

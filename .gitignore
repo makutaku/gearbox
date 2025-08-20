@@ -5,10 +5,9 @@ workspace/
 ~/tools/build/
 ~/tools/cache/
 
-# Main compiled binaries 
-gearbox
-bin/
-!bin/.gitkeep
+# Compiled binaries (Go best practice: separate build directory)
+build/
+!build/.gitkeep
 
 # Go build artifacts
 *.exe

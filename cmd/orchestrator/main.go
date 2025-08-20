@@ -1,7 +1,7 @@
 package main
 
 import (
-	"gearbox/internal/orchestrator"
+	"gearbox/pkg/orchestrator"
 )
 
 func main() {

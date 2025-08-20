@@ -14,7 +14,7 @@ setup() {
     # Copy essential files
     cp -r "$REPO_DIR/scripts/lib" test_env/
     cp -r "$REPO_DIR/config" test_env/
-    cp "$REPO_DIR/gearbox" test_env/
+    cp "$REPO_DIR/build/gearbox" test_env/
     
     # Create minimal test scripts for faster execution
     create_test_scripts
