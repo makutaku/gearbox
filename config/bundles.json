@@ -105,7 +105,7 @@
       "name": "intermediate",
       "description": "Productive developer environment with git workflow and development tools",
       "category": "foundation",
-      "tools": ["delta", "lazygit", "gh", "tokei", "sd", "tealdeer"],
+      "tools": ["delta", "lazygit", "gh", "tokei", "sd", "tealdeer", "just", "mise"],
       "system_packages": ["git", "curl", "wget", "tree"],
       "package_managers": {
         "apt": ["git", "curl", "wget", "tree"],
@@ -452,10 +452,10 @@
       "tags": ["domain", "game-development", "graphics", "3d", "audio", "engine"]
     },
     {
-      "name": "ai-coding-agent",
-      "description": "AI-powered coding assistance and semantic code analysis tools",
-      "category": "ai-assistant",
-      "tools": ["serena"],
+      "name": "modern-dev",
+      "description": "Modern development workflow tools (version management, task running, AI assistance)",
+      "category": "workflow",
+      "tools": ["mise", "just", "aider"],
       "system_packages": [],
       "package_managers": {
         "apt": [],
@@ -463,8 +463,35 @@
         "dnf": []
       },
       "post_install": [
-        "echo 'Serena MCP server installed - configure with your preferred AI assistant (Claude, etc.)'",
-        "echo 'See https://github.com/oraios/serena for integration instructions'"
+        "echo 'Modern development tools installed:'",
+        "echo '  - mise: Multi-language version manager (replaces nvm, pyenv, rbenv)'",
+        "echo '  - just: Modern command runner (simpler Make alternative)'",
+        "echo '  - aider: AI pair programming assistant'",
+        "echo 'Quick start:'",
+        "echo '  mise install node@latest python@latest'",
+        "echo '  echo \"test:\\n\\techo Hello World\" > justfile && just test'",
+        "echo '  aider --help  # See AI coding options'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["workflow", "modern", "version-management", "task-runner", "ai", "productivity"]
+    },
+    {
+      "name": "ai-coding-agent",
+      "description": "AI-powered coding assistance and semantic code analysis tools",
+      "category": "ai-assistant",
+      "tools": ["serena", "aider"],
+      "system_packages": [],
+      "package_managers": {
+        "apt": [],
+        "yum": [],
+        "dnf": []
+      },
+      "post_install": [
+        "echo 'AI coding tools installed:'",
+        "echo '  - Serena MCP server: configure with your preferred AI assistant (Claude, etc.)'",
+        "echo '  - Aider: AI pair programming in terminal'",
+        "echo 'See https://github.com/oraios/serena for Serena integration'",
+        "echo 'See https://github.com/paul-gauthier/aider for Aider setup'"
       ],
       "includes_bundles": ["essential"],
       "tags": ["ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]

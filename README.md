@@ -82,8 +82,9 @@ gearbox install --bundle debugging-tools   # Profilers + memory analyzers + netw
 gearbox install --bundle deployment-tools  # CI/CD + containers + cloud deployment  
 gearbox install --bundle code-review-tools # Cross-language linting + formatting + analysis
 
-# 🤖 AI & Specialized Tools
-gearbox install --bundle ai-coding-agent   # AI-powered coding assistance
+# 🤖 AI & Modern Development
+gearbox install --bundle ai-coding-agent   # AI-powered coding assistance (serena + aider)
+gearbox install --bundle modern-dev        # Modern workflow tools (mise + just + aider)
 gearbox install --bundle media            # Media processing tools
 
 # List all available bundles
@@ -123,8 +124,9 @@ gearbox show bundle web-dev
 - `deployment-tools` - CI/CD, containers, and cloud deployment tools
 - `code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
-**🤖 AI & Specialized:**
-- `ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis
+**🤖 AI & Modern Development:**
+- `ai-coding-agent` - AI-powered coding assistance (serena + aider) 
+- `modern-dev` - Modern workflow tools (mise + just + aider)
 - `media` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
 **🔧 Legacy Core Bundles:**
@@ -264,6 +266,9 @@ The one-line installer provides:
 | **yazi** | Terminal file manager | Vim-like keys, preview support |
 | **fclones** | Duplicate file finder | Efficient deduplication, link replacement |
 | **serena** | AI coding agent toolkit (MCP server) | Semantic code analysis, multi-language AI assistance |
+| **mise** | Multi-language version manager | Replaces nvm/pyenv/rbenv, unified tooling |
+| **just** | Modern command runner | Simpler Make alternative, intuitive syntax |
+| **aider** | AI pair programming assistant | Terminal-based AI coding, git integration |
 | **uv** | Python package manager | 10-100x faster than pip, unified tooling |
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |

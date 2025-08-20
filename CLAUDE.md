@@ -47,8 +47,9 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle deployment-tools` - CI/CD, containers, and cloud deployment tools
 - `gearbox install --bundle code-review-tools` - Code linting, formatting, and analysis tools (cross-language)
 
-**🤖 AI & Specialized:**
-- `gearbox install --bundle ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis
+**🤖 AI & Modern Development:**
+- `gearbox install --bundle ai-coding-agent` - AI-powered coding assistance (serena + aider)
+- `gearbox install --bundle modern-dev` - Modern workflow tools (mise + just + aider)
 - `gearbox install --bundle media` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
 **Bundle Management:**

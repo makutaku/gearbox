@@ -608,6 +608,67 @@
       "test_command": "--version"
     },
     {
+      "name": "mise",
+      "description": "Multi-language version manager (Rust)",
+      "category": "development",
+      "repository": "https://github.com/jdx/mise.git",
+      "binary_name": "mise",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": true,
+      "test_command": "--version"
+    },
+    {
+      "name": "just",
+      "description": "Modern command runner (Rust)",
+      "category": "development",
+      "repository": "https://github.com/casey/just.git",
+      "binary_name": "just",
+      "language": "rust",
+      "build_types": {
+        "minimal": "-d",
+        "standard": "-r",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "rust",
+        "build-essential"
+      ],
+      "min_version": "",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
+      "name": "aider",
+      "description": "AI pair programming in terminal (Python)",
+      "category": "development",
+      "repository": "https://github.com/paul-gauthier/aider.git",
+      "binary_name": "aider",
+      "language": "python",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-f"
+      },
+      "dependencies": [
+        "python3",
+        "python3-pip",
+        "python3-venv"
+      ],
+      "min_version": "3.11.0",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
       "name": "7zip",
       "description": "Compression tool (C/C++)",
       "category": "media",
