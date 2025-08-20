@@ -63,6 +63,9 @@ gearbox install --bundle developer
 # Install complete Python development environment (Python + pipx, black, mypy, poetry + essential tools)
 gearbox install --bundle python-ecosystem
 
+# Install AI coding assistant (Serena MCP server for semantic code analysis)
+gearbox install --bundle ai-coding-agent
+
 # Install complete Node.js development environment (Node.js + TypeScript, Angular/Vue/React CLIs + essential tools)
 gearbox install --bundle nodejs-ecosystem
 
@@ -72,7 +75,7 @@ gearbox install --bundle rust-ecosystem
 # Install complete Go development environment (Go + gopls, linters, build tools + essential tools)
 gearbox install --bundle go-ecosystem
 
-# Install data science tools (jq, xsv, choose, hyperfine, serena, uv, ruff)
+# Install data science tools (jq, xsv, choose, hyperfine, uv, ruff)
 gearbox install --bundle data-science
 
 # Install web development environment (includes nginx, nodejs via apt)
@@ -101,6 +104,9 @@ gearbox show bundle web-dev
 - `java-ecosystem` - Java 17 + Maven, Gradle + essential tools
 - `ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
 - `cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
+
+**🤖 AI-Powered Development:**
+- `ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis (multi-language)
 
 **🔧 Core Development Bundles:**
 - `minimal` - Bare essentials (fd, ripgrep, fzf)
@@ -220,7 +226,7 @@ The one-line installer provides:
 | **zoxide** | Smart cd command | Frecency-based navigation |
 | **yazi** | Terminal file manager | Vim-like keys, preview support |
 | **fclones** | Duplicate file finder | Efficient deduplication, link replacement |
-| **serena** | Coding agent toolkit | Semantic retrieval, IDE-like analysis |
+| **serena** | AI coding agent toolkit (MCP server) | Semantic code analysis, multi-language AI assistance |
 | **uv** | Python package manager | 10-100x faster than pip, unified tooling |
 | **ruff** | Python linter & formatter | 10-100x faster than Flake8/Black, 800+ rules |
 | **bat** | Enhanced cat with syntax highlighting | Git integration, themes, automatic paging |

@@ -41,7 +41,7 @@
       "name": "data-science",
       "description": "Tools for data analysis and processing",
       "category": "data",
-      "tools": ["jq", "xsv", "choose", "hyperfine", "serena", "uv", "ruff"],
+      "tools": ["jq", "xsv", "choose", "hyperfine", "uv", "ruff"],
       "tags": ["data", "analysis", "python", "csv", "json"]
     },
     {
@@ -164,7 +164,7 @@
       "name": "python-ecosystem",
       "description": "Complete Python development environment with modern tooling",
       "category": "language-ecosystem",
-      "tools": ["serena", "uv", "ruff"],
+      "tools": ["uv", "ruff"],
       "system_packages": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
       "package_managers": {
         "apt": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
@@ -322,11 +322,29 @@
       "tags": ["cpp", "c", "ecosystem", "development", "systems", "performance", "native"]
     },
     {
+      "name": "ai-coding-agent",
+      "description": "AI-powered coding assistance and semantic code analysis tools",
+      "category": "ai-assistant",
+      "tools": ["serena"],
+      "system_packages": [],
+      "package_managers": {
+        "apt": [],
+        "yum": [],
+        "dnf": []
+      },
+      "post_install": [
+        "echo 'Serena MCP server installed - configure with your preferred AI assistant (Claude, etc.)'",
+        "echo 'See https://github.com/oraios/serena for integration instructions'"
+      ],
+      "includes_bundles": ["essential"],
+      "tags": ["ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]
+    },
+    {
       "name": "all",
       "description": "Install all available tools",
       "category": "complete",
       "tools": [],
-      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem"],
+      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem", "ai-coding-agent"],
       "tags": ["complete", "all"]
     }
   ]

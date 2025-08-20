@@ -28,6 +28,9 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
 - `gearbox install --bundle cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
+**AI-Powered Development:**
+- `gearbox install --bundle ai-coding-agent` - Serena MCP server for AI-assisted coding with semantic code analysis (multi-language)
+
 **Core Development Bundles:**
 - `gearbox install --bundle essential` - Install curated bundle of essential tools
 - `gearbox install --bundle developer` - Complete development environment
