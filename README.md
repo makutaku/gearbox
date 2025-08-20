@@ -106,7 +106,7 @@ gearbox list bundles
 gearbox show bundle fullstack-dev
 ```
 
-**Available Bundles (31 total, organized by tier):**
+**Available Bundles (32 total, organized by tier):**
 
 **🎯 Foundation Tier (4 bundles) - User Journey:**
 - `system-foundation` - Essential base system packages for development environments
@@ -186,7 +186,7 @@ The bundle system follows a **5-Tier Architecture** that matches how developers 
 - **No tool duplication** - each tool appears once in its logical tier
 - **Role-based approach** - install what you actually need for your job
 - **Highly composable** - mix and match tiers for custom environments
-- **30 focused bundles** instead of 44+ overlapping ones
+- **32 focused bundles** instead of 44+ overlapping ones
 
 ## 🐳 Docker Installation Migration (2024 Update)
 
@@ -363,7 +363,7 @@ The one-line installer provides:
 
 ## Disk Space Management
 
-Building 31+ tools from source can consume 8GB+ of disk space. Gearbox provides intelligent cleanup:
+Building 42+ tools from source can consume 8GB+ of disk space. Gearbox provides intelligent cleanup:
 
 ```bash
 # Show disk usage report

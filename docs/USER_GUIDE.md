@@ -63,7 +63,7 @@ Install all tools with optimal dependency management:
 gearbox install
 ```
 
-This will show a confirmation prompt before installing all 31 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
+This will show a confirmation prompt before installing all 42 tools, since the process takes 30-60 minutes. The installer builds tools in optimal order, sharing dependencies efficiently.
 
 ### Selective Installation
 
@@ -186,7 +186,7 @@ The installer manages these dependencies:
 
 ## Individual Tools
 
-The installer provides 31 essential tools organized by category. Here are the most commonly used tools with installation and usage examples:
+The installer provides 42 essential tools organized by category. Here are the most commonly used tools with installation and usage examples:
 
 ### Core Development Tools
 
@@ -574,7 +574,7 @@ scripts/install-7zip.sh --asm-optimized  # Assembly optimized
 
 ### All Available Tools
 
-For a complete list of all 31 tools with descriptions:
+For a complete list of all 42 tools with descriptions:
 
 ```bash
 gearbox list

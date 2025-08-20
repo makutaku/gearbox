@@ -4,7 +4,7 @@ This guide explains how to effectively manage disk space when building tools fro
 
 ## The Challenge
 
-When building 30+ tools from source, build artifacts accumulate rapidly:
+When building 42+ tools from source, build artifacts accumulate rapidly:
 - **Large build directories**: Rust projects can use 100-500MB+ per tool
 - **Multiple build types**: Debug, release, and optimized builds
 - **Preserved source code**: Git repositories with full history

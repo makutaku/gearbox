@@ -9,7 +9,7 @@ This is an Essential Tools Installer - a collection of automated installation sc
 ## Common Commands
 
 ### Installation Commands
-- `gearbox install` - Show confirmation prompt and install all 31 tools
+- `gearbox install` - Show confirmation prompt and install all 42 tools
 - `gearbox install fd ripgrep fzf` - Install only specified tools (recommended approach)
 - `gearbox install --minimal fd ripgrep` - Install with minimal/fast builds  
 - `gearbox install --maximum ffmpeg` - Install with full-featured builds
@@ -25,22 +25,22 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle advanced` - High-performance development environment with debugging and performance tools
 
 **🏗️ Domain Tier (Choose Your Role):**
-- `gearbox install --bundle frontend-dev` - Complete frontend development (HTML/CSS/JS + design tools)
-- `gearbox install --bundle backend-dev` - Complete backend development (APIs + databases + servers)
+- `gearbox install --bundle polyglot-dev` - Multi-language development environment (Python + Node.js + Docker + Cloud + Editors)
+- `gearbox install --bundle fullstack-dev` - Complete web development (frontend + backend + databases)
 - `gearbox install --bundle mobile-dev` - Cross-platform mobile development environment
-- `gearbox install --bundle data-scientist` - Data science and machine learning development environment
-- `gearbox install --bundle devops-engineer` - Infrastructure, monitoring, deployment + modern container tools (podman, ctop, trivy)
-- `gearbox install --bundle security-researcher` - Security analysis, penetration testing + container security (trivy, dive)
+- `gearbox install --bundle data-dev` - Data science and machine learning development environment
+- `gearbox install --bundle devops-dev` - Infrastructure, monitoring, deployment + modern container tools
+- `gearbox install --bundle security-dev` - Security analysis, penetration testing + container security
 - `gearbox install --bundle game-dev` - Game development environment with graphics and engine tools
 
 **🚀 Language Ecosystem Tier:**
-- `gearbox install --bundle python-ecosystem` - Python runtime + pipx, black, flake8, mypy, poetry, pytest, jupyter + essential tools
-- `gearbox install --bundle nodejs-ecosystem` - Node.js runtime + TypeScript, ESLint, Angular/Vue/React CLIs, jest + essential tools
-- `gearbox install --bundle rust-ecosystem` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
-- `gearbox install --bundle go-ecosystem` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
-- `gearbox install --bundle java-ecosystem` - Java 17 + Maven, Gradle + essential tools
-- `gearbox install --bundle ruby-ecosystem` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
-- `gearbox install --bundle cpp-ecosystem` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
+- `gearbox install --bundle python-dev` - Python runtime + uv, ruff, black, mypy, poetry, pytest, ipython + essential tools
+- `gearbox install --bundle nodejs-dev` - Node.js runtime + TypeScript, ESLint, yarn, pnpm, jest + essential tools
+- `gearbox install --bundle rust-dev` - Rust compiler + rustfmt, clippy, rust-analyzer, cargo tools + essential tools
+- `gearbox install --bundle go-dev` - Go compiler + gopls, golangci-lint, air, staticcheck, delve + essential tools
+- `gearbox install --bundle java-dev` - Java 17 + Maven, Gradle + essential tools
+- `gearbox install --bundle ruby-dev` - Ruby runtime + Rails, RSpec, RuboCop, Solargraph + essential tools
+- `gearbox install --bundle cpp-dev` - GCC/Clang + CMake, Ninja, GDB, Valgrind, Conan, vcpkg + essential tools
 
 **⚙️ Workflow Tier:**
 - `gearbox install --bundle debugging-tools` - Profilers, memory analyzers, and network debugging tools
@@ -52,14 +52,15 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install --bundle docker-enhanced` - Complete Docker ecosystem (docker-official + analysis tools)
 - `gearbox install --bundle docker-rootless` - Maximum security with rootless mode
 
-**🤖 AI & Modern Development:**
-- `gearbox install --bundle ai-coding-agent` - AI-powered coding assistance (serena + aider)
-- `gearbox install --bundle modern-dev` - Modern workflow tools (mise + just + aider)
-- `gearbox install --bundle media` - Media processing tools (ffmpeg, imagemagick, 7zip)
+**🤖 AI & Infrastructure:**
+- `gearbox install --bundle ai-tools` - AI-powered coding assistance (serena + aider + mise + just)
+- `gearbox install --bundle cloud-tools` - AWS CLI v2 and cloud platform tools
+- `gearbox install --bundle editors` - Neovim and modern text editors
+- `gearbox install --bundle media-tools` - Media processing tools (ffmpeg, imagemagick, 7zip)
 
 **Bundle Management:**
 - `gearbox list bundles` - Show available bundles with descriptions
-- `gearbox show bundle frontend-dev` - Show bundle contents including system packages
+- `gearbox show bundle fullstack-dev` - Show bundle contents including system packages
 
 ### General Commands  
 - `gearbox list` - Show available tools with descriptions
@@ -358,7 +359,7 @@ substitutions = { "~" = "󰜴" }
   * Environment and permission checks
 
 **Main Installation Script (`scripts/install-all-tools.sh`)**:
-- Orchestrates tool installation in optimal dependency order for all 31 tools
+- Orchestrates tool installation in optimal dependency order for all 42 tools
 - Supports three build types: minimal, standard, maximum (configurable via ~/.gearboxrc)
 - Handles common dependency installation via `install-common-deps.sh`
 - Installation order optimized for shared toolchains: Go tools → Rust tools → C/C++ tools
@@ -377,7 +378,7 @@ substitutions = { "~" = "󰜴" }
 - Safe command execution (no eval usage, array-based commands)
 - Root prevention checks and comprehensive security validation
 
-### Available Tools (31 total)
+### Available Tools (42 total)
 
 **Core Development Tools:**
 - **fd** - Fast file finder (Rust) - build flags: -m minimal, -r release
