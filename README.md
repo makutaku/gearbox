@@ -60,6 +60,18 @@ gearbox install --bundle essential
 # Install complete developer toolkit (includes essential + git tools, fonts)
 gearbox install --bundle developer
 
+# Install complete Python development environment (with black, mypy, poetry)
+gearbox install --bundle python-ecosystem
+
+# Install complete Node.js development environment (with TypeScript, Angular/Vue/React CLIs)
+gearbox install --bundle nodejs-ecosystem
+
+# Install complete Rust development environment (with all Rust tools + cargo ecosystem)
+gearbox install --bundle rust-ecosystem
+
+# Install complete Go development environment (with gopls, linters, build tools)
+gearbox install --bundle go-ecosystem
+
 # Install data science tools (jq, xsv, choose, hyperfine, serena, uv, ruff)
 gearbox install --bundle data-science
 
@@ -80,19 +92,35 @@ gearbox show bundle web-dev
 ```
 
 **Available Bundles:**
+
+**🚀 Language Ecosystem Bundles (NEW!):**
+- `python-ecosystem` - Complete Python development with pipx, black, flake8, mypy, poetry
+- `nodejs-ecosystem` - Complete Node.js with TypeScript, ESLint, Angular/Vue/React CLIs
+- `go-ecosystem` - Complete Go development with gopls, golangci-lint, air, staticcheck
+- `rust-ecosystem` - Complete Rust development with rustfmt, clippy, rust-analyzer, cargo tools  
+- `java-ecosystem` - Complete Java development with OpenJDK 17, Maven, Gradle
+- `ruby-ecosystem` - Complete Ruby development with Rails, RSpec, RuboCop, Solargraph
+- `cpp-ecosystem` - Complete C/C++ development with GCC, Clang, CMake, Conan, vcpkg
+
+**🔧 Core Development Bundles:**
 - `minimal` - Bare essentials (fd, ripgrep, fzf)
 - `essential` - Modern terminal essentials everyone should have
 - `developer` - Professional dev environment with beautiful terminal
-- `web-dev` - **NEW!** Web development (nginx, nodejs, npm + gearbox tools)
-- `docker-dev` - **NEW!** Docker development (docker, docker-compose + git tools)
-- `database-admin` - **NEW!** Database tools (postgresql, mysql, redis clients)
-- `netadmin` - **NEW!** Network administration and monitoring toolkit
+- `quickstart` - Recommended starter bundle
+
+**🌐 Infrastructure & DevOps:**
+- `web-dev` - Web development (nginx, nodejs, npm + gearbox tools)
+- `docker-dev` - Docker development (docker, docker-compose + git tools)
+- `database-admin` - Database tools (postgresql, mysql, redis clients)
+- `netadmin` - Network administration and monitoring toolkit
+
+**🎯 Specialized Tools:**
 - `rust-dev` - All Rust-based tools
 - `data-science` - Data analysis and Python tools
 - `system-admin` - System monitoring tools
 - `terminal-enhancement` - Better terminal experience
 - `git-workflow` - Git productivity tools
-- `quickstart` - Recommended starter bundle
+- `media` - Media processing tools
 
 **🆕 System Package Support:**
 Bundles can now include system packages (installed via apt, yum, dnf) alongside gearbox tools. Perfect for complete development environments!

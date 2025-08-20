@@ -18,11 +18,28 @@ This is an Essential Tools Installer - a collection of automated installation sc
 - `gearbox install nerd-fonts --interactive` - Interactive font selection with previews
 
 ### Bundle Installation (NEW!)
+
+**Language Ecosystem Bundles:**
+- `gearbox install --bundle python-ecosystem` - Complete Python development (pipx, black, flake8, mypy, poetry, pre-commit)
+- `gearbox install --bundle nodejs-ecosystem` - Complete Node.js development (TypeScript, ESLint, Angular/Vue/React CLIs)
+- `gearbox install --bundle rust-ecosystem` - Complete Rust development (rustfmt, clippy, rust-analyzer, cargo tools)
+- `gearbox install --bundle go-ecosystem` - Complete Go development (gopls, golangci-lint, air, staticcheck)
+- `gearbox install --bundle java-ecosystem` - Complete Java development (OpenJDK 17, Maven, Gradle)
+- `gearbox install --bundle ruby-ecosystem` - Complete Ruby development (Rails, RSpec, RuboCop, Solargraph)
+- `gearbox install --bundle cpp-ecosystem` - Complete C/C++ development (GCC, Clang, CMake, Conan, vcpkg)
+
+**Core Development Bundles:**
 - `gearbox install --bundle essential` - Install curated bundle of essential tools
 - `gearbox install --bundle developer` - Complete development environment
+- `gearbox install --bundle quickstart` - Recommended starter bundle
+
+**Infrastructure & DevOps Bundles:**
 - `gearbox install --bundle web-dev` - Web development (nginx, nodejs + tools)  
 - `gearbox install --bundle docker-dev` - Docker development environment
+- `gearbox install --bundle database-admin` - Database administration tools
 - `gearbox install --bundle netadmin` - Network administration and monitoring toolkit
+
+**Specialized Bundles:**
 - `gearbox list bundles` - Show available bundles with descriptions
 - `gearbox show bundle web-dev` - Show bundle contents including system packages
 

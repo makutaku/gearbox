@@ -161,11 +161,160 @@
       "tags": ["network", "admin", "monitoring", "security", "diagnostics", "performance"]
     },
     {
+      "name": "python-ecosystem",
+      "description": "Complete Python development environment with modern tooling",
+      "category": "language-ecosystem",
+      "tools": ["serena", "uv", "ruff"],
+      "system_packages": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
+      "package_managers": {
+        "apt": ["python3", "python3-pip", "python3-venv", "python3-dev", "pipx"],
+        "yum": ["python3", "python3-pip", "python3-devel", "python3-pipx"],
+        "dnf": ["python3", "python3-pip", "python3-devel", "pipx"]
+      },
+      "post_install": [
+        "pipx ensurepath",
+        "pipx install black",
+        "pipx install flake8", 
+        "pipx install mypy",
+        "pipx install poetry",
+        "pipx install pre-commit"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["python", "ecosystem", "development", "data-science", "web", "ml"]
+    },
+    {
+      "name": "nodejs-ecosystem",
+      "description": "Complete Node.js development environment with TypeScript and modern tooling",
+      "category": "language-ecosystem",
+      "tools": ["gh", "sd", "jq"],
+      "system_packages": ["nodejs", "npm"],
+      "package_managers": {
+        "apt": ["nodejs", "npm"],
+        "yum": ["nodejs", "npm"],
+        "dnf": ["nodejs", "npm"]
+      },
+      "post_install": [
+        "npm install -g typescript",
+        "npm install -g ts-node",
+        "npm install -g eslint",
+        "npm install -g prettier",
+        "npm install -g @angular/cli",
+        "npm install -g @vue/cli",
+        "npm install -g create-react-app",
+        "npm install -g yarn",
+        "npm install -g pnpm"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["nodejs", "javascript", "typescript", "ecosystem", "web", "frontend"]
+    },
+    {
+      "name": "go-ecosystem",
+      "description": "Complete Go development environment with essential tools",
+      "category": "language-ecosystem",
+      "tools": ["fzf", "lazygit", "gh"],
+      "system_packages": ["golang-go"],
+      "package_managers": {
+        "apt": ["golang-go"],
+        "yum": ["golang"],
+        "dnf": ["golang"]
+      },
+      "post_install": [
+        "go install golang.org/x/tools/gopls@latest",
+        "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
+        "go install github.com/air-verse/air@latest",
+        "go install honnef.co/go/tools/cmd/staticcheck@latest",
+        "go install github.com/spf13/cobra-cli@latest"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["go", "golang", "ecosystem", "development", "backend", "cli"]
+    },
+    {
+      "name": "rust-ecosystem",
+      "description": "Complete Rust development environment with cargo ecosystem",
+      "category": "language-ecosystem",
+      "tools": ["fd", "ripgrep", "bat", "eza", "delta", "bottom", "procs", "dust", "bandwhich", "hyperfine", "tealdeer", "difftastic", "fclones", "tokei", "sd", "choose", "xsv"],
+      "system_packages": ["rustc", "cargo"],
+      "package_managers": {
+        "apt": ["rustc", "cargo"],
+        "yum": ["rust", "cargo"],
+        "dnf": ["rust", "cargo"]
+      },
+      "post_install": [
+        "rustup component add rustfmt",
+        "rustup component add clippy",
+        "rustup component add rust-analyzer",
+        "cargo install cargo-watch",
+        "cargo install cargo-edit",
+        "cargo install cargo-audit",
+        "cargo install cargo-outdated",
+        "cargo install sccache"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["rust", "ecosystem", "development", "performance", "systems", "cli"]
+    },
+    {
+      "name": "java-ecosystem",
+      "description": "Complete Java development environment with Maven and Gradle",
+      "category": "language-ecosystem",
+      "tools": ["gh", "jq", "hyperfine"],
+      "system_packages": ["openjdk-17-jdk", "maven", "gradle"],
+      "package_managers": {
+        "apt": ["openjdk-17-jdk", "maven", "gradle"],
+        "yum": ["java-17-openjdk-devel", "maven", "gradle"],
+        "dnf": ["java-17-openjdk-devel", "maven", "gradle"]
+      },
+      "post_install": [
+        "update-alternatives --set java /usr/lib/jvm/java-17-openjdk-amd64/bin/java || true",
+        "echo 'export JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64' >> ~/.bashrc"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["java", "ecosystem", "development", "enterprise", "jvm", "maven", "gradle"]
+    },
+    {
+      "name": "ruby-ecosystem",
+      "description": "Complete Ruby development environment with rbenv and gems",
+      "category": "language-ecosystem",
+      "tools": ["gh", "sd", "jq"],
+      "system_packages": ["ruby", "ruby-dev", "bundler"],
+      "package_managers": {
+        "apt": ["ruby", "ruby-dev", "bundler", "libssl-dev", "zlib1g-dev", "bison", "libffi-dev", "libyaml-dev"],
+        "yum": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"],
+        "dnf": ["ruby", "ruby-devel", "bundler", "openssl-devel", "zlib-devel", "bison", "libffi-devel", "libyaml-devel"]
+      },
+      "post_install": [
+        "gem install rails",
+        "gem install rspec",
+        "gem install rubocop",
+        "gem install bundler-audit",
+        "gem install solargraph"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["ruby", "ecosystem", "development", "web", "rails", "gem"]
+    },
+    {
+      "name": "cpp-ecosystem",
+      "description": "Complete C/C++ development environment with modern tooling",
+      "category": "language-ecosystem",
+      "tools": ["ffmpeg", "imagemagick", "7zip", "jq", "hyperfine"],
+      "system_packages": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind"],
+      "package_managers": {
+        "apt": ["gcc", "g++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkg-config", "autoconf", "automake", "libtool"],
+        "yum": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"],
+        "dnf": ["gcc", "gcc-c++", "clang", "make", "cmake", "ninja-build", "gdb", "valgrind", "pkgconfig", "autoconf", "automake", "libtool"]
+      },
+      "post_install": [
+        "pip3 install conan || true",
+        "curl -sSL https://github.com/microsoft/vcpkg/archive/master.tar.gz | tar -xz -C /opt && mv /opt/vcpkg-master /opt/vcpkg || true"
+      ],
+      "includes_bundles": ["minimal"],
+      "tags": ["cpp", "c", "ecosystem", "development", "systems", "performance", "native"]
+    },
+    {
       "name": "all",
       "description": "Install all available tools",
       "category": "complete",
       "tools": [],
-      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin"],
+      "includes_bundles": ["rust-dev", "data-science", "media", "file-management", "web-dev", "docker-dev", "netadmin", "python-ecosystem", "nodejs-ecosystem", "go-ecosystem", "rust-ecosystem", "java-ecosystem", "ruby-ecosystem", "cpp-ecosystem"],
       "tags": ["complete", "all"]
     }
   ]
