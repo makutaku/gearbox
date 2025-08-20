@@ -42,6 +42,7 @@
       "description": "Tools for data analysis and processing",
       "category": "data",
       "tools": ["jq", "xsv", "choose", "hyperfine", "uv", "ruff"],
+      "includes_bundles": ["essential"],
       "tags": ["data", "analysis", "python", "csv", "json"]
     },
     {
@@ -57,6 +58,7 @@
       "description": "Media processing and manipulation tools",
       "category": "media",
       "tools": ["ffmpeg", "imagemagick", "7zip"],
+      "includes_bundles": ["essential"],
       "tags": ["media", "video", "audio", "image", "compression"]
     },
     {
@@ -80,6 +82,7 @@
       "description": "Text and data processing utilities",
       "category": "text",
       "tools": ["sd", "xsv", "choose", "jq", "bat", "delta"],
+      "includes_bundles": ["essential"],
       "tags": ["text", "regex", "csv", "json", "diff"]
     },
     {
@@ -89,14 +92,6 @@
       "tools": ["delta", "lazygit", "gh", "difftastic"],
       "includes_bundles": ["minimal"],
       "tags": ["git", "github", "diff", "workflow"]
-    },
-    {
-      "name": "python-dev",
-      "description": "Python development environment (DEPRECATED - use python-ecosystem instead)",
-      "category": "development",
-      "tools": ["uv", "ruff"],
-      "includes_bundles": ["essential"],
-      "tags": ["python", "development", "linting", "packaging", "deprecated"]
     },
     {
       "name": "beginner",
