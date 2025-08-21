@@ -359,8 +359,21 @@ substitutions = { "~" = "󰜴" }
 - `config/` - Configuration files:
   * `tools.json` - Tool definitions with metadata, build types, and dependencies
   * `bundles.json` - Bundle definitions and relationships
-- `docs/` - Documentation files
-- `examples/` - Example usage scripts
+- `docs/` - Comprehensive documentation library:
+  * `USER_GUIDE.md` - End-user installation and usage guide
+  * `DEVELOPER_GUIDE.md` - Developer setup and contribution guide
+  * `TESTING_GUIDE.md` - Testing framework and validation procedures
+  * `TROUBLESHOOTING.md` - Common issues and solutions
+  * `CONFIGURATION_MIGRATION.md` - Configuration system documentation
+  * `GO_MIGRATION_PLAN.md` - Shell-to-Go migration strategy
+  * `INSTALLATION_METHODS.md` - Detailed installation method documentation
+  * `DISK_SPACE_MANAGEMENT.md` - Storage optimization and cache management
+  * Additional technical guides and migration documentation
+- `README.md` - Main project overview and quick start guide (project root)
+- `examples/` - Example usage scripts:
+  * `full-setup.sh` - Complete installation example
+  * `minimal-setup.sh` - Minimal installation example  
+  * `rust-tools-only.sh` - Rust-specific tools installation
 - `tests/` - Comprehensive test suite
 
 ### Build System Architecture
@@ -703,6 +716,41 @@ This architecture enables:
 - **Cross-Tool Intelligence**: Relationship awareness between tools for optimal workflow
 - **Scalable Patterns**: Template for implementing advanced features in other tools
 - **Maintainable Code**: Clean separation between UI, business logic, and system integration
+
+## Documentation Structure
+
+### Quick Navigation
+The project documentation is organized across multiple locations for different audiences:
+
+**📋 Project Root**:
+- **`README.md`** - Main project overview, quick start, and installation guide
+- **`CLAUDE.md`** - This file: comprehensive technical documentation for Claude Code
+
+**📁 Documentation Library (`docs/`)**:
+- **`USER_GUIDE.md`** - Complete end-user manual with usage examples
+- **`DEVELOPER_GUIDE.md`** - Developer setup, contribution guidelines, and architecture
+- **`TESTING_GUIDE.md`** - Testing framework documentation and validation procedures
+- **`TROUBLESHOOTING.md`** - Common issues, solutions, and debugging guides
+
+**🔧 Technical Documentation (`docs/`)**:
+- **`CONFIGURATION_MIGRATION.md`** - Configuration system and user preferences
+- **`GO_MIGRATION_PLAN.md`** - Strategic shell-to-Go migration roadmap
+- **`INSTALLATION_METHODS.md`** - Detailed installation method documentation
+- **`DISK_SPACE_MANAGEMENT.md`** - Storage optimization and cache management
+- **`CLI_MIGRATION_COMPLETED.md`** - Completed CLI migration documentation
+- **Phase-specific guides**: `PHASE2_ORCHESTRATION.md`, `PHASE3_SCRIPT_GENERATION.md`
+
+**🎯 Examples & Practical Guides (`examples/`)**:
+- **`full-setup.sh`** - Complete installation with all tools
+- **`minimal-setup.sh`** - Lightweight installation for basic usage
+- **`rust-tools-only.sh`** - Rust ecosystem tools installation
+
+### Documentation Usage Guide
+- **New Users**: Start with `README.md` → `docs/USER_GUIDE.md`
+- **Developers**: Read `docs/DEVELOPER_GUIDE.md` → `CLAUDE.md` → `docs/TESTING_GUIDE.md`
+- **Issues/Problems**: Check `docs/TROUBLESHOOTING.md` first
+- **Advanced Configuration**: See `docs/CONFIGURATION_MIGRATION.md`
+- **Migration Planning**: Review `docs/GO_MIGRATION_PLAN.md`
 
 ## Recent Improvements & Best Practices
 
