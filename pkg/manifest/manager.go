@@ -2,7 +2,6 @@ package manifest
 
 import (
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"time"
@@ -70,7 +69,7 @@ func (m *Manager) Load() (*InstallationManifest, error) {
 	}
 	
 	// Read existing manifest
-	data, err := ioutil.ReadFile(m.manifestPath)
+	data, err := os.ReadFile(m.manifestPath)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read manifest file: %w", err)
 	}
@@ -106,7 +105,7 @@ func (m *Manager) Save(manifest *InstallationManifest) error {
 	
 	// Write to temporary file first
 	tempPath := m.manifestPath + ".tmp"
-	if err := ioutil.WriteFile(tempPath, data, 0644); err != nil {
+	if err := os.WriteFile(tempPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write temporary manifest: %w", err)
 	}
 	
@@ -141,12 +140,12 @@ func (m *Manager) Backup(suffix string) error {
 	backupPath := filepath.Join(m.backupDir, backupName)
 	
 	// Copy manifest to backup location
-	data, err := ioutil.ReadFile(m.manifestPath)
+	data, err := os.ReadFile(m.manifestPath)
 	if err != nil {
 		return fmt.Errorf("failed to read manifest for backup: %w", err)
 	}
 	
-	if err := ioutil.WriteFile(backupPath, data, 0644); err != nil {
+	if err := os.WriteFile(backupPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to write backup: %w", err)
 	}
 	
@@ -159,7 +158,7 @@ func (m *Manager) ListBackups() ([]string, error) {
 		return []string{}, nil
 	}
 	
-	files, err := ioutil.ReadDir(m.backupDir)
+	files, err := os.ReadDir(m.backupDir)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read backup directory: %w", err)
 	}
@@ -189,7 +188,7 @@ func (m *Manager) RestoreBackup(backupName string) error {
 	}
 	
 	// Copy backup to manifest location
-	data, err := ioutil.ReadFile(backupPath)
+	data, err := os.ReadFile(backupPath)
 	if err != nil {
 		return fmt.Errorf("failed to read backup file: %w", err)
 	}
@@ -205,7 +204,7 @@ func (m *Manager) RestoreBackup(backupName string) error {
 	}
 	
 	// Write to manifest location
-	if err := ioutil.WriteFile(m.manifestPath, data, 0644); err != nil {
+	if err := os.WriteFile(m.manifestPath, data, 0644); err != nil {
 		return fmt.Errorf("failed to restore manifest: %w", err)
 	}
 	
