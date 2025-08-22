@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/charmbracelet/bubbles/key"
 	tea "github.com/charmbracelet/bubbletea"
@@ -105,6 +106,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ready = true
 		}
 		// Update view sizes
+		// Nav bar = 1 line, Status bar = 1 line, so views get height-2
 		m.dashboard.SetSize(m.width, m.height-2) // Account for nav and status bars
 		m.toolBrowser.SetSize(m.width, m.height-2)
 		m.bundleExplorer.SetSize(m.width, m.height-2)
@@ -174,8 +176,20 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		m.state.CurrentView = ViewHelp
 		return m, nil
 	case key.Matches(msg, keys.Tab):
-		// Cycle through views
+		// Cycle through views forward
 		m.nextView()
+		return m, nil
+	case msg.String() == "shift+tab":
+		// Cycle through views backward
+		m.previousView()
+		return m, nil
+	case key.Matches(msg, keys.Right):
+		// Navigate to next view with right arrow
+		m.nextView()
+		return m, nil
+	case key.Matches(msg, keys.Left):
+		// Navigate to previous view with left arrow
+		m.previousView()
 		return m, nil
 	}
 
@@ -210,19 +224,24 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	return m, nil
 }
 
+// Define the main navigation views (excluding Help)
+var mainViews = []ViewType{
+	ViewDashboard,
+	ViewToolBrowser,
+	ViewBundleExplorer,
+	ViewInstallManager,
+	ViewConfig,
+	ViewHealth,
+}
+
 func (m *Model) nextView() {
-	views := []ViewType{
-		ViewDashboard,
-		ViewToolBrowser,
-		ViewBundleExplorer,
-		ViewInstallManager,
-		ViewConfig,
-		ViewHealth,
-		ViewHelp,
+	// Don't navigate away from Help view with arrows
+	if m.state.CurrentView == ViewHelp {
+		return
 	}
 	
 	currentIndex := -1
-	for i, v := range views {
+	for i, v := range mainViews {
 		if v == m.state.CurrentView {
 			currentIndex = i
 			break
@@ -230,8 +249,31 @@ func (m *Model) nextView() {
 	}
 	
 	if currentIndex >= 0 {
-		nextIndex := (currentIndex + 1) % len(views)
-		m.state.CurrentView = views[nextIndex]
+		nextIndex := (currentIndex + 1) % len(mainViews)
+		m.state.CurrentView = mainViews[nextIndex]
+	}
+}
+
+func (m *Model) previousView() {
+	// Don't navigate away from Help view with arrows
+	if m.state.CurrentView == ViewHelp {
+		return
+	}
+	
+	currentIndex := -1
+	for i, v := range mainViews {
+		if v == m.state.CurrentView {
+			currentIndex = i
+			break
+		}
+	}
+	
+	if currentIndex >= 0 {
+		prevIndex := currentIndex - 1
+		if prevIndex < 0 {
+			prevIndex = len(mainViews) - 1
+		}
+		m.state.CurrentView = mainViews[prevIndex]
 	}
 }
 
@@ -368,36 +410,56 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 }
 
 func (m Model) renderCurrentView() string {
-	var content string
+	var viewContent string
 	
 	switch m.state.CurrentView {
 	case ViewDashboard:
-		content = m.renderDashboard()
+		viewContent = m.renderDashboard()
 	case ViewToolBrowser:
-		content = m.renderToolBrowser()
+		viewContent = m.renderToolBrowser()
 	case ViewBundleExplorer:
-		content = m.renderBundleExplorer()
+		viewContent = m.renderBundleExplorer()
 	case ViewInstallManager:
-		content = m.renderInstallManager()
+		viewContent = m.renderInstallManager()
 	case ViewConfig:
-		content = m.renderConfig()
+		viewContent = m.renderConfig()
 	case ViewHealth:
-		content = m.renderHealth()
+		viewContent = m.renderHealth()
 	case ViewHelp:
-		content = m.renderHelp()
+		viewContent = m.renderHelp()
 	default:
-		content = m.renderDashboard()
+		viewContent = m.renderDashboard()
 	}
 
 	// Add navigation bar
 	navBar := m.renderNavigationBar()
+	statusBar := m.renderStatusBar()
+	
+	// Calculate available height for content
+	// Total height - nav bar (1) - status bar (1) = height - 2
+	contentHeight := m.height - 2
+	
+	// Ensure content doesn't exceed available height
+	content := m.constrainHeight(viewContent, contentHeight)
 	
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
 		navBar,
 		content,
-		m.renderStatusBar(),
+		statusBar,
 	)
+}
+
+// constrainHeight ensures content doesn't exceed the given height
+func (m Model) constrainHeight(content string, maxHeight int) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) <= maxHeight {
+		return content
+	}
+	
+	// Truncate to fit
+	truncated := strings.Join(lines[:maxHeight], "\n")
+	return truncated
 }
 
 func (m Model) renderNavigationBar() string {
@@ -488,7 +550,9 @@ func (m Model) renderHelp() string {
 Gearbox TUI Help
 
 Navigation:
-  Tab       - Switch between views
+  ←/→       - Switch between views
+  Tab       - Next view
+  Shift+Tab - Previous view
   ↑/↓       - Navigate lists
   Enter     - Select/Confirm
   Esc       - Go back

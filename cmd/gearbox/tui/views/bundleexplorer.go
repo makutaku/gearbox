@@ -22,13 +22,18 @@ type BundleExplorer struct {
 	installedTools map[string]*manifest.InstallationRecord
 	
 	// UI state
-	cursor          int
-	scrollOffset    int
+	cursor          int      // Index in selectable bundles
+	scrollOffset    int      // Line offset in the rendered content
 	expandedBundles map[string]bool
 	selectedCategory string
 	
 	// Categories
 	categories []string
+	
+	// Cached rendering data
+	renderedLines    []string // All rendered lines
+	selectableLines  []int    // Line indices that correspond to selectable bundles
+	lastHeight      int      // Track last render height for moveUp/Down
 }
 
 // NewBundleExplorer creates a new bundle explorer view
@@ -84,7 +89,9 @@ func (be *BundleExplorer) Render() string {
 	categoryBar := be.renderCategoryBar()
 	
 	// Bundle tree
-	contentHeight := be.height - 6
+	// Title = 2 (with margin), Category bar = 2, Help bar = 1, spacing = 1, total = 6
+	// But let's be more conservative to ensure content fits
+	contentHeight := be.height - 7
 	bundleTree := be.renderBundleTree(contentHeight)
 	
 	// Help bar
@@ -116,70 +123,104 @@ func (be *BundleExplorer) renderCategoryBar() string {
 }
 
 func (be *BundleExplorer) renderBundleTree(height int) string {
-	// Group bundles by category
-	bundlesByCategory := be.groupBundlesByCategory()
+	// Store height for navigation
+	be.lastHeight = height
 	
-	var lines []string
-	bundleIndex := 0
-	selectedLineIndex := -1
-	currentLineIndex := 0
+	// Rebuild the rendered content and track selectable lines
+	be.rebuildRenderedContent()
 	
-	for _, category := range be.categories {
-		if be.selectedCategory != "" && be.selectedCategory != category {
-			continue
-		}
-		
-		bundles := bundlesByCategory[category]
-		if len(bundles) == 0 {
-			continue
-		}
-		
-		// Category header
-		categoryTitle := styles.SubtitleStyle().Render(strings.Title(category) + " Tier")
-		lines = append(lines, categoryTitle)
-		currentLineIndex++
-		
-		// Bundles in this category
-		for _, bundle := range bundles {
-			isSelected := bundleIndex == be.cursor
-			if isSelected {
-				selectedLineIndex = currentLineIndex
-			}
-			bundleLine := be.renderBundleLine(bundle, isSelected)
-			lines = append(lines, bundleLine)
-			currentLineIndex++
-			bundleIndex++
-			
-			// Show expanded details
-			if be.expandedBundles[bundle.Name] {
-				details := be.renderBundleDetails(bundle)
-				lines = append(lines, details...)
-				currentLineIndex += len(details)
-			}
-		}
-		
-		lines = append(lines, "") // Empty line between categories
-		currentLineIndex++
+	// Calculate viewport
+	// BoxStyle adds: 2 lines for borders + 2 lines for padding = 4 total
+	contentHeight := height - 4 // Account for box borders and padding
+	
+	// If there's nothing to render
+	if len(be.renderedLines) == 0 {
+		return styles.BoxStyle().
+			Width(be.width).
+			Height(height).
+			Render("No bundles available")
 	}
 	
-	// Handle scrolling based on the selected line position
-	visibleLines := height - 2
-	if selectedLineIndex >= 0 {
-		if selectedLineIndex >= be.scrollOffset+visibleLines {
-			be.scrollOffset = selectedLineIndex - visibleLines + 1
-		} else if selectedLineIndex < be.scrollOffset {
-			be.scrollOffset = selectedLineIndex
+	// Calculate total content and viewport
+	totalLines := len(be.renderedLines)
+	
+	// Use a fixed viewport that doesn't change
+	// Always reserve space for potential scroll indicators
+	viewportHeight := contentHeight - 2
+	if viewportHeight < 1 {
+		viewportHeight = 1
+	}
+	
+	// Determine if scrolling is needed
+	needsScroll := totalLines > viewportHeight
+	
+	// Find the line of the current selection
+	selectedLine := -1
+	if be.cursor >= 0 && be.cursor < len(be.selectableLines) {
+		selectedLine = be.selectableLines[be.cursor]
+	}
+	
+	// Adjust scroll to keep selection visible with some padding
+	if selectedLine >= 0 && needsScroll {
+		// Keep 1 line of context above/below when possible
+		scrollPadding := 1
+		
+		// If selected line would be above viewport
+		if selectedLine < be.scrollOffset + scrollPadding {
+			be.scrollOffset = max(0, selectedLine - scrollPadding)
+		} else if selectedLine >= be.scrollOffset + viewportHeight - scrollPadding {
+			// If selected line would be below viewport
+			be.scrollOffset = min(totalLines - viewportHeight, selectedLine - viewportHeight + scrollPadding + 1)
 		}
 	}
 	
-	// Get visible portion
-	start := be.scrollOffset
-	end := min(start+visibleLines, len(lines))
-	if start < len(lines) {
-		lines = lines[start:end]
+	// Ensure scroll offset is valid
+	if needsScroll {
+		maxScroll := max(0, totalLines - viewportHeight)
+		be.scrollOffset = max(0, min(be.scrollOffset, maxScroll))
+	} else {
+		be.scrollOffset = 0
 	}
 	
-	content := strings.Join(lines, "\n")
+	// Build display with fixed layout
+	var displayLines []string
+	
+	if needsScroll {
+		// Top indicator or spacing
+		if be.scrollOffset > 0 {
+			displayLines = append(displayLines, styles.MutedStyle().Render("↑ More above"))
+		} else {
+			displayLines = append(displayLines, "") // Empty line for consistent spacing
+		}
+		
+		// Content lines
+		startLine := be.scrollOffset
+		endLine := min(be.scrollOffset + viewportHeight, totalLines)
+		displayLines = append(displayLines, be.renderedLines[startLine:endLine]...)
+		
+		// Pad if needed to maintain consistent height
+		for len(displayLines) < viewportHeight + 1 {
+			displayLines = append(displayLines, "")
+		}
+		
+		// Bottom indicator or spacing
+		if be.scrollOffset + viewportHeight < totalLines {
+			displayLines = append(displayLines, styles.MutedStyle().Render("↓ More below"))
+		} else {
+			displayLines = append(displayLines, "") // Empty line for consistent spacing
+		}
+	} else {
+		// No scrolling needed, show all content
+		displayLines = be.renderedLines
+		
+		// Pad to fill the content area if needed
+		for len(displayLines) < contentHeight {
+			displayLines = append(displayLines, "")
+		}
+	}
+	
+	// Join and render
+	content := strings.Join(displayLines, "\n")
 	
 	return styles.BoxStyle().
 		Width(be.width).
@@ -271,7 +312,10 @@ func (be *BundleExplorer) renderBundleDetails(bundle orchestrator.BundleConfig) 
 	
 	if !allInstalled {
 		details = append(details, "")
-		details = append(details, indent+styles.ButtonStyle(false).Render("[i] Install Bundle"))
+		// No indentation - button's border provides visual separation
+		buttonText := "[i] Install Bundle"
+		button := styles.ButtonStyle(false).Render(buttonText)
+		details = append(details, button)
 	}
 	
 	details = append(details, "") // Empty line after details
@@ -292,6 +336,66 @@ func (be *BundleExplorer) renderHelpBar() string {
 }
 
 // Helper methods
+
+// rebuildRenderedContent rebuilds the complete rendered output and tracks selectable lines
+func (be *BundleExplorer) rebuildRenderedContent() {
+	be.renderedLines = nil
+	be.selectableLines = nil
+	
+	bundlesByCategory := be.groupBundlesByCategory()
+	selectableBundles := be.getSelectableBundles()
+	
+	// Create a map for quick lookup of bundle indices
+	bundleIndexMap := make(map[string]int)
+	for i, bundle := range selectableBundles {
+		bundleIndexMap[bundle.Name] = i
+	}
+	
+	lineIndex := 0
+	
+	for _, category := range be.categories {
+		if be.selectedCategory != "" && be.selectedCategory != category {
+			continue
+		}
+		
+		bundles := bundlesByCategory[category]
+		if len(bundles) == 0 {
+			continue
+		}
+		
+		// Category header
+		categoryTitle := styles.SubtitleStyle().Render(strings.Title(category) + " Tier")
+		be.renderedLines = append(be.renderedLines, categoryTitle)
+		lineIndex++
+		
+		// Bundles in this category
+		for _, bundle := range bundles {
+			// Check if this bundle is selectable and if it's the current selection
+			bundleIdx, isSelectable := bundleIndexMap[bundle.Name]
+			isCurrentBundle := isSelectable && bundleIdx == be.cursor
+			
+			// Track this line as selectable
+			if isSelectable {
+				be.selectableLines = append(be.selectableLines, lineIndex)
+			}
+			
+			bundleLine := be.renderBundleLine(bundle, isCurrentBundle)
+			be.renderedLines = append(be.renderedLines, bundleLine)
+			lineIndex++
+			
+			// Show expanded details
+			if be.expandedBundles[bundle.Name] {
+				details := be.renderBundleDetails(bundle)
+				be.renderedLines = append(be.renderedLines, details...)
+				lineIndex += len(details)
+			}
+		}
+		
+		// Empty line between categories
+		be.renderedLines = append(be.renderedLines, "")
+		lineIndex++
+	}
+}
 
 func (be *BundleExplorer) groupBundlesByCategory() map[string][]orchestrator.BundleConfig {
 	grouped := make(map[string][]orchestrator.BundleConfig)
@@ -334,7 +438,7 @@ func (be *BundleExplorer) groupBundlesByCategory() map[string][]orchestrator.Bun
 
 func (be *BundleExplorer) moveUp() {
 	bundles := be.getSelectableBundles()
-	if be.cursor > 0 && be.cursor <= len(bundles) {
+	if be.cursor > 0 && len(bundles) > 0 {
 		be.cursor--
 	}
 }

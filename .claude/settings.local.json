@@ -8,7 +8,8 @@
       "Bash(make:*)",
       "Bash(./build/gearbox:*)",
       "Bash(go build:*)",
-      "Bash(git add:*)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)"
     ],
     "deny": []
   }

@@ -98,6 +98,13 @@ func (im *InstallManager) Update(msg tea.Msg) tea.Cmd {
 			if im.selectedTaskID != "" && im.taskProvider != nil {
 				im.taskProvider.CancelTask(im.selectedTaskID)
 			}
+		case "C":
+			// Cancel all tasks
+			if im.taskProvider != nil {
+				for _, taskID := range im.taskIDs {
+					im.taskProvider.CancelTask(taskID)
+				}
+			}
 		}
 	}
 	
@@ -126,8 +133,10 @@ func (im *InstallManager) Render() string {
 	}
 	
 	// Calculate layout
-	queueHeight := im.height / 3
-	detailHeight := im.height - queueHeight - 4
+	// Reserve space for status bar (2) and help bar (2)
+	availableHeight := im.height - 4
+	queueHeight := availableHeight / 3
+	detailHeight := availableHeight - queueHeight
 	
 	// Render components
 	queueView := im.renderQueue(queueHeight)

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime"
 	"strings"
+	"time"
 
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
@@ -12,6 +13,9 @@ import (
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
 )
+
+// healthChecksCompleteMsg is sent when health checks are complete
+type healthChecksCompleteMsg struct{}
 
 // HealthView represents the health monitor view
 type HealthView struct {
@@ -89,12 +93,22 @@ func (hv *HealthView) Update(msg tea.Msg) tea.Cmd {
 		case "enter", " ":
 			hv.selectCheck()
 		case "r":
-			hv.runHealthChecks()
+			// Reset checks to pending state to show refresh is happening
+			hv.resetChecksToChecking()
+			// Return a command that will run the health checks after a brief delay
+			return tea.Tick(time.Millisecond*100, func(time.Time) tea.Msg {
+				hv.runHealthChecks()
+				return healthChecksCompleteMsg{}
+			})
 		case "a":
 			hv.autoRefresh = !hv.autoRefresh
 		case "d":
 			hv.showDetails = !hv.showDetails
 		}
+	case healthChecksCompleteMsg:
+		// Health checks are complete, no need to do anything special
+		// The view will be re-rendered automatically
+		return nil
 	}
 
 	return nil
@@ -411,6 +425,26 @@ func (hv *HealthView) runHealthChecks() {
 	// TODO: Actually run health checks
 	// For now, just simulate some results
 	
+	// Update OS check
+	if len(hv.systemChecks) > 0 {
+		hv.systemChecks[0].Status = HealthStatusPassing
+		hv.systemChecks[0].Message = "Linux (Debian-based)"
+		hv.systemChecks[0].Details = []string{
+			"Kernel: " + runtime.GOOS,
+			"Architecture: " + runtime.GOARCH,
+		}
+	}
+	
+	// Update CPU cores check
+	if len(hv.systemChecks) > 1 {
+		hv.systemChecks[1].Status = HealthStatusPassing
+		hv.systemChecks[1].Message = fmt.Sprintf("%d cores available", runtime.NumCPU())
+		hv.systemChecks[1].Details = []string{
+			fmt.Sprintf("Logical CPUs: %d", runtime.NumCPU()),
+			"GOMAXPROCS: " + fmt.Sprintf("%d", runtime.GOMAXPROCS(0)),
+		}
+	}
+	
 	// Update memory check
 	if len(hv.systemChecks) > 2 {
 		hv.systemChecks[2].Status = HealthStatusPassing
@@ -489,6 +523,28 @@ func (hv *HealthView) runHealthChecks() {
 		}
 	}
 	
+	// Update tool coverage check
+	if len(hv.toolChecks) > 2 {
+		installedCount := len(hv.installedTools)
+		totalTools := 42 // This would come from the tools config in real implementation
+		percentage := float64(installedCount) / float64(totalTools) * 100
+		
+		hv.toolChecks[2].Status = HealthStatusPassing
+		hv.toolChecks[2].Message = fmt.Sprintf("%d/%d tools (%.0f%%)", installedCount, totalTools, percentage)
+		hv.toolChecks[2].Details = []string{
+			fmt.Sprintf("Installed: %d", installedCount),
+			fmt.Sprintf("Available: %d", totalTools),
+			fmt.Sprintf("Missing: %d", totalTools-installedCount),
+		}
+		
+		if percentage < 50 {
+			hv.toolChecks[2].Suggestions = []string{
+				"Run 'gearbox install --bundle beginner' for essential tools",
+				"Browse available tools with 'gearbox list'",
+			}
+		}
+	}
+	
 	// Update the tool updates check
 	if len(hv.toolChecks) > 3 {
 		hv.toolChecks[3].Status = HealthStatusPassing
@@ -497,6 +553,24 @@ func (hv *HealthView) runHealthChecks() {
 			"Last checked: just now",
 			"No updates available",
 		}
+	}
+}
+
+func (hv *HealthView) resetChecksToChecking() {
+	// Reset all system checks to pending/checking state
+	for i := range hv.systemChecks {
+		hv.systemChecks[i].Status = HealthStatusPending
+		hv.systemChecks[i].Message = "Checking..."
+		hv.systemChecks[i].Details = nil
+		hv.systemChecks[i].Suggestions = nil
+	}
+	
+	// Reset all tool checks to pending/checking state
+	for i := range hv.toolChecks {
+		hv.toolChecks[i].Status = HealthStatusPending
+		hv.toolChecks[i].Message = "Checking..."
+		hv.toolChecks[i].Details = nil
+		hv.toolChecks[i].Suggestions = nil
 	}
 }
 

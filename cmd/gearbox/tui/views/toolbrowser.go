@@ -49,6 +49,8 @@ func NewToolBrowser() *ToolBrowser {
 		installedTools: make(map[string]*manifest.InstallationRecord),
 		showPreview:   true,
 		categories:    []string{"All", "Core", "Development", "System", "Text", "Media", "UI"},
+		selectedCategory: "All",
+		filteredTools: []orchestrator.ToolConfig{}, // Initialize empty slice
 	}
 }
 
@@ -63,6 +65,10 @@ func (tb *ToolBrowser) SetSize(width, height int) {
 func (tb *ToolBrowser) SetData(tools []orchestrator.ToolConfig, installed map[string]*manifest.InstallationRecord) {
 	tb.tools = tools
 	tb.installedTools = installed
+	// Initialize selectedCategory if not set
+	if tb.selectedCategory == "" {
+		tb.selectedCategory = "All"
+	}
 	tb.applyFilters()
 }
 
@@ -127,7 +133,8 @@ func (tb *ToolBrowser) Render() string {
 	
 	// Calculate layout
 	searchBarHeight := 3
-	contentHeight := tb.height - searchBarHeight - 2
+	helpBarHeight := 2 // Increased to account for proper spacing
+	contentHeight := tb.height - searchBarHeight - helpBarHeight
 	
 	// Render components
 	searchBar := tb.renderSearchBar()
@@ -452,16 +459,3 @@ func (tb *ToolBrowser) ClearSelection() {
 	tb.selectedTools = make(map[string]bool)
 }
 
-func min(a, b int) int {
-	if a < b {
-		return a
-	}
-	return b
-}
-
-func max(a, b int) int {
-	if a > b {
-		return a
-	}
-	return b
-}

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	
 	"gearbox/cmd/gearbox/tui/styles"
@@ -45,14 +46,19 @@ func (d *Dashboard) SetData(tools []orchestrator.ToolConfig, bundles []orchestra
 	d.installedTools = installed
 }
 
+// Update handles dashboard updates
+func (d *Dashboard) Update(msg tea.Msg) tea.Cmd {
+	// Dashboard doesn't handle specific keys since the quick actions
+	// are handled by the main app navigation (i, b, c, h keys)
+	// The dashboard is primarily a read-only overview
+	return nil
+}
+
 // Render returns the rendered dashboard view
 func (d *Dashboard) Render() string {
 	if d.width == 0 || d.height == 0 {
 		return "Loading..."
 	}
-
-	// Calculate available content height (minus navigation and status bars)
-	contentHeight := d.height - 4
 
 	// Render components
 	systemStatus := d.renderSystemStatus()
@@ -78,12 +84,8 @@ func (d *Dashboard) Render() string {
 		recommendations,
 	)
 
-	// Center the content
-	return lipgloss.NewStyle().
-		Width(d.width).
-		Height(contentHeight).
-		Padding(1, 2).
-		Render(sections)
+	// Return content without padding - let components handle their own spacing
+	return sections
 }
 
 func (d *Dashboard) renderSystemStatus() string {
@@ -97,9 +99,10 @@ func (d *Dashboard) renderSystemStatus() string {
 		installedCount, totalTools, bundleCount, diskUsage, d.healthStatus,
 	)
 
-	width := (d.width - 6) / 2
+	// Calculate inner content width for half-width boxes
+	boxContentWidth := d.calculateHalfBoxWidth()
 	return styles.BoxStyle().
-		Width(width).
+		Width(boxContentWidth).
 		Height(6).
 		Render(styles.TitleStyle().Render("System Status") + "\n" + content)
 }
@@ -114,9 +117,10 @@ func (d *Dashboard) renderQuickActions() string {
 
 	content := strings.Join(actions, "\n")
 	
-	width := (d.width - 6) / 2
+	// Use same width calculation as System Status
+	boxContentWidth := d.calculateHalfBoxWidth()
 	return styles.BoxStyle().
-		Width(width).
+		Width(boxContentWidth).
 		Height(6).
 		Render(styles.TitleStyle().Render("Quick Actions") + "\n" + content)
 }
@@ -131,8 +135,10 @@ func (d *Dashboard) renderRecentActivity() string {
 
 	content := strings.Join(activities, "\n")
 	
+	// Full width box doesn't need adjustment as BoxStyle handles its own padding/border
+	boxContentWidth := d.calculateFullBoxWidth()
 	return styles.BoxStyle().
-		Width(d.width - 4).
+		Width(boxContentWidth).
 		Render(styles.TitleStyle().Render("Recent Activity") + "\n" + content)
 }
 
@@ -145,8 +151,10 @@ func (d *Dashboard) renderRecommendations() string {
 
 	content := strings.Join(recommendations, "\n")
 	
+	// Full width box
+	boxContentWidth := d.calculateFullBoxWidth()
 	return styles.BoxStyle().
-		Width(d.width - 4).
+		Width(boxContentWidth).
 		Render(styles.TitleStyle().Render("Recommendations") + "\n" + content)
 }
 
@@ -265,4 +273,31 @@ func formatDuration(d time.Duration) string {
 		return fmt.Sprintf("%d hours", int(d.Hours()))
 	}
 	return fmt.Sprintf("%d days", int(d.Hours()/24))
+}
+
+// calculateHalfBoxWidth returns the content width for half-width boxes
+func (d *Dashboard) calculateHalfBoxWidth() int {
+	const (
+		gapBetweenBoxes = 2
+		borderWidth     = 2 // 1 char on each side
+		paddingWidth    = 2 // 1 char on each side (from BoxStyle)
+		boxOverhead     = borderWidth + paddingWidth
+	)
+	
+	// Available width for both boxes combined
+	availableWidth := d.width - gapBetweenBoxes
+	
+	// Each box gets half, minus its own overhead
+	return availableWidth/2 - boxOverhead
+}
+
+// calculateFullBoxWidth returns the content width for full-width boxes
+func (d *Dashboard) calculateFullBoxWidth() int {
+	const (
+		borderWidth  = 2 // 1 char on each side
+		paddingWidth = 2 // 1 char on each side (from BoxStyle)
+		boxOverhead  = borderWidth + paddingWidth
+	)
+	
+	return d.width - boxOverhead
 }

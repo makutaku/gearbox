@@ -2,7 +2,10 @@ package views
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
 	"strings"
+	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
 	tea "github.com/charmbracelet/bubbletea"
@@ -26,12 +29,16 @@ type ConfigView struct {
 
 	// Scroll state
 	scrollOffset int
+	
+	// Status message
+	statusMessage string
 }
 
 // ConfigItem represents a configuration item
 type ConfigItem struct {
 	Key         string
 	Value       string
+	Default     string
 	Description string
 	Type        string // "string", "number", "boolean", "choice"
 	Choices     []string
@@ -141,13 +148,13 @@ func (cv *ConfigView) Update(msg tea.Msg) tea.Cmd {
 				cv.textInput.SetValue("")
 				return nil
 			case "enter":
-				// Save the value
+				// Save the value and auto-save to file
 				cv.configs[cv.cursor].Value = cv.textInput.Value()
 				cv.editing = false
 				cv.textInput.Blur()
 				cv.textInput.SetValue("")
-				// TODO: Actually save to config file
-				return nil
+				// Auto-save the configuration
+				return cv.saveConfig()
 			default:
 				var cmd tea.Cmd
 				cv.textInput, cmd = cv.textInput.Update(msg)
@@ -166,9 +173,31 @@ func (cv *ConfigView) Update(msg tea.Msg) tea.Cmd {
 				cv.startEditing()
 			case "r":
 				cv.resetToDefault()
-			case "s":
-				cv.saveConfig()
+				// Auto-save after reset
+				return cv.saveConfig()
+			case "R":
+				// Reset all to defaults
+				cv.resetAllToDefaults()
+				// Auto-save after reset
+				return cv.saveConfig()
 			}
+		case configSaveSuccessMsg:
+			// Config saved successfully
+			cv.statusMessage = "✓ Configuration saved to ~/.gearboxrc"
+			// Clear message after a delay
+			return tea.Tick(time.Second*3, func(time.Time) tea.Msg {
+				return clearStatusMsg{}
+			})
+		case configSaveErrorMsg:
+			// Handle save error
+			cv.statusMessage = fmt.Sprintf("✗ Error saving config: %v", msg.err)
+			// Clear message after a delay
+			return tea.Tick(time.Second*5, func(time.Time) tea.Msg {
+				return clearStatusMsg{}
+			})
+		case clearStatusMsg:
+			cv.statusMessage = ""
+			return nil
 		}
 	}
 
@@ -200,36 +229,81 @@ func (cv *ConfigView) Render() string {
 }
 
 func (cv *ConfigView) renderContent(height int) string {
-	// Calculate visible items
-	visibleItems := (height - 4) / 3 // Each config item takes ~3 lines
-	if cv.cursor >= cv.scrollOffset+visibleItems {
-		cv.scrollOffset = cv.cursor - visibleItems + 1
-	} else if cv.cursor < cv.scrollOffset {
-		cv.scrollOffset = cv.cursor
-	}
-
-	var lines []string
-
+	contentHeight := height - 2 // Account for box borders
+	
+	// Build all content lines first
+	var allLines []string
+	
 	// Add description
 	desc := styles.MutedStyle().Render("Configure Gearbox behavior and preferences")
-	lines = append(lines, desc, "")
-
-	// Render visible config items
-	for i := cv.scrollOffset; i < min(cv.scrollOffset+visibleItems, len(cv.configs)); i++ {
-		item := cv.renderConfigItem(cv.configs[i], i == cv.cursor)
-		lines = append(lines, item)
+	allLines = append(allLines, desc, "")
+	
+	// Render all config items to calculate their actual height
+	configStartLine := len(allLines)
+	for i, config := range cv.configs {
+		item := cv.renderConfigItem(config, i == cv.cursor)
+		itemLines := strings.Split(item, "\n")
+		allLines = append(allLines, itemLines...)
 	}
-
-	// Add scroll indicators
-	if cv.scrollOffset > 0 {
-		lines[2] = "↑ More above"
+	
+	// Calculate which line the cursor is on
+	cursorLine := configStartLine
+	for i := 0; i < cv.cursor; i++ {
+		item := cv.renderConfigItem(cv.configs[i], false)
+		cursorLine += len(strings.Split(item, "\n"))
 	}
-	if cv.scrollOffset+visibleItems < len(cv.configs) {
-		lines = append(lines, "↓ More below")
+	
+	// Check if we need scroll indicators
+	needsScrollUp := len(allLines) > contentHeight && cv.scrollOffset > 0
+	needsScrollDown := len(allLines) > contentHeight && 
+		(cv.scrollOffset + contentHeight) < len(allLines)
+	
+	// Adjust effective height for scroll indicators
+	effectiveHeight := contentHeight
+	if needsScrollUp {
+		effectiveHeight--
 	}
-
-	content := strings.Join(lines, "\n")
-
+	if needsScrollDown {
+		effectiveHeight--
+	}
+	
+	// Adjust scroll to keep cursor visible
+	if cursorLine < cv.scrollOffset {
+		cv.scrollOffset = cursorLine
+	} else if cursorLine >= cv.scrollOffset + effectiveHeight {
+		// Find how many lines the current item takes
+		currentItemLines := len(strings.Split(cv.renderConfigItem(cv.configs[cv.cursor], true), "\n"))
+		cv.scrollOffset = cursorLine - effectiveHeight + currentItemLines
+	}
+	
+	// Clamp scroll offset
+	maxScroll := len(allLines) - effectiveHeight
+	if maxScroll < 0 {
+		maxScroll = 0
+	}
+	cv.scrollOffset = max(0, min(cv.scrollOffset, maxScroll))
+	
+	// Build display lines
+	var displayLines []string
+	
+	// Add scroll indicators and visible content
+	if needsScrollUp {
+		displayLines = append(displayLines, styles.MutedStyle().Render("↑ More above"))
+	}
+	
+	// Add visible lines
+	start := cv.scrollOffset
+	end := min(start + effectiveHeight, len(allLines))
+	if start < len(allLines) {
+		displayLines = append(displayLines, allLines[start:end]...)
+	}
+	
+	if needsScrollDown {
+		displayLines = append(displayLines, styles.MutedStyle().Render("↓ More below"))
+	}
+	
+	content := strings.Join(displayLines, "\n")
+	
 	return styles.BoxStyle().
 		Width(cv.width).
 		Height(height).
@@ -261,8 +335,8 @@ func (cv *ConfigView) renderConfigItem(item ConfigItem, selected bool) string {
 
 	line := fmt.Sprintf("%s = %s", key, value)
 
-	// Apply selection style
-	if selected {
+	// Apply selection style only when not editing
+	if selected && !cv.editing {
 		line = styles.SelectedStyle().Render(line)
 	}
 
@@ -288,12 +362,19 @@ func (cv *ConfigView) renderHelpBar() string {
 	helps := []string{
 		"[↑/↓] Navigate",
 		"[Enter/Space] Edit",
-		"[r] Reset to Default",
-		"[s] Save All",
+		"[r] Reset Field",
+		"[R] Reset All to Defaults",
 		"[Esc] Cancel Edit",
 	}
 
-	return styles.MutedStyle().Render(strings.Join(helps, "  "))
+	helpText := styles.MutedStyle().Render(strings.Join(helps, "  "))
+	
+	// Add status message if present
+	if cv.statusMessage != "" {
+		return helpText + "\n" + cv.statusMessage
+	}
+	
+	return helpText
 }
 
 // Helper methods
@@ -322,8 +403,8 @@ func (cv *ConfigView) startEditing() {
 }
 
 func (cv *ConfigView) resetToDefault() {
-	// Reset current item to default value
-	// TODO: Load defaults from config system
+	// Reset current field to its default value
+	// Use hardcoded defaults for now since configs don't have Default field populated yet
 	switch cv.configs[cv.cursor].Key {
 	case "DEFAULT_BUILD_TYPE":
 		cv.configs[cv.cursor].Value = "standard"
@@ -348,7 +429,49 @@ func (cv *ConfigView) resetToDefault() {
 	}
 }
 
-func (cv *ConfigView) saveConfig() {
-	// TODO: Actually save configuration to file
-	// For now, this is just a placeholder
+func (cv *ConfigView) resetAllToDefaults() {
+	// Reset all fields to their default values
+	for i := range cv.configs {
+		// Temporarily save cursor position
+		originalCursor := cv.cursor
+		cv.cursor = i
+		cv.resetToDefault()
+		cv.cursor = originalCursor
+	}
 }
+
+func (cv *ConfigView) saveConfig() tea.Cmd {
+	return func() tea.Msg {
+		// Build config file content
+		var lines []string
+		lines = append(lines, "# Gearbox Configuration File")
+		lines = append(lines, "# Generated by Gearbox TUI")
+		lines = append(lines, "")
+		
+		// Add each configuration setting
+		for _, config := range cv.configs {
+			// Add comment with description
+			lines = append(lines, fmt.Sprintf("# %s", config.Description))
+			// Add the key=value pair
+			lines = append(lines, fmt.Sprintf("%s=%s", config.Key, config.Value))
+			lines = append(lines, "")
+		}
+		
+		// Write to ~/.gearboxrc
+		configPath := filepath.Join(os.Getenv("HOME"), ".gearboxrc")
+		content := strings.Join(lines, "\n")
+		
+		err := os.WriteFile(configPath, []byte(content), 0644)
+		if err != nil {
+			return configSaveErrorMsg{err}
+		}
+		
+		// Return a success message
+		return configSaveSuccessMsg{}
+	}
+}
+
+// Message types for config operations
+type configSaveSuccessMsg struct{}
+type configSaveErrorMsg struct{ err error }
+type clearStatusMsg struct{}
