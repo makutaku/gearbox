@@ -82,28 +82,49 @@ func (be *BundleExplorer) Render() string {
 		return "Loading..."
 	}
 	
-	// Title
+	// Render components first to know their exact heights
 	title := styles.TitleStyle().Render("Bundle Explorer")
-	
-	// Category filter
 	categoryBar := be.renderCategoryBar()
-	
-	// Bundle tree
-	// Title = 2 (with margin), Category bar = 2, Help bar = 1, spacing = 1, total = 6
-	// But let's be more conservative to ensure content fits
-	contentHeight := be.height - 7
-	bundleTree := be.renderBundleTree(contentHeight)
-	
-	// Help bar
 	helpBar := be.renderHelpBar()
 	
-	return lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		categoryBar,
-		bundleTree,
-		helpBar,
-	)
+	// Calculate exact heights
+	titleHeight := lipgloss.Height(title)
+	categoryHeight := lipgloss.Height(categoryBar) 
+	helpHeight := lipgloss.Height(helpBar)
+	
+	// Calculate space for bundle tree
+	// We need to ensure the total doesn't exceed be.height
+	fixedComponentsHeight := titleHeight + categoryHeight + helpHeight
+	availableForTree := be.height - fixedComponentsHeight
+	
+	// Ensure we have at least some space for the tree
+	if availableForTree < 5 {
+		// Not enough space - we need to make room
+		availableForTree = 5
+	}
+	
+	// Render the tree with the available space
+	bundleTree := be.renderBundleTree(availableForTree)
+	
+	// Now assemble all components
+	components := []string{title, categoryBar, bundleTree, helpBar}
+	result := lipgloss.JoinVertical(lipgloss.Left, components...)
+	
+	// If the result is too tall, we need to trim it
+	resultHeight := lipgloss.Height(result)
+	if resultHeight > be.height {
+		// The tree must have rendered taller than expected
+		// Reduce tree height and try again
+		availableForTree = availableForTree - (resultHeight - be.height)
+		if availableForTree < 1 {
+			availableForTree = 1
+		}
+		bundleTree = be.renderBundleTree(availableForTree)
+		components = []string{title, categoryBar, bundleTree, helpBar}
+		result = lipgloss.JoinVertical(lipgloss.Left, components...)
+	}
+	
+	return result
 }
 
 func (be *BundleExplorer) renderCategoryBar() string {
@@ -122,100 +143,107 @@ func (be *BundleExplorer) renderCategoryBar() string {
 		Render(strings.Join(categories, "  "))
 }
 
-func (be *BundleExplorer) renderBundleTree(height int) string {
-	// Store height for navigation
-	be.lastHeight = height
+func (be *BundleExplorer) renderBundleTree(requestedHeight int) string {
+	// Store height for navigation  
+	be.lastHeight = requestedHeight
 	
 	// Rebuild the rendered content and track selectable lines
 	be.rebuildRenderedContent()
 	
-	// Calculate viewport
-	// BoxStyle adds: 2 lines for borders + 2 lines for padding = 4 total
-	contentHeight := height - 4 // Account for box borders and padding
+	// IMPORTANT: BoxStyle().Height(n) sets the CONTENT height to n
+	// The actual rendered height will be n + borders(2) + padding(2) = n + 4
+	// So if we want the total rendered height to be requestedHeight,
+	// we need to set the content height to requestedHeight - 4
+	contentHeight := requestedHeight - 4
+	if contentHeight < 1 {
+		contentHeight = 1
+	}
 	
 	// If there's nothing to render
 	if len(be.renderedLines) == 0 {
 		return styles.BoxStyle().
 			Width(be.width).
-			Height(height).
+			Height(contentHeight).
 			Render("No bundles available")
 	}
 	
-	// Calculate total content and viewport
-	totalLines := len(be.renderedLines)
-	
-	// Use a fixed viewport that doesn't change
-	// Always reserve space for potential scroll indicators
-	viewportHeight := contentHeight - 2
-	if viewportHeight < 1 {
-		viewportHeight = 1
+	// Trim trailing empty lines to get actual content length
+	actualContentLines := len(be.renderedLines)
+	for actualContentLines > 0 && be.renderedLines[actualContentLines-1] == "" {
+		actualContentLines--
 	}
 	
-	// Determine if scrolling is needed
-	needsScroll := totalLines > viewportHeight
+	// Check if we need scrolling
+	needsScroll := actualContentLines > contentHeight
 	
-	// Find the line of the current selection
+	// Find the current selection line
 	selectedLine := -1
 	if be.cursor >= 0 && be.cursor < len(be.selectableLines) {
 		selectedLine = be.selectableLines[be.cursor]
 	}
 	
-	// Adjust scroll to keep selection visible with some padding
-	if selectedLine >= 0 && needsScroll {
-		// Keep 1 line of context above/below when possible
-		scrollPadding := 1
-		
-		// If selected line would be above viewport
-		if selectedLine < be.scrollOffset + scrollPadding {
-			be.scrollOffset = max(0, selectedLine - scrollPadding)
-		} else if selectedLine >= be.scrollOffset + viewportHeight - scrollPadding {
-			// If selected line would be below viewport
-			be.scrollOffset = min(totalLines - viewportHeight, selectedLine - viewportHeight + scrollPadding + 1)
+	// Calculate viewport for scrolling
+	viewportHeight := contentHeight
+	if needsScroll {
+		// Reserve lines for indicators within the content area
+		viewportHeight = contentHeight - 2
+		if viewportHeight < 1 {
+			viewportHeight = 1
 		}
 	}
 	
-	// Ensure scroll offset is valid
-	if needsScroll {
-		maxScroll := max(0, totalLines - viewportHeight)
+	// Update scroll offset to keep selection visible
+	if selectedLine >= 0 && needsScroll {
+		if selectedLine < be.scrollOffset {
+			be.scrollOffset = selectedLine
+		} else if selectedLine >= be.scrollOffset + viewportHeight {
+			be.scrollOffset = selectedLine - viewportHeight + 1
+		}
+		
+		// Clamp scroll offset
+		maxScroll := max(0, actualContentLines - viewportHeight)
 		be.scrollOffset = max(0, min(be.scrollOffset, maxScroll))
-	} else {
+	} else if !needsScroll {
 		be.scrollOffset = 0
 	}
 	
-	// Build display with fixed layout
+	// Build the display content - always exactly contentHeight lines
 	var displayLines []string
 	
 	if needsScroll {
-		// Top indicator or spacing
+		// Add top indicator
 		if be.scrollOffset > 0 {
 			displayLines = append(displayLines, styles.MutedStyle().Render("↑ More above"))
 		} else {
-			displayLines = append(displayLines, "") // Empty line for consistent spacing
-		}
-		
-		// Content lines
-		startLine := be.scrollOffset
-		endLine := min(be.scrollOffset + viewportHeight, totalLines)
-		displayLines = append(displayLines, be.renderedLines[startLine:endLine]...)
-		
-		// Pad if needed to maintain consistent height
-		for len(displayLines) < viewportHeight + 1 {
 			displayLines = append(displayLines, "")
 		}
 		
-		// Bottom indicator or spacing
-		if be.scrollOffset + viewportHeight < totalLines {
+		// Add viewport content
+		for i := 0; i < viewportHeight; i++ {
+			lineIdx := be.scrollOffset + i
+			if lineIdx < len(be.renderedLines) {
+				displayLines = append(displayLines, be.renderedLines[lineIdx])
+			} else {
+				displayLines = append(displayLines, "")
+			}
+		}
+		
+		// Add bottom indicator
+		if be.scrollOffset + viewportHeight < actualContentLines {
 			displayLines = append(displayLines, styles.MutedStyle().Render("↓ More below"))
 		} else {
-			displayLines = append(displayLines, "") // Empty line for consistent spacing
+			displayLines = append(displayLines, "")
 		}
 	} else {
-		// No scrolling needed, show all content
-		displayLines = be.renderedLines
-		
-		// Pad to fill the content area if needed
+		// No scrolling - just show all content with padding
+		displayLines = append(displayLines, be.renderedLines...)
+		// Pad to exact height
 		for len(displayLines) < contentHeight {
 			displayLines = append(displayLines, "")
+		}
+		// Truncate if too long
+		if len(displayLines) > contentHeight {
+			displayLines = displayLines[:contentHeight]
 		}
 	}
 	
@@ -224,7 +252,7 @@ func (be *BundleExplorer) renderBundleTree(height int) string {
 	
 	return styles.BoxStyle().
 		Width(be.width).
-		Height(height).
+		Height(contentHeight).
 		Render(content)
 }
 
