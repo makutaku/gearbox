@@ -3,22 +3,15 @@ package views
 import (
 	"fmt"
 	"strings"
-	"time"
 
 	"github.com/charmbracelet/bubbles/progress"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-	
-	"gearbox/cmd/gearbox/tui/styles"
 )
 
-// We'll use TaskStatus from interfaces.go instead
-
-// InstallManager represents the installation manager view
-type InstallManager struct {
-	width  int
-	height int
-	
+// InstallManagerNew represents the new installation manager with TUI best practices
+type InstallManagerNew struct {
 	// Task provider
 	taskProvider   TaskProvider
 	
@@ -27,58 +20,91 @@ type InstallManager struct {
 	
 	// UI state
 	cursor         int
-	scrollOffset   int
 	selectedTaskID string
 	showOutput     bool
 	
 	// Progress bars
 	progressBars   map[string]progress.Model
+	
+	// TUI components (official Bubbles components)
+	viewport       viewport.Model
+	ready          bool
+	width          int
+	height         int
 }
 
-// NewInstallManager creates a new install manager view
-func NewInstallManager() *InstallManager {
-	return &InstallManager{
+// NewInstallManagerNew creates a new install manager with TUI best practices
+func NewInstallManagerNew() *InstallManagerNew {
+	return &InstallManagerNew{
 		taskIDs:      []string{},
 		progressBars: make(map[string]progress.Model),
 		showOutput:   true,
 	}
 }
 
-// SetSize updates the size of the install manager
-func (im *InstallManager) SetSize(width, height int) {
+
+// SetSize updates the install manager size (TUI best practices)
+func (im *InstallManagerNew) SetSize(width, height int) {
 	im.width = width
 	im.height = height
 	
+	// Initialize official viewport if not ready
+	if !im.ready {
+		// Calculate viewport height: total - header - footer
+		viewportHeight := height - 3 // Reserve 3 lines for header + footer
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		
+		im.viewport = viewport.New(width, viewportHeight)
+		im.viewport.SetContent("")
+		im.ready = true
+	} else {
+		// Update existing viewport
+		viewportHeight := height - 3
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		im.viewport.Width = width
+		im.viewport.Height = viewportHeight
+	}
+	
 	// Update progress bar widths
 	for id, prog := range im.progressBars {
-		prog.Width = im.width / 2
+		prog.Width = width / 2
 		im.progressBars[id] = prog
 	}
 }
 
 // SetTaskProvider sets the task provider
-func (im *InstallManager) SetTaskProvider(provider TaskProvider) {
+func (im *InstallManagerNew) SetTaskProvider(provider TaskProvider) {
 	im.taskProvider = provider
 }
 
 // AddTaskID adds a new task ID to track
-func (im *InstallManager) AddTaskID(taskID string) {
+func (im *InstallManagerNew) AddTaskID(taskID string) {
 	im.taskIDs = append(im.taskIDs, taskID)
 	
 	// Create progress bar for this task
 	prog := progress.New(progress.WithDefaultGradient())
-	prog.Width = im.width / 2
+	prog.Width = 50 // Will be updated in SetSize
 	im.progressBars[taskID] = prog
+	
+	if im.ready {
+		im.updateViewportContentTUI()
+	}
 }
 
 // HandleTaskUpdate handles task update messages
-func (im *InstallManager) HandleTaskUpdate(taskID string, progress float64) {
-	// Progress will be updated when we fetch the task in the Update method
-	// This method is just a notification that an update occurred
+func (im *InstallManagerNew) HandleTaskUpdate(taskID string, progress float64) {
+	// Update will refresh the content automatically
+	if im.ready {
+		im.updateViewportContentTUI()
+	}
 }
 
 // Update handles install manager updates
-func (im *InstallManager) Update(msg tea.Msg) tea.Cmd {
+func (im *InstallManagerNew) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -112,7 +138,6 @@ func (im *InstallManager) Update(msg tea.Msg) tea.Cmd {
 	var cmds []tea.Cmd
 	for id, prog := range im.progressBars {
 		if task := im.findTask(id); task != nil && task.Status == TaskStatusRunning {
-			// Progress is already set in the task, just update the model
 			newModel, cmd := prog.Update(msg)
 			if newProg, ok := newModel.(progress.Model); ok {
 				im.progressBars[id] = newProg
@@ -123,43 +148,59 @@ func (im *InstallManager) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	
+	if im.ready {
+		im.updateViewportContentTUI()
+	}
+	
 	return tea.Batch(cmds...)
 }
 
 // Render returns the rendered install manager view
-func (im *InstallManager) Render() string {
-	if im.width == 0 || im.height == 0 {
-		return "Loading..."
-	}
+func (im *InstallManagerNew) Render() string {
+	return im.renderTUIStyle()
+}
+
+// renderTUIStyle uses proper TUI best practices with official Bubbles components
+func (im *InstallManagerNew) renderTUIStyle() string {
+	// Header (installation queue info)
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true).
+		Padding(0, 1)
 	
-	// Calculate layout
-	// Reserve space for status bar (2) and help bar (2)
-	availableHeight := im.height - 4
-	queueHeight := availableHeight / 3
-	detailHeight := availableHeight - queueHeight
+	header := headerStyle.Render(fmt.Sprintf(
+		"Installation Manager | %d tasks in queue",
+		len(im.taskIDs),
+	))
 	
-	// Render components
-	queueView := im.renderQueue(queueHeight)
-	detailView := im.renderDetails(detailHeight)
-	statusBar := im.renderStatusBar()
-	helpBar := im.renderHelpBar()
+	// Footer (help)
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Padding(0, 1)
 	
+	footer := footerStyle.Render(
+		"[↑/↓] Navigate  [s] Start Tasks  [c] Cancel Current  [o] Toggle Output  [Enter] Details",
+	)
+	
+	// Content (task list with cursor highlighting)
+	im.updateViewportContentTUI()
+	
+	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		queueView,
-		detailView,
-		statusBar,
-		helpBar,
+		header,
+		im.viewport.View(),
+		footer,
 	)
 }
 
-func (im *InstallManager) renderQueue(height int) string {
-	title := styles.TitleStyle().Render("Installation Queue")
+// updateViewportContentTUI rebuilds content for the official viewport
+func (im *InstallManagerNew) updateViewportContentTUI() {
+	var lines []string
 	
 	// Get all tasks from task provider
 	var allTasks []*TaskInfo
 	if im.taskProvider != nil {
-		// Get tasks for our tracked IDs
 		for _, id := range im.taskIDs {
 			if task, ok := im.taskProvider.GetTask(id); ok {
 				allTasks = append(allTasks, task)
@@ -168,62 +209,79 @@ func (im *InstallManager) renderQueue(height int) string {
 	}
 	
 	if len(allTasks) == 0 {
-		content := lipgloss.NewStyle().
-			Height(height-3).
-			Width(im.width-4).
-			Align(lipgloss.Center, lipgloss.Center).
-			Render("No tasks in queue\n\nAdd tools from the Tool Browser [T]")
-		
-		return styles.BoxStyle().
-			Width(im.width).
-			Height(height).
-			Render(title + "\n" + content)
+		lines = []string{
+			"",
+			"No tasks in queue",
+			"",
+			"Add tools from the Tool Browser [T]",
+			"",
+		}
+	} else {
+		for i, task := range allTasks {
+			line := im.renderTaskItem(task, i == im.cursor)
+			lines = append(lines, line)
+			
+			// Add task details if this task is selected and showOutput is enabled
+			if i == im.cursor && im.showOutput {
+				details := im.renderTaskDetails(task)
+				lines = append(lines, details...)
+			}
+		}
 	}
 	
-	// Calculate visible items
-	visibleItems := height - 4
-	if im.cursor >= im.scrollOffset+visibleItems {
-		im.scrollOffset = im.cursor - visibleItems + 1
-	} else if im.cursor < im.scrollOffset {
-		im.scrollOffset = im.cursor
-	}
+	content := strings.Join(lines, "\n")
+	im.viewport.SetContent(content)
 	
-	var items []string
-	for i := im.scrollOffset; i < min(im.scrollOffset+visibleItems, len(allTasks)); i++ {
-		task := allTasks[i]
-		items = append(items, im.renderTaskItem(task, i == im.cursor))
-	}
-	
-	content := strings.Join(items, "\n")
-	
-	return styles.BoxStyle().
-		Width(im.width).
-		Height(height).
-		Render(title + "\n" + content)
+	// Sync viewport with cursor position (TUI best practice)
+	im.syncViewportWithCursor()
 }
 
-func (im *InstallManager) renderTaskItem(task *TaskInfo, selected bool) string {
+// syncViewportWithCursor ensures cursor is visible (TUI best practice)
+func (im *InstallManagerNew) syncViewportWithCursor() {
+	if len(im.taskIDs) == 0 {
+		return
+	}
+	
+	// Get viewport bounds
+	top := im.viewport.YOffset
+	bottom := top + im.viewport.Height - 1
+	
+	// Ensure cursor is visible by scrolling viewport
+	if im.cursor < top {
+		// Cursor above viewport - scroll up
+		im.viewport.SetYOffset(im.cursor)
+	} else if im.cursor > bottom {
+		// Cursor below viewport - scroll down
+		im.viewport.SetYOffset(im.cursor - im.viewport.Height + 1)
+	}
+}
+
+// updateQueueContent is deprecated - using TUI best practices instead
+
+func (im *InstallManagerNew) renderTaskItem(task *TaskInfo, selected bool) string {
 	// Status icon
 	var statusIcon string
-	statusStyle := lipgloss.NewStyle()
+	var statusColor lipgloss.Color
 	
 	switch task.Status {
 	case TaskStatusPending:
 		statusIcon = "⏳"
-		statusStyle = statusStyle.Foreground(styles.CurrentTheme.Warning)
+		statusColor = lipgloss.Color("11") // Yellow
 	case TaskStatusRunning:
 		statusIcon = "🔄"
-		statusStyle = statusStyle.Foreground(styles.CurrentTheme.Info)
+		statusColor = lipgloss.Color("12") // Blue
 	case TaskStatusCompleted:
 		statusIcon = "✅"
-		statusStyle = statusStyle.Foreground(styles.CurrentTheme.Success)
+		statusColor = lipgloss.Color("10") // Green
 	case TaskStatusFailed:
 		statusIcon = "❌"
-		statusStyle = statusStyle.Foreground(styles.CurrentTheme.Error)
+		statusColor = lipgloss.Color("9")  // Red
 	case TaskStatusCancelled:
 		statusIcon = "⏹️"
-		statusStyle = statusStyle.Foreground(styles.CurrentTheme.Muted)
+		statusColor = lipgloss.Color("8")  // Gray
 	}
+	
+	statusStyle := lipgloss.NewStyle().Foreground(statusColor)
 	
 	// Build the item
 	name := fmt.Sprintf("%-20s", task.ToolName)
@@ -250,182 +308,64 @@ func (im *InstallManager) renderTaskItem(task *TaskInfo, selected bool) string {
 		progress,
 	)
 	
-	// Apply selection style
-	if selected {
-		return styles.SelectedStyle().Render(item)
-	}
-	
 	return item
 }
 
-func (im *InstallManager) renderDetails(height int) string {
-	selectedTask := im.getSelectedTask()
-	if selectedTask == nil {
-		return styles.BoxStyle().
-			Width(im.width).
-			Height(height).
-			Render("Select a task to view details")
-	}
-	
-	title := styles.TitleStyle().Render(fmt.Sprintf("Task Details: %s", selectedTask.ToolName))
+// renderTaskDetails returns detailed information for a task (used in TUI style)
+func (im *InstallManagerNew) renderTaskDetails(task *TaskInfo) []string {
+	var details []string
+	indent := "    "
 	
 	// Task information
-	info := fmt.Sprintf(
-		"Build Type: %s\nStatus: %s\nStarted: %s",
-		selectedTask.BuildType,
-		im.getStatusText(selectedTask.Status),
-		selectedTask.StartTime,
-	)
+	details = append(details, indent+"Details:")
+	details = append(details, fmt.Sprintf("%sBuild Type: %s", indent, task.BuildType))
+	details = append(details, fmt.Sprintf("%sStatus: %s", indent, im.getStatusText(task.Status)))
+	details = append(details, fmt.Sprintf("%sStarted: %s", indent, task.StartTime))
 	
-	if selectedTask.Status == TaskStatusCompleted || selectedTask.Status == TaskStatusFailed {
-		info += fmt.Sprintf("\nEnded: %s", selectedTask.EndTime)
-		info += fmt.Sprintf("\nDuration: %s", selectedTask.Duration)
+	if task.Status == TaskStatusCompleted || task.Status == TaskStatusFailed {
+		details = append(details, fmt.Sprintf("%sEnded: %s", indent, task.EndTime))
+		details = append(details, fmt.Sprintf("%sDuration: %s", indent, task.Duration))
 	}
 	
-	// Progress bar for running tasks
-	var progressBar string
-	if selectedTask.Status == TaskStatusRunning && selectedTask.Progress > 0 {
-		if prog, ok := im.progressBars[selectedTask.ID]; ok {
-			// ViewAs takes the progress value to render
-			progressBar = "\n\n" + prog.ViewAs(selectedTask.Progress)
+	// Progress for running tasks
+	if task.Status == TaskStatusRunning {
+		if task.Progress > 0 {
+			progressText := fmt.Sprintf("%sProgress: %.0f%% - %s", indent, task.Progress*100, task.Stage)
+			details = append(details, progressText)
+		} else {
+			details = append(details, fmt.Sprintf("%sStage: %s", indent, task.Stage))
 		}
 	}
 	
-	// Output section
-	var output string
-	if im.showOutput && len(selectedTask.Output) > 0 {
-		outputTitle := styles.SubtitleStyle().Render("Output:")
-		
-		// Get last N lines of output
-		outputLines := selectedTask.Output
-		maxLines := height - 10
+	// Error message
+	if task.Error != nil {
+		errorStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
+		errorMsg := errorStyle.Render(fmt.Sprintf("%sError: %s", indent, task.Error.Error()))
+		details = append(details, errorMsg)
+	}
+	
+	// Recent output
+	if len(task.Output) > 0 {
+		details = append(details, indent+"Recent Output:")
+		// Show last few lines of output
+		outputLines := task.Output
+		maxLines := 3
 		if len(outputLines) > maxLines {
 			outputLines = outputLines[len(outputLines)-maxLines:]
 		}
 		
-		outputContent := lipgloss.NewStyle().
-			Foreground(styles.CurrentTheme.Muted).
-			Render(strings.Join(outputLines, "\n"))
-		
-		output = "\n\n" + outputTitle + "\n" + outputContent
-	}
-	
-	// Error message
-	var errorMsg string
-	if selectedTask.Error != nil {
-		errorMsg = "\n\n" + styles.ErrorStyle().Render("Error: " + selectedTask.Error.Error())
-	}
-	
-	content := info + progressBar + output + errorMsg
-	
-	return styles.BoxStyle().
-		Width(im.width).
-		Height(height).
-		Render(title + "\n\n" + content)
-}
-
-func (im *InstallManager) renderStatusBar() string {
-	pending := 0
-	running := 0
-	completed := 0
-	failed := 0
-	
-	// Count tasks by status
-	if im.taskProvider != nil {
-		for _, taskID := range im.taskIDs {
-			if task, ok := im.taskProvider.GetTask(taskID); ok {
-				switch task.Status {
-				case TaskStatusPending:
-					pending++
-				case TaskStatusRunning:
-					running++
-				case TaskStatusCompleted:
-					completed++
-				case TaskStatusFailed, TaskStatusCancelled:
-					failed++
-				}
-			}
+		mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		for _, line := range outputLines {
+			details = append(details, mutedStyle.Render(indent+"  "+line))
 		}
 	}
 	
-	status := fmt.Sprintf(
-		"Queue: %d pending | %d running | %d completed | %d failed",
-		pending, running, completed, failed,
-	)
+	details = append(details, "") // Empty line after details
 	
-	return styles.StatusBarStyle().
-		Width(im.width).
-		Render(status)
+	return details
 }
 
-func (im *InstallManager) renderHelpBar() string {
-	helps := []string{
-		"[s] Start",
-		"[c] Cancel Current",
-		"[C] Cancel All",
-		"[o] Toggle Output",
-		"[Enter] Details",
-	}
-	
-	return styles.MutedStyle().Render(strings.Join(helps, "  "))
-}
-
-// Helper methods
-
-func (im *InstallManager) getSelectedTask() *TaskInfo {
-	if im.taskProvider == nil || im.cursor < 0 || im.cursor >= len(im.taskIDs) {
-		return nil
-	}
-	
-	taskID := im.taskIDs[im.cursor]
-	task, _ := im.taskProvider.GetTask(taskID)
-	return task
-}
-
-func (im *InstallManager) moveUp() {
-	if im.cursor > 0 {
-		im.cursor--
-	}
-}
-
-func (im *InstallManager) moveDown() {
-	if im.cursor < len(im.taskIDs)-1 {
-		im.cursor++
-	}
-}
-
-func (im *InstallManager) selectCurrentTask() {
-	if task := im.getSelectedTask(); task != nil {
-		im.selectedTaskID = task.ID
-	}
-}
-
-func (im *InstallManager) startPendingTasks() tea.Cmd {
-	return func() tea.Msg {
-		// Start all pending tasks
-		if im.taskProvider != nil {
-			for _, taskID := range im.taskIDs {
-				if task, ok := im.taskProvider.GetTask(taskID); ok {
-					if task.Status == TaskStatusPending {
-						im.taskProvider.StartTask(taskID)
-					}
-				}
-			}
-		}
-		return nil
-	}
-}
-
-func (im *InstallManager) findTask(taskID string) *TaskInfo {
-	if im.taskProvider != nil {
-		if task, ok := im.taskProvider.GetTask(taskID); ok {
-			return task
-		}
-	}
-	return nil
-}
-
-func (im *InstallManager) getStatusText(status TaskStatus) string {
+func (im *InstallManagerNew) getStatusText(status TaskStatus) string {
 	switch status {
 	case TaskStatusPending:
 		return "Pending"
@@ -442,15 +382,66 @@ func (im *InstallManager) getStatusText(status TaskStatus) string {
 	}
 }
 
-func formatTaskDuration(d time.Duration) string {
-	if d < time.Second {
-		return fmt.Sprintf("%dms", d.Milliseconds())
+// Helper methods
+func (im *InstallManagerNew) moveUp() {
+	if im.cursor > 0 {
+		im.cursor--
+		// Use TUI best practice: update content and sync viewport
+		if im.ready {
+			im.updateViewportContentTUI()
+		}
 	}
-	if d < time.Minute {
-		return fmt.Sprintf("%ds", int(d.Seconds()))
-	}
-	if d < time.Hour {
-		return fmt.Sprintf("%dm %ds", int(d.Minutes()), int(d.Seconds())%60)
-	}
-	return fmt.Sprintf("%dh %dm", int(d.Hours()), int(d.Minutes())%60)
 }
+
+func (im *InstallManagerNew) moveDown() {
+	if im.cursor < len(im.taskIDs)-1 {
+		im.cursor++
+		// Use TUI best practice: update content and sync viewport
+		if im.ready {
+			im.updateViewportContentTUI()
+		}
+	}
+}
+
+func (im *InstallManagerNew) selectCurrentTask() {
+	if task := im.getSelectedTask(); task != nil {
+		im.selectedTaskID = task.ID
+	}
+}
+
+func (im *InstallManagerNew) getSelectedTask() *TaskInfo {
+	if im.taskProvider == nil || im.cursor < 0 || im.cursor >= len(im.taskIDs) {
+		return nil
+	}
+	
+	taskID := im.taskIDs[im.cursor]
+	task, _ := im.taskProvider.GetTask(taskID)
+	return task
+}
+
+func (im *InstallManagerNew) findTask(taskID string) *TaskInfo {
+	if im.taskProvider != nil {
+		if task, ok := im.taskProvider.GetTask(taskID); ok {
+			return task
+		}
+	}
+	return nil
+}
+
+func (im *InstallManagerNew) startPendingTasks() tea.Cmd {
+	return func() tea.Msg {
+		// Start all pending tasks
+		if im.taskProvider != nil {
+			for _, taskID := range im.taskIDs {
+				if task, ok := im.taskProvider.GetTask(taskID); ok {
+					if task.Status == TaskStatusPending {
+						im.taskProvider.StartTask(taskID)
+					}
+				}
+			}
+		}
+		return nil
+	}
+}
+
+// All deprecated widgets and layout system code removed - using TUI best practices

@@ -27,9 +27,9 @@ type Model struct {
 	
 	// Views
 	dashboard      *views.Dashboard
-	toolBrowser    *views.ToolBrowser
-	bundleExplorer *views.BundleExplorer
-	installManager *views.InstallManager
+	toolBrowser    *views.ToolBrowserNew
+	bundleExplorer *views.BundleExplorerNew
+	installManager *views.InstallManagerNew
 	configView     *views.ConfigView
 	healthView     *views.HealthView
 	
@@ -64,9 +64,9 @@ func NewModel() (*Model, error) {
 	
 	// Create views
 	dashboard := views.NewDashboard()
-	toolBrowser := views.NewToolBrowser()
-	bundleExplorer := views.NewBundleExplorer()
-	installManager := views.NewInstallManager()
+	toolBrowser := views.NewToolBrowserNew()
+	bundleExplorer := views.NewBundleExplorerNew()
+	installManager := views.NewInstallManagerNew()
 	installManager.SetTaskProvider(taskProvider)
 	configView := views.NewConfigView()
 	healthView := views.NewHealthView()
@@ -106,13 +106,15 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			m.ready = true
 		}
 		// Update view sizes
-		// Nav bar = 1 line, Status bar = 1 line, so views get height-2
-		m.dashboard.SetSize(m.width, m.height-2) // Account for nav and status bars
-		m.toolBrowser.SetSize(m.width, m.height-2)
-		m.bundleExplorer.SetSize(m.width, m.height-2)
-		m.installManager.SetSize(m.width, m.height-2)
-		m.configView.SetSize(m.width, m.height-2)
-		m.healthView.SetSize(m.width, m.height-2)
+		// Calculate available height for content (excluding nav and status bars)
+		// Nav bar and status bar each take 1 line, so views get height - 2
+		viewHeight := max(5, m.height - 2) // Minimum 5 lines for views
+		m.dashboard.SetSize(m.width, viewHeight)
+		m.toolBrowser.SetSize(m.width, viewHeight)
+		m.bundleExplorer.SetSize(m.width, viewHeight)
+		m.installManager.SetSize(m.width, viewHeight)
+		m.configView.SetSize(m.width, viewHeight)
+		m.healthView.SetSize(m.width, viewHeight)
 		return m, nil
 
 	case tea.KeyMsg:
@@ -435,12 +437,8 @@ func (m Model) renderCurrentView() string {
 	navBar := m.renderNavigationBar()
 	statusBar := m.renderStatusBar()
 	
-	// Calculate available height for content
-	// Total height - nav bar (1) - status bar (1) = height - 2
-	contentHeight := m.height - 2
-	
-	// Ensure content doesn't exceed available height
-	content := m.constrainHeight(viewContent, contentHeight)
+	// Layout system should render exactly to its bounds - no additional constraint
+	content := viewContent
 	
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
@@ -460,6 +458,59 @@ func (m Model) constrainHeight(content string, maxHeight int) string {
 	// Truncate to fit
 	truncated := strings.Join(lines[:maxHeight], "\n")
 	return truncated
+}
+
+// constrainHeightPreserveScrolling constrains total height but allows internal scrolling
+func (m Model) constrainHeightPreserveScrolling(content string, maxHeight int) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) <= maxHeight {
+		return content
+	}
+	
+	// Simply truncate to maxHeight - the layout system should handle this properly
+	// This preserves the viewport's internal scrolling capability
+	return strings.Join(lines[:maxHeight], "\n")
+}
+
+// smartConstrainHeight constrains content while preserving the help bar at the bottom
+func (m Model) smartConstrainHeight(content string, maxHeight int) string {
+	lines := strings.Split(content, "\n")
+	if len(lines) <= maxHeight {
+		return content
+	}
+	
+	// Find the help bar (last non-empty line that contains navigation keys)
+	helpBarIndex := -1
+	for i := len(lines) - 1; i >= 0; i-- {
+		line := strings.TrimSpace(lines[i])
+		if line != "" && (strings.Contains(line, "[↑/↓]") || strings.Contains(line, "Navigate")) {
+			helpBarIndex = i
+			break
+		}
+	}
+	
+	if helpBarIndex == -1 {
+		// No help bar found, use regular constraint
+		return m.constrainHeight(content, maxHeight)
+	}
+	
+	// Calculate how much content we can keep before help bar
+	helpBarLines := lines[helpBarIndex:]
+	availableForContent := maxHeight - len(helpBarLines)
+	
+	if availableForContent <= 0 {
+		// Not enough space, just show help bar
+		if len(helpBarLines) <= maxHeight {
+			return strings.Join(helpBarLines, "\n")
+		} else {
+			return strings.Join(helpBarLines[:maxHeight], "\n")
+		}
+	}
+	
+	// Keep content + help bar
+	contentLines := lines[:availableForContent]
+	result := append(contentLines, helpBarLines...)
+	return strings.Join(result, "\n")
 }
 
 func (m Model) renderNavigationBar() string {

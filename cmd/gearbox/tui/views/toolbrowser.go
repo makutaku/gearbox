@@ -5,19 +5,16 @@ import (
 	"strings"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	
-	"gearbox/cmd/gearbox/tui/styles"
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
 )
 
-// ToolBrowser represents the tool browser view
-type ToolBrowser struct {
-	width  int
-	height int
-	
+// ToolBrowserNew represents the new tool browser with layout system
+type ToolBrowserNew struct {
 	// Data
 	tools          []orchestrator.ToolConfig
 	filteredTools  []orchestrator.ToolConfig
@@ -26,54 +23,93 @@ type ToolBrowser struct {
 	// UI state
 	searchInput    textinput.Model
 	cursor         int
-	scrollOffset   int
 	selectedTools  map[string]bool
 	searchActive   bool
 	showPreview    bool
-	
-	// Categories
-	categories     []string
 	selectedCategory string
+	categories     []string
+	
+	// Deprecated layout system removed - using TUI best practices
+	
+	// TUI components (official Bubbles components)
+	viewport       viewport.Model
+	ready          bool
+	width          int
+	height         int
 }
 
-// NewToolBrowser creates a new tool browser view
-func NewToolBrowser() *ToolBrowser {
+// NewToolBrowserNew creates a new tool browser with layout system
+func NewToolBrowserNew() *ToolBrowserNew {
 	ti := textinput.New()
 	ti.Placeholder = "Search tools..."
 	ti.CharLimit = 50
 	ti.Width = 40
 	
-	return &ToolBrowser{
-		searchInput:   ti,
-		selectedTools: make(map[string]bool),
+	tb := &ToolBrowserNew{
+		searchInput:    ti,
+		selectedTools:  make(map[string]bool),
 		installedTools: make(map[string]*manifest.InstallationRecord),
-		showPreview:   true,
-		categories:    []string{"All", "Core", "Development", "System", "Text", "Media", "UI"},
+		showPreview:    true,
+		categories:     []string{"All", "Core", "Development", "System", "Text", "Media", "UI"},
 		selectedCategory: "All",
-		filteredTools: []orchestrator.ToolConfig{}, // Initialize empty slice
+		filteredTools:  []orchestrator.ToolConfig{},
 	}
+	
+	return tb
 }
 
-// SetSize updates the size of the tool browser
-func (tb *ToolBrowser) SetSize(width, height int) {
+// SetSize updates the layout bounds
+func (tb *ToolBrowserNew) SetSize(width, height int) {
 	tb.width = width
 	tb.height = height
+	
+	// Initialize official viewport if not ready
+	if !tb.ready {
+		// Calculate viewport height: total - header - footer
+		viewportHeight := height - 3 // Reserve 3 lines for header + footer
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		
+		tb.viewport = viewport.New(width, viewportHeight)
+		tb.viewport.SetContent("")
+		tb.ready = true
+	} else {
+		// Update existing viewport
+		viewportHeight := height - 3
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		tb.viewport.Width = width
+		tb.viewport.Height = viewportHeight
+	}
+	
+	// Update search input width
 	tb.searchInput.Width = min(width-10, 50)
 }
 
-// SetData updates the tool browser data
-func (tb *ToolBrowser) SetData(tools []orchestrator.ToolConfig, installed map[string]*manifest.InstallationRecord) {
-	tb.tools = tools
-	tb.installedTools = installed
-	// Initialize selectedCategory if not set
-	if tb.selectedCategory == "" {
-		tb.selectedCategory = "All"
+// syncViewportWithCursor ensures cursor is visible (TUI best practice)
+func (tb *ToolBrowserNew) syncViewportWithCursor() {
+	if len(tb.filteredTools) == 0 {
+		return
 	}
-	tb.applyFilters()
+	
+	// Get viewport bounds
+	top := tb.viewport.YOffset
+	bottom := top + tb.viewport.Height - 1
+	
+	// Ensure cursor is visible by scrolling viewport
+	if tb.cursor < top {
+		// Cursor above viewport - scroll up
+		tb.viewport.SetYOffset(tb.cursor)
+	} else if tb.cursor > bottom {
+		// Cursor below viewport - scroll down
+		tb.viewport.SetYOffset(tb.cursor - tb.viewport.Height + 1)
+	}
 }
 
 // Update handles tool browser updates
-func (tb *ToolBrowser) Update(msg tea.Msg) tea.Cmd {
+func (tb *ToolBrowserNew) Update(msg tea.Msg) tea.Cmd {
 	var cmd tea.Cmd
 	
 	switch msg := msg.(type) {
@@ -113,7 +149,7 @@ func (tb *ToolBrowser) Update(msg tea.Msg) tea.Cmd {
 			case "c":
 				tb.cycleCategory()
 			case "p":
-				tb.showPreview = !tb.showPreview
+				tb.togglePreview()
 			case "a":
 				tb.selectAll()
 			case "A":
@@ -122,127 +158,90 @@ func (tb *ToolBrowser) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	
+	// Don't rebuild viewport every update - only when needed
 	return nil
 }
 
 // Render returns the rendered tool browser view
-func (tb *ToolBrowser) Render() string {
-	if tb.width == 0 || tb.height == 0 {
-		return "Loading..."
+func (tb *ToolBrowserNew) Render() string {
+	return tb.renderTUIStyle()
+}
+
+// renderTUIStyle uses proper TUI best practices with official Bubbles components
+func (tb *ToolBrowserNew) renderTUIStyle() string {
+	// Header (search bar and category info)
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true).
+		Padding(0, 1)
+	
+	searchDisplay := tb.searchInput.View()
+	if !tb.searchActive {
+		searchDisplay = tb.searchInput.Placeholder
 	}
 	
-	// Calculate layout
-	searchBarHeight := 3
-	helpBarHeight := 2 // Increased to account for proper spacing
-	contentHeight := tb.height - searchBarHeight - helpBarHeight
+	header := headerStyle.Render(fmt.Sprintf(
+		"🔍 %s | Category: %s | %d/%d tools",
+		searchDisplay,
+		tb.selectedCategory,
+		len(tb.filteredTools),
+		len(tb.tools),
+	))
 	
-	// Render components
-	searchBar := tb.renderSearchBar()
+	// Footer (help)
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Padding(0, 1)
 	
-	var content string
-	if tb.showPreview {
-		// Split view with tool list and preview
-		listWidth := tb.width / 2
-		previewWidth := tb.width - listWidth - 2
-		
-		toolList := tb.renderToolList(listWidth, contentHeight)
-		preview := tb.renderPreview(previewWidth, contentHeight)
-		
-		content = lipgloss.JoinHorizontal(
-			lipgloss.Top,
-			toolList,
-			lipgloss.NewStyle().Width(2).Render("  "),
-			preview,
-		)
-	} else {
-		// Full width tool list
-		content = tb.renderToolList(tb.width-4, contentHeight)
-	}
+	footer := footerStyle.Render(
+		"[/] Search  [↑/↓] Navigate  [Space] Select  [Enter] Details  [c] Category  [i] Install",
+	)
 	
-	helpBar := tb.renderHelpBar()
+	// Content (list items with cursor highlighting)
+	tb.updateViewportContentTUI()
 	
+	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		searchBar,
-		content,
-		helpBar,
+		header,
+		tb.viewport.View(),
+		footer,
 	)
 }
 
-func (tb *ToolBrowser) renderSearchBar() string {
-	categorySelector := fmt.Sprintf("Category: [%s]", tb.selectedCategory)
+// updateViewportContentTUI rebuilds content for the official viewport
+func (tb *ToolBrowserNew) updateViewportContentTUI() {
+	var lines []string
 	
-	searchBox := lipgloss.NewStyle().
-		Border(lipgloss.RoundedBorder()).
-		BorderForeground(styles.CurrentTheme.Border).
-		Padding(0, 1).
-		Width(tb.searchInput.Width + 4).
-		Render(tb.searchInput.View())
-	
-	stats := fmt.Sprintf("Showing %d/%d tools", len(tb.filteredTools), len(tb.tools))
-	
-	leftContent := lipgloss.JoinHorizontal(
-		lipgloss.Top,
-		searchBox,
-		lipgloss.NewStyle().Width(4).Render("  "),
-		categorySelector,
-	)
-	
-	gap := tb.width - lipgloss.Width(leftContent) - lipgloss.Width(stats) - 4
-	if gap < 0 {
-		gap = 0
+	for i, tool := range tb.filteredTools {
+		line := tb.renderToolItem(tool, false) // Don't use selected parameter
+		
+		// Apply cursor highlighting here (TUI best practice)
+		if i == tb.cursor {
+			selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+			line = selectedStyle.Render(line)
+		}
+		
+		lines = append(lines, line)
 	}
 	
-	return lipgloss.NewStyle().
-		Width(tb.width).
-		Padding(0, 2).
-		Render(
-			leftContent +
-			lipgloss.NewStyle().Width(gap).Render(" ") +
-			stats,
-		)
+	content := strings.Join(lines, "\n")
+	tb.viewport.SetContent(content)
+	
+	// Sync viewport with cursor position (TUI best practice)
+	tb.syncViewportWithCursor()
 }
 
-func (tb *ToolBrowser) renderToolList(width, height int) string {
-	if len(tb.filteredTools) == 0 {
-		return styles.BoxStyle().
-			Width(width).
-			Height(height).
-			Align(lipgloss.Center, lipgloss.Center).
-			Render("No tools found")
-	}
-	
-	// Calculate visible items
-	visibleItems := height - 2
-	if tb.cursor >= tb.scrollOffset+visibleItems {
-		tb.scrollOffset = tb.cursor - visibleItems + 1
-	} else if tb.cursor < tb.scrollOffset {
-		tb.scrollOffset = tb.cursor
-	}
-	
-	var items []string
-	for i := tb.scrollOffset; i < min(tb.scrollOffset+visibleItems, len(tb.filteredTools)); i++ {
-		tool := tb.filteredTools[i]
-		items = append(items, tb.renderToolItem(tool, i == tb.cursor, width-4))
-	}
-	
-	content := strings.Join(items, "\n")
-	
-	// Add scroll indicators
-	if tb.scrollOffset > 0 {
-		content = "↑ More above\n" + content
-	}
-	if tb.scrollOffset+visibleItems < len(tb.filteredTools) {
-		content = content + "\n↓ More below"
-	}
-	
-	return styles.BoxStyle().
-		Width(width).
-		Height(height).
-		Render(content)
+// SetData updates the tool browser data
+func (tb *ToolBrowserNew) SetData(tools []orchestrator.ToolConfig, installed map[string]*manifest.InstallationRecord) {
+	tb.tools = tools
+	tb.installedTools = installed
+	tb.applyFilters()
 }
 
-func (tb *ToolBrowser) renderToolItem(tool orchestrator.ToolConfig, selected bool, width int) string {
+// updateViewportContent is deprecated - using TUI best practices instead
+
+func (tb *ToolBrowserNew) renderToolItem(tool orchestrator.ToolConfig, selected bool) string {
 	// Status indicators
 	var status string
 	if _, installed := tb.installedTools[tool.Name]; installed {
@@ -267,107 +266,26 @@ func (tb *ToolBrowser) renderToolItem(tool orchestrator.ToolConfig, selected boo
 	
 	category := fmt.Sprintf("[%s]", tool.Category)
 	
-	// Calculate spacing
-	baseContent := fmt.Sprintf("%s %s %s", selection, status, name)
-	padding := width - lipgloss.Width(baseContent) - lipgloss.Width(category) - 2
-	if padding < 0 {
-		padding = 0
-	}
+	// Format with consistent spacing
+	line := fmt.Sprintf("%s %s %-20s %s", selection, status, name, category)
 	
-	item := fmt.Sprintf("%s %s %s%s %s", selection, status, name, strings.Repeat(" ", padding), category)
-	
-	// Apply style
-	if selected {
-		return styles.SelectedStyle().Render(item)
-	}
-	
+	// Apply style for installed tools
 	if _, installed := tb.installedTools[tool.Name]; installed {
-		return styles.MutedStyle().Render(item)
+		mutedStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
+		return mutedStyle.Render(line)
 	}
 	
-	return item
+	return line
 }
 
-func (tb *ToolBrowser) renderPreview(width, height int) string {
-	if tb.cursor >= len(tb.filteredTools) {
-		return styles.BoxStyle().
-			Width(width).
-			Height(height).
-			Render("Select a tool to preview")
-	}
-	
-	tool := tb.filteredTools[tb.cursor]
-	
-	// Title
-	title := styles.TitleStyle().Render(tool.Name)
-	
-	// Description
-	desc := lipgloss.NewStyle().
-		Width(width-4).
-		Render(tool.Description)
-	
-	// Installation status
-	var status string
-	if _, installed := tb.installedTools[tool.Name]; installed {
-		status = styles.SuccessStyle().Render("✓ Installed")
-	} else {
-		status = styles.WarningStyle().Render("○ Not installed")
-	}
-	
-	// Build types
-	buildTypes := "Build Types:\n"
-	for bt, flags := range tool.BuildTypes {
-		buildTypes += fmt.Sprintf("  • %s: %s\n", bt, flags)
-	}
-	
-	// Dependencies
-	deps := "Dependencies:\n"
-	if len(tool.Dependencies) > 0 {
-		for _, dep := range tool.Dependencies {
-			deps += fmt.Sprintf("  • %s\n", dep)
-		}
-	} else {
-		deps += "  • None\n"
-	}
-	
-	// Language and repository
-	info := fmt.Sprintf("Language: %s\nRepository: %s\nBinary: %s\n",
-		tool.Language, tool.Repository, tool.BinaryName)
-	
-	content := lipgloss.JoinVertical(
-		lipgloss.Left,
-		title,
-		desc,
-		"",
-		status,
-		"",
-		buildTypes,
-		deps,
-		info,
-	)
-	
-	return styles.BoxStyle().
-		Width(width).
-		Height(height).
-		Render(content)
+// togglePreview switches between full width and split view
+func (tb *ToolBrowserNew) togglePreview() {
+	tb.showPreview = !tb.showPreview
+	// Preview functionality can be implemented in TUI style later
 }
 
-func (tb *ToolBrowser) renderHelpBar() string {
-	helps := []string{
-		"[/] Search",
-		"[Space] Select",
-		"[Enter] Details",
-		"[c] Category",
-		"[p] Toggle Preview",
-		"[i] Install Selected",
-	}
-	
-	return styles.MutedStyle().Render(strings.Join(helps, "  "))
-}
-
-// Helper methods
-
-func (tb *ToolBrowser) applyFilters() {
+// Business logic methods
+func (tb *ToolBrowserNew) applyFilters() {
 	tb.filteredTools = []orchestrator.ToolConfig{}
 	
 	searchTerm := strings.ToLower(tb.searchInput.Value())
@@ -396,21 +314,34 @@ func (tb *ToolBrowser) applyFilters() {
 	if tb.cursor >= len(tb.filteredTools) {
 		tb.cursor = max(0, len(tb.filteredTools)-1)
 	}
+	
+	// Update TUI viewport
+	if tb.ready {
+		tb.updateViewportContentTUI()
+	}
 }
 
-func (tb *ToolBrowser) moveUp() {
+func (tb *ToolBrowserNew) moveUp() {
 	if tb.cursor > 0 {
 		tb.cursor--
+		// Use TUI best practice: update content and sync viewport
+		if tb.ready {
+			tb.updateViewportContentTUI()
+		}
 	}
 }
 
-func (tb *ToolBrowser) moveDown() {
+func (tb *ToolBrowserNew) moveDown() {
 	if tb.cursor < len(tb.filteredTools)-1 {
 		tb.cursor++
+		// Use TUI best practice: update content and sync viewport
+		if tb.ready {
+			tb.updateViewportContentTUI()
+		}
 	}
 }
 
-func (tb *ToolBrowser) toggleSelection() {
+func (tb *ToolBrowserNew) toggleSelection() {
 	if tb.cursor < len(tb.filteredTools) {
 		tool := tb.filteredTools[tb.cursor]
 		if tb.selectedTools[tool.Name] {
@@ -418,10 +349,14 @@ func (tb *ToolBrowser) toggleSelection() {
 		} else {
 			tb.selectedTools[tool.Name] = true
 		}
+		// Need to rebuild to show selection changes
+		if tb.ready {
+			tb.updateViewportContentTUI()
+		}
 	}
 }
 
-func (tb *ToolBrowser) cycleCategory() {
+func (tb *ToolBrowserNew) cycleCategory() {
 	currentIdx := 0
 	for i, cat := range tb.categories {
 		if cat == tb.selectedCategory {
@@ -435,18 +370,24 @@ func (tb *ToolBrowser) cycleCategory() {
 	tb.applyFilters()
 }
 
-func (tb *ToolBrowser) selectAll() {
+func (tb *ToolBrowserNew) selectAll() {
 	for _, tool := range tb.filteredTools {
 		tb.selectedTools[tool.Name] = true
 	}
+	if tb.ready {
+		tb.updateViewportContentTUI()
+	}
 }
 
-func (tb *ToolBrowser) deselectAll() {
+func (tb *ToolBrowserNew) deselectAll() {
 	tb.selectedTools = make(map[string]bool)
+	if tb.ready {
+		tb.updateViewportContentTUI()
+	}
 }
 
 // GetSelectedTools returns the list of selected tool names
-func (tb *ToolBrowser) GetSelectedTools() []string {
+func (tb *ToolBrowserNew) GetSelectedTools() []string {
 	var selected []string
 	for name := range tb.selectedTools {
 		selected = append(selected, name)
@@ -455,7 +396,11 @@ func (tb *ToolBrowser) GetSelectedTools() []string {
 }
 
 // ClearSelection clears all selected tools
-func (tb *ToolBrowser) ClearSelection() {
+func (tb *ToolBrowserNew) ClearSelection() {
 	tb.selectedTools = make(map[string]bool)
+	if tb.ready {
+		tb.updateViewportContentTUI()
+	}
 }
 
+// All deprecated widgets and layout system code removed - using TUI best practices

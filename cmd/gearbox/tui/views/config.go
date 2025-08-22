@@ -8,10 +8,9 @@ import (
 	"time"
 
 	"github.com/charmbracelet/bubbles/textinput"
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
-
-	"gearbox/cmd/gearbox/tui/styles"
 )
 
 // ConfigView represents the configuration view
@@ -27,8 +26,9 @@ type ConfigView struct {
 	// Text input for editing
 	textInput textinput.Model
 
-	// Scroll state
-	scrollOffset int
+	// TUI components (official Bubbles components)
+	viewport viewport.Model
+	ready    bool
 	
 	// Status message
 	statusMessage string
@@ -134,6 +134,27 @@ func (cv *ConfigView) SetSize(width, height int) {
 	cv.width = width
 	cv.height = height
 	cv.textInput.Width = min(width-20, 50)
+	
+	// Initialize official viewport if not ready
+	if !cv.ready {
+		// Calculate viewport height: total - header - footer
+		viewportHeight := height - 3 // Reserve 3 lines for header + footer
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		
+		cv.viewport = viewport.New(width, viewportHeight)
+		cv.viewport.SetContent("")
+		cv.ready = true
+	} else {
+		// Update existing viewport
+		viewportHeight := height - 3
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		cv.viewport.Width = width
+		cv.viewport.Height = viewportHeight
+	}
 }
 
 // Update handles config view updates
@@ -206,108 +227,85 @@ func (cv *ConfigView) Update(msg tea.Msg) tea.Cmd {
 
 // Render returns the rendered config view
 func (cv *ConfigView) Render() string {
-	if cv.width == 0 || cv.height == 0 {
-		return "Loading..."
-	}
+	return cv.renderTUIStyle()
+}
 
-	// Title
-	title := styles.TitleStyle().Render("Configuration Settings")
-
-	// Content
-	contentHeight := cv.height - 4
-	content := cv.renderContent(contentHeight)
-
-	// Help bar
-	helpBar := cv.renderHelpBar()
-
+// renderTUIStyle uses proper TUI best practices with official Bubbles components
+func (cv *ConfigView) renderTUIStyle() string {
+	// Header (configuration title)
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true).
+		Padding(0, 1)
+	
+	header := headerStyle.Render("Configuration Settings")
+	
+	// Footer (help)
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Padding(0, 1)
+	
+	footer := footerStyle.Render(cv.renderHelpBar())
+	
+	// Content (configuration items with cursor highlighting)
+	cv.updateViewportContentTUI()
+	
+	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
-		content,
-		helpBar,
+		header,
+		cv.viewport.View(),
+		footer,
 	)
 }
 
-func (cv *ConfigView) renderContent(height int) string {
-	contentHeight := height - 2 // Account for box borders
-	
-	// Build all content lines first
-	var allLines []string
+// updateViewportContentTUI rebuilds content for the official viewport
+func (cv *ConfigView) updateViewportContentTUI() {
+	var lines []string
 	
 	// Add description
-	desc := styles.MutedStyle().Render("Configure Gearbox behavior and preferences")
-	allLines = append(allLines, desc, "")
+	desc := lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("Configure Gearbox behavior and preferences")
+	lines = append(lines, desc, "")
 	
-	// Render all config items to calculate their actual height
-	configStartLine := len(allLines)
+	// Render all config items
 	for i, config := range cv.configs {
 		item := cv.renderConfigItem(config, i == cv.cursor)
 		itemLines := strings.Split(item, "\n")
-		allLines = append(allLines, itemLines...)
+		lines = append(lines, itemLines...)
 	}
 	
-	// Calculate which line the cursor is on
-	cursorLine := configStartLine
+	content := strings.Join(lines, "\n")
+	cv.viewport.SetContent(content)
+	
+	// Sync viewport with cursor position (TUI best practice)
+	cv.syncViewportWithCursor()
+}
+
+// syncViewportWithCursor ensures cursor is visible (TUI best practice)
+func (cv *ConfigView) syncViewportWithCursor() {
+	if len(cv.configs) == 0 {
+		return
+	}
+	
+	// Calculate which line the cursor is on (approximate)
+	cursorLine := 2 // Start after description + empty line
 	for i := 0; i < cv.cursor; i++ {
 		item := cv.renderConfigItem(cv.configs[i], false)
 		cursorLine += len(strings.Split(item, "\n"))
 	}
 	
-	// Check if we need scroll indicators
-	needsScrollUp := len(allLines) > contentHeight && cv.scrollOffset > 0
-	needsScrollDown := len(allLines) > contentHeight && 
-		(cv.scrollOffset + contentHeight) < len(allLines)
+	// Get viewport bounds
+	top := cv.viewport.YOffset
+	bottom := top + cv.viewport.Height - 1
 	
-	// Adjust effective height for scroll indicators
-	effectiveHeight := contentHeight
-	if needsScrollUp {
-		effectiveHeight--
+	// Ensure cursor is visible by scrolling viewport
+	if cursorLine < top {
+		// Cursor above viewport - scroll up
+		cv.viewport.SetYOffset(cursorLine)
+	} else if cursorLine > bottom {
+		// Cursor below viewport - scroll down
+		cv.viewport.SetYOffset(cursorLine - cv.viewport.Height + 1)
 	}
-	if needsScrollDown {
-		effectiveHeight--
-	}
-	
-	// Adjust scroll to keep cursor visible
-	if cursorLine < cv.scrollOffset {
-		cv.scrollOffset = cursorLine
-	} else if cursorLine >= cv.scrollOffset + effectiveHeight {
-		// Find how many lines the current item takes
-		currentItemLines := len(strings.Split(cv.renderConfigItem(cv.configs[cv.cursor], true), "\n"))
-		cv.scrollOffset = cursorLine - effectiveHeight + currentItemLines
-	}
-	
-	// Clamp scroll offset
-	maxScroll := len(allLines) - effectiveHeight
-	if maxScroll < 0 {
-		maxScroll = 0
-	}
-	cv.scrollOffset = max(0, min(cv.scrollOffset, maxScroll))
-	
-	// Build display lines
-	var displayLines []string
-	
-	// Add scroll indicators and visible content
-	if needsScrollUp {
-		displayLines = append(displayLines, styles.MutedStyle().Render("↑ More above"))
-	}
-	
-	// Add visible lines
-	start := cv.scrollOffset
-	end := min(start + effectiveHeight, len(allLines))
-	if start < len(allLines) {
-		displayLines = append(displayLines, allLines[start:end]...)
-	}
-	
-	if needsScrollDown {
-		displayLines = append(displayLines, styles.MutedStyle().Render("↓ More below"))
-	}
-	
-	content := strings.Join(displayLines, "\n")
-	
-	return styles.BoxStyle().
-		Width(cv.width).
-		Height(height).
-		Render(content)
 }
 
 func (cv *ConfigView) renderConfigItem(item ConfigItem, selected bool) string {
@@ -322,9 +320,9 @@ func (cv *ConfigView) renderConfigItem(item ConfigItem, selected bool) string {
 		switch item.Type {
 		case "boolean":
 			if item.Value == "true" {
-				value = styles.SuccessStyle().Render("✓ " + item.Value)
+				value = lipgloss.NewStyle().Foreground(lipgloss.Color("10")).Render("✓ " + item.Value)
 			} else {
-				value = styles.MutedStyle().Render("✗ " + item.Value)
+				value = lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("✗ " + item.Value)
 			}
 		case "choice":
 			value = fmt.Sprintf("[%s]", item.Value)
@@ -337,16 +335,17 @@ func (cv *ConfigView) renderConfigItem(item ConfigItem, selected bool) string {
 
 	// Apply selection style only when not editing
 	if selected && !cv.editing {
-		line = styles.SelectedStyle().Render(line)
+		selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+		line = selectedStyle.Render(line)
 	}
 
 	// Add description
-	desc := "  " + styles.MutedStyle().Render(item.Description)
+	desc := "  " + lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(item.Description)
 
 	// Add choices for choice type
 	var choices string
 	if item.Type == "choice" && len(item.Choices) > 0 {
-		choices = "  " + styles.MutedStyle().Render("Options: "+strings.Join(item.Choices, ", "))
+		choices = "  " + lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render("Options: "+strings.Join(item.Choices, ", "))
 	}
 
 	// Combine all parts
@@ -367,7 +366,7 @@ func (cv *ConfigView) renderHelpBar() string {
 		"[Esc] Cancel Edit",
 	}
 
-	helpText := styles.MutedStyle().Render(strings.Join(helps, "  "))
+	helpText := strings.Join(helps, "  ")
 	
 	// Add status message if present
 	if cv.statusMessage != "" {
@@ -382,12 +381,20 @@ func (cv *ConfigView) renderHelpBar() string {
 func (cv *ConfigView) moveUp() {
 	if cv.cursor > 0 {
 		cv.cursor--
+		// Use TUI best practice: update content and sync viewport
+		if cv.ready {
+			cv.updateViewportContentTUI()
+		}
 	}
 }
 
 func (cv *ConfigView) moveDown() {
 	if cv.cursor < len(cv.configs)-1 {
 		cv.cursor++
+		// Use TUI best practice: update content and sync viewport
+		if cv.ready {
+			cv.updateViewportContentTUI()
+		}
 	}
 }
 
@@ -404,7 +411,6 @@ func (cv *ConfigView) startEditing() {
 
 func (cv *ConfigView) resetToDefault() {
 	// Reset current field to its default value
-	// Use hardcoded defaults for now since configs don't have Default field populated yet
 	switch cv.configs[cv.cursor].Key {
 	case "DEFAULT_BUILD_TYPE":
 		cv.configs[cv.cursor].Value = "standard"

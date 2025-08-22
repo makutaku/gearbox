@@ -3,62 +3,79 @@ package views
 import (
 	"fmt"
 	"strings"
-
+	
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 	
-	"gearbox/cmd/gearbox/tui/styles"
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
 )
 
-// BundleExplorer represents the bundle explorer view
-type BundleExplorer struct {
-	width  int
-	height int
-	
+// BundleExplorerNew demonstrates the new layout system
+type BundleExplorerNew struct {
 	// Data
 	bundles        []orchestrator.BundleConfig
 	installedTools map[string]*manifest.InstallationRecord
 	
 	// UI state
-	cursor          int      // Index in selectable bundles
-	scrollOffset    int      // Line offset in the rendered content
+	cursor          int
+	selectedBundle  string // Track selected bundle by name instead of index
 	expandedBundles map[string]bool
 	selectedCategory string
+	categories      []string
 	
-	// Categories
-	categories []string
+	// TUI components (official Bubbles components)
+	viewport viewport.Model
+	ready    bool
+	width    int
+	height   int
 	
-	// Cached rendering data
-	renderedLines    []string // All rendered lines
-	selectableLines  []int    // Line indices that correspond to selectable bundles
-	lastHeight      int      // Track last render height for moveUp/Down
+	// Cached content
+	renderedLines   []string
+	bundleLineMap   map[string]int // Maps bundle name to its line index for robust highlighting
 }
 
-// NewBundleExplorer creates a new bundle explorer view
-func NewBundleExplorer() *BundleExplorer {
-	return &BundleExplorer{
+// NewBundleExplorerNew creates a new bundle explorer with TUI best practices
+func NewBundleExplorerNew() *BundleExplorerNew {
+	return &BundleExplorerNew{
 		expandedBundles: make(map[string]bool),
 		installedTools:  make(map[string]*manifest.InstallationRecord),
 		categories:      []string{"foundation", "domain", "language", "workflow", "infrastructure"},
+		cursor:          0,
+		selectedBundle:  "", // Will be set when data is loaded
 	}
 }
 
-// SetSize updates the size of the bundle explorer
-func (be *BundleExplorer) SetSize(width, height int) {
+// SetSize updates the bundle explorer size (TUI best practices)
+func (be *BundleExplorerNew) SetSize(width, height int) {
 	be.width = width
 	be.height = height
+	
+	// Initialize official viewport if not ready
+	if !be.ready {
+		// Calculate viewport height: total - header - footer
+		viewportHeight := height - 3 // Reserve 3 lines for header + footer
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		
+		be.viewport = viewport.New(width, viewportHeight)
+		be.viewport.SetContent("")
+		be.ready = true
+	} else {
+		// Update existing viewport
+		viewportHeight := height - 3
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		be.viewport.Width = width
+		be.viewport.Height = viewportHeight
+	}
 }
 
-// SetData updates the bundle explorer data
-func (be *BundleExplorer) SetData(bundles []orchestrator.BundleConfig, installed map[string]*manifest.InstallationRecord) {
-	be.bundles = bundles
-	be.installedTools = installed
-}
-
-// Update handles bundle explorer updates
-func (be *BundleExplorer) Update(msg tea.Msg) tea.Cmd {
+// Update handles input - business logic only
+func (be *BundleExplorerNew) Update(msg tea.Msg) tea.Cmd {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
 		switch msg.String() {
@@ -73,190 +90,226 @@ func (be *BundleExplorer) Update(msg tea.Msg) tea.Cmd {
 		}
 	}
 	
+	// Don't rebuild viewport content every update - only when data actually changes
 	return nil
 }
 
-// Render returns the rendered bundle explorer view
-func (be *BundleExplorer) Render() string {
-	if be.width == 0 || be.height == 0 {
-		return "Loading..."
-	}
-	
-	// Render components first to know their exact heights
-	title := styles.TitleStyle().Render("Bundle Explorer")
-	categoryBar := be.renderCategoryBar()
-	helpBar := be.renderHelpBar()
-	
-	// Calculate exact heights
-	titleHeight := lipgloss.Height(title)
-	categoryHeight := lipgloss.Height(categoryBar) 
-	helpHeight := lipgloss.Height(helpBar)
-	
-	// Calculate space for bundle tree
-	// We need to ensure the total doesn't exceed be.height
-	fixedComponentsHeight := titleHeight + categoryHeight + helpHeight
-	availableForTree := be.height - fixedComponentsHeight
-	
-	// Ensure we have at least some space for the tree
-	if availableForTree < 5 {
-		// Not enough space - we need to make room
-		availableForTree = 5
-	}
-	
-	// Render the tree with the available space
-	bundleTree := be.renderBundleTree(availableForTree)
-	
-	// Now assemble all components
-	components := []string{title, categoryBar, bundleTree, helpBar}
-	result := lipgloss.JoinVertical(lipgloss.Left, components...)
-	
-	// If the result is too tall, we need to trim it
-	resultHeight := lipgloss.Height(result)
-	if resultHeight > be.height {
-		// The tree must have rendered taller than expected
-		// Reduce tree height and try again
-		availableForTree = availableForTree - (resultHeight - be.height)
-		if availableForTree < 1 {
-			availableForTree = 1
-		}
-		bundleTree = be.renderBundleTree(availableForTree)
-		components = []string{title, categoryBar, bundleTree, helpBar}
-		result = lipgloss.JoinVertical(lipgloss.Left, components...)
-	}
-	
-	return result
+// Render is now trivial - just ask layout to render
+func (be *BundleExplorerNew) Render() string {
+	return be.renderTUIStyle()
 }
 
-func (be *BundleExplorer) renderCategoryBar() string {
-	var categories []string
-	for _, cat := range be.categories {
-		if cat == be.selectedCategory || be.selectedCategory == "" {
-			categories = append(categories, styles.HighlightStyle().Render("["+cat+"]"))
-		} else {
-			categories = append(categories, styles.MutedStyle().Render(cat))
-		}
-	}
+// renderTUIStyle uses proper TUI best practices with official Bubbles components
+func (be *BundleExplorerNew) renderTUIStyle() string {
+	// Header (category filter and bundle info)
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true).
+		Padding(0, 1)
 	
-	return lipgloss.NewStyle().
-		Width(be.width).
-		Padding(0, 2).
-		Render(strings.Join(categories, "  "))
+	header := headerStyle.Render(fmt.Sprintf(
+		"Bundle Explorer | Category: %s | %d bundles",
+		be.selectedCategory,
+		len(be.bundles),
+	))
+	
+	// Footer (help)
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Padding(0, 1)
+	
+	footer := footerStyle.Render(
+		"[↑/↓] Navigate  [Enter/Space] Expand  [c] Cycle Category  [i] Install Bundle  [Tab] Switch View",
+	)
+	
+	// Content (bundle list with cursor highlighting)
+	be.updateViewportContentTUI()
+	
+	// Compose: header + viewport + footer (TUI best practice pattern)
+	return lipgloss.JoinVertical(
+		lipgloss.Left,
+		header,
+		be.viewport.View(),
+		footer,
+	)
 }
 
-func (be *BundleExplorer) renderBundleTree(requestedHeight int) string {
-	// Store height for navigation  
-	be.lastHeight = requestedHeight
-	
-	// Rebuild the rendered content and track selectable lines
+// updateViewportContentTUI rebuilds content for the official viewport
+func (be *BundleExplorerNew) updateViewportContentTUI() {
 	be.rebuildRenderedContent()
 	
-	// IMPORTANT: BoxStyle().Height(n) sets the CONTENT height to n
-	// The actual rendered height will be n + borders(2) + padding(2) = n + 4
-	// So if we want the total rendered height to be requestedHeight,
-	// we need to set the content height to requestedHeight - 4
-	contentHeight := requestedHeight - 4
-	if contentHeight < 1 {
-		contentHeight = 1
-	}
-	
-	// If there's nothing to render
-	if len(be.renderedLines) == 0 {
-		return styles.BoxStyle().
-			Width(be.width).
-			Height(contentHeight).
-			Render("No bundles available")
-	}
-	
-	// Trim trailing empty lines to get actual content length
-	actualContentLines := len(be.renderedLines)
-	for actualContentLines > 0 && be.renderedLines[actualContentLines-1] == "" {
-		actualContentLines--
-	}
-	
-	// Check if we need scrolling
-	needsScroll := actualContentLines > contentHeight
-	
-	// Find the current selection line
-	selectedLine := -1
-	if be.cursor >= 0 && be.cursor < len(be.selectableLines) {
-		selectedLine = be.selectableLines[be.cursor]
-	}
-	
-	// Calculate viewport for scrolling
-	viewportHeight := contentHeight
-	if needsScroll {
-		// Reserve lines for indicators within the content area
-		viewportHeight = contentHeight - 2
-		if viewportHeight < 1 {
-			viewportHeight = 1
+	// Use robust line index mapping instead of fragile string matching
+	selectedLineIndex := -1
+	if be.selectedBundle != "" {
+		if lineIdx, exists := be.bundleLineMap[be.selectedBundle]; exists {
+			selectedLineIndex = lineIdx
 		}
 	}
 	
-	// Update scroll offset to keep selection visible
-	if selectedLine >= 0 && needsScroll {
-		if selectedLine < be.scrollOffset {
-			be.scrollOffset = selectedLine
-		} else if selectedLine >= be.scrollOffset + viewportHeight {
-			be.scrollOffset = selectedLine - viewportHeight + 1
+	// Apply highlighting to the correct line
+	var lines []string
+	for i, line := range be.renderedLines {
+		if i == selectedLineIndex {
+			// Highlight the selected bundle line
+			selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+			line = selectedStyle.Render(line)
+		}
+		lines = append(lines, line)
+	}
+	
+	content := strings.Join(lines, "\n")
+	be.viewport.SetContent(content)
+	
+	// DON'T interfere with manual scrolling - let viewport handle scrolling naturally
+	// Only auto-scroll when selection changes, not on every content update
+}
+
+// syncViewportWithLine ensures selected line is visible (TUI best practice)
+func (be *BundleExplorerNew) syncViewportWithLine(lineIndex int) {
+	if lineIndex < 0 || len(be.renderedLines) == 0 {
+		return
+	}
+	
+	// Get viewport bounds
+	top := be.viewport.YOffset
+	bottom := top + be.viewport.Height - 1
+	
+	// Ensure selected line is visible by scrolling viewport
+	if lineIndex < top {
+		// Line above viewport - scroll up
+		be.viewport.SetYOffset(lineIndex)
+	} else if lineIndex > bottom {
+		// Line below viewport - scroll down
+		be.viewport.SetYOffset(lineIndex - be.viewport.Height + 1)
+	}
+}
+
+// SetData updates data and refreshes content
+func (be *BundleExplorerNew) SetData(bundles []orchestrator.BundleConfig, installed map[string]*manifest.InstallationRecord) {
+	be.bundles = bundles
+	be.installedTools = installed
+	
+	// Initialize selectedBundle to first available bundle if none selected
+	if be.selectedBundle == "" && len(bundles) > 0 {
+		selectableBundles := be.getSelectableBundles()
+		if len(selectableBundles) > 0 {
+			be.selectedBundle = selectableBundles[0].Name
+		}
+	}
+	
+	if be.ready {
+		be.updateViewportContentTUI()
+	}
+}
+
+// updateViewportContent is deprecated - using TUI best practices instead
+
+// Business logic methods - robust approach with line index mapping
+func (be *BundleExplorerNew) rebuildRenderedContent() {
+	be.renderedLines = nil
+	be.bundleLineMap = make(map[string]int)
+	
+	lineIndex := 0
+	bundlesByCategory := be.groupBundlesByCategory()
+	
+	for _, category := range be.categories {
+		if be.selectedCategory != "" && be.selectedCategory != category {
+			continue
 		}
 		
-		// Clamp scroll offset
-		maxScroll := max(0, actualContentLines - viewportHeight)
-		be.scrollOffset = max(0, min(be.scrollOffset, maxScroll))
-	} else if !needsScroll {
-		be.scrollOffset = 0
-	}
-	
-	// Build the display content - always exactly contentHeight lines
-	var displayLines []string
-	
-	if needsScroll {
-		// Add top indicator
-		if be.scrollOffset > 0 {
-			displayLines = append(displayLines, styles.MutedStyle().Render("↑ More above"))
-		} else {
-			displayLines = append(displayLines, "")
+		bundles := bundlesByCategory[category]
+		if len(bundles) == 0 {
+			continue
 		}
 		
-		// Add viewport content
-		for i := 0; i < viewportHeight; i++ {
-			lineIdx := be.scrollOffset + i
-			if lineIdx < len(be.renderedLines) {
-				displayLines = append(displayLines, be.renderedLines[lineIdx])
-			} else {
-				displayLines = append(displayLines, "")
+		// Category header
+		subtitleStyle := lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14"))
+		categoryTitle := subtitleStyle.Render(strings.Title(category) + " Tier")
+		be.renderedLines = append(be.renderedLines, categoryTitle)
+		lineIndex++
+		
+		// Bundles in this category
+		for _, bundle := range bundles {
+			// Record the exact line index for this bundle (BEFORE adding the line)
+			be.bundleLineMap[bundle.Name] = lineIndex
+			
+			// Always render without highlighting - highlighting will be applied in updateViewportContentTUI
+			bundleLine := be.renderBundleLine(bundle, false)
+			be.renderedLines = append(be.renderedLines, bundleLine)
+			lineIndex++
+			
+			// Show expanded details
+			if be.expandedBundles[bundle.Name] {
+				details := be.renderBundleDetails(bundle)
+				be.renderedLines = append(be.renderedLines, details...)
+				lineIndex += len(details)
 			}
 		}
 		
-		// Add bottom indicator
-		if be.scrollOffset + viewportHeight < actualContentLines {
-			displayLines = append(displayLines, styles.MutedStyle().Render("↓ More below"))
-		} else {
-			displayLines = append(displayLines, "")
+		// Empty line between categories
+		be.renderedLines = append(be.renderedLines, "")
+		lineIndex++
+	}
+}
+
+// getSelectedLineIndex function removed - no longer needed with name-based selection
+
+func (be *BundleExplorerNew) groupBundlesByCategory() map[string][]orchestrator.BundleConfig {
+	grouped := make(map[string][]orchestrator.BundleConfig)
+	
+	for _, bundle := range be.bundles {
+		category := bundle.Category
+		if category == "" {
+			// Infer category from bundle name or tags
+			if strings.HasSuffix(bundle.Name, "-dev") {
+				if strings.Contains(bundle.Name, "python") || 
+				   strings.Contains(bundle.Name, "nodejs") ||
+				   strings.Contains(bundle.Name, "rust") ||
+				   strings.Contains(bundle.Name, "go") {
+					category = "language"
+				} else {
+					category = "domain"
+				}
+			} else if strings.Contains(bundle.Name, "beginner") ||
+			          strings.Contains(bundle.Name, "intermediate") ||
+			          strings.Contains(bundle.Name, "advanced") {
+				category = "foundation"
+			} else if strings.Contains(bundle.Name, "docker") ||
+			          strings.Contains(bundle.Name, "cloud") ||
+			          strings.Contains(bundle.Name, "database") {
+				category = "infrastructure"
+			} else if strings.Contains(bundle.Name, "debugging") ||
+			          strings.Contains(bundle.Name, "deployment") ||
+			          strings.Contains(bundle.Name, "review") {
+				category = "workflow"
+			}
 		}
-	} else {
-		// No scrolling - just show all content with padding
-		displayLines = append(displayLines, be.renderedLines...)
-		// Pad to exact height
-		for len(displayLines) < contentHeight {
-			displayLines = append(displayLines, "")
-		}
-		// Truncate if too long
-		if len(displayLines) > contentHeight {
-			displayLines = displayLines[:contentHeight]
+		
+		if category != "" {
+			grouped[category] = append(grouped[category], bundle)
 		}
 	}
 	
-	// Join and render
-	content := strings.Join(displayLines, "\n")
-	
-	return styles.BoxStyle().
-		Width(be.width).
-		Height(contentHeight).
-		Render(content)
+	return grouped
 }
 
-func (be *BundleExplorer) renderBundleLine(bundle orchestrator.BundleConfig, selected bool) string {
+func (be *BundleExplorerNew) getSelectableBundles() []orchestrator.BundleConfig {
+	var selectableBundles []orchestrator.BundleConfig
+	bundlesByCategory := be.groupBundlesByCategory()
+	
+	for _, category := range be.categories {
+		if be.selectedCategory != "" && be.selectedCategory != category {
+			continue
+		}
+		
+		bundles := bundlesByCategory[category]
+		selectableBundles = append(selectableBundles, bundles...)
+	}
+	
+	return selectableBundles
+}
+
+func (be *BundleExplorerNew) renderBundleLine(bundle orchestrator.BundleConfig, selected bool) string {
 	// Expansion indicator
 	var expandIcon string
 	if be.expandedBundles[bundle.Name] {
@@ -283,19 +336,16 @@ func (be *BundleExplorer) renderBundleLine(bundle orchestrator.BundleConfig, sel
 		bundle.Description,
 	)
 	
-	// Apply style
-	if selected {
-		return styles.SelectedStyle().Render(line)
-	}
-	
+	// Apply style (will be handled by viewport if selected)
 	if installedCount == len(bundle.Tools) && len(bundle.Tools) > 0 {
-		return styles.SuccessStyle().Render(line)
+		successStyle := lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
+		return successStyle.Render(line)
 	}
 	
 	return line
 }
 
-func (be *BundleExplorer) renderBundleDetails(bundle orchestrator.BundleConfig) []string {
+func (be *BundleExplorerNew) renderBundleDetails(bundle orchestrator.BundleConfig) []string {
 	var details []string
 	indent := "    "
 	
@@ -340,9 +390,12 @@ func (be *BundleExplorer) renderBundleDetails(bundle orchestrator.BundleConfig) 
 	
 	if !allInstalled {
 		details = append(details, "")
-		// No indentation - button's border provides visual separation
+		buttonStyle := lipgloss.NewStyle().
+			Border(lipgloss.RoundedBorder()).
+			BorderForeground(lipgloss.Color("12")).
+			Padding(0, 1)
 		buttonText := "[i] Install Bundle"
-		button := styles.ButtonStyle(false).Render(buttonText)
+		button := buttonStyle.Render(buttonText)
 		details = append(details, button)
 	}
 	
@@ -351,226 +404,69 @@ func (be *BundleExplorer) renderBundleDetails(bundle orchestrator.BundleConfig) 
 	return details
 }
 
-func (be *BundleExplorer) renderHelpBar() string {
-	helps := []string{
-		"[↑/↓] Navigate",
-		"[Enter/Space] Expand",
-		"[c] Cycle Category",
-		"[i] Install Bundle",
-		"[Tab] Switch View",
-	}
-	
-	return styles.MutedStyle().Render(strings.Join(helps, "  "))
-}
-
-// Helper methods
-
-// rebuildRenderedContent rebuilds the complete rendered output and tracks selectable lines
-func (be *BundleExplorer) rebuildRenderedContent() {
-	be.renderedLines = nil
-	be.selectableLines = nil
-	
-	bundlesByCategory := be.groupBundlesByCategory()
+func (be *BundleExplorerNew) moveUp() {
 	selectableBundles := be.getSelectableBundles()
+	if len(selectableBundles) == 0 {
+		return
+	}
 	
-	// Create a map for quick lookup of bundle indices
-	bundleIndexMap := make(map[string]int)
+	// Find current bundle index
+	currentIndex := -1
 	for i, bundle := range selectableBundles {
-		bundleIndexMap[bundle.Name] = i
-	}
-	
-	lineIndex := 0
-	
-	for _, category := range be.categories {
-		if be.selectedCategory != "" && be.selectedCategory != category {
-			continue
-		}
-		
-		bundles := bundlesByCategory[category]
-		if len(bundles) == 0 {
-			continue
-		}
-		
-		// Category header
-		categoryTitle := styles.SubtitleStyle().Render(strings.Title(category) + " Tier")
-		be.renderedLines = append(be.renderedLines, categoryTitle)
-		lineIndex++
-		
-		// Bundles in this category
-		for _, bundle := range bundles {
-			// Check if this bundle is selectable and if it's the current selection
-			bundleIdx, isSelectable := bundleIndexMap[bundle.Name]
-			isCurrentBundle := isSelectable && bundleIdx == be.cursor
-			
-			// Track this line as selectable
-			if isSelectable {
-				be.selectableLines = append(be.selectableLines, lineIndex)
-			}
-			
-			bundleLine := be.renderBundleLine(bundle, isCurrentBundle)
-			be.renderedLines = append(be.renderedLines, bundleLine)
-			lineIndex++
-			
-			// Show expanded details
-			if be.expandedBundles[bundle.Name] {
-				details := be.renderBundleDetails(bundle)
-				be.renderedLines = append(be.renderedLines, details...)
-				lineIndex += len(details)
-			}
-		}
-		
-		// Empty line between categories
-		be.renderedLines = append(be.renderedLines, "")
-		lineIndex++
-	}
-}
-
-func (be *BundleExplorer) groupBundlesByCategory() map[string][]orchestrator.BundleConfig {
-	grouped := make(map[string][]orchestrator.BundleConfig)
-	
-	for _, bundle := range be.bundles {
-		category := bundle.Category
-		if category == "" {
-			// Infer category from bundle name or tags
-			if strings.HasSuffix(bundle.Name, "-dev") {
-				if strings.Contains(bundle.Name, "python") || 
-				   strings.Contains(bundle.Name, "nodejs") ||
-				   strings.Contains(bundle.Name, "rust") ||
-				   strings.Contains(bundle.Name, "go") {
-					category = "language"
-				} else {
-					category = "domain"
-				}
-			} else if strings.Contains(bundle.Name, "beginner") ||
-			          strings.Contains(bundle.Name, "intermediate") ||
-			          strings.Contains(bundle.Name, "advanced") {
-				category = "foundation"
-			} else if strings.Contains(bundle.Name, "docker") ||
-			          strings.Contains(bundle.Name, "cloud") ||
-			          strings.Contains(bundle.Name, "database") {
-				category = "infrastructure"
-			} else if strings.Contains(bundle.Name, "debugging") ||
-			          strings.Contains(bundle.Name, "deployment") ||
-			          strings.Contains(bundle.Name, "review") {
-				category = "workflow"
-			}
-		}
-		
-		if category != "" {
-			grouped[category] = append(grouped[category], bundle)
-		}
-	}
-	
-	return grouped
-}
-
-func (be *BundleExplorer) moveUp() {
-	bundles := be.getSelectableBundles()
-	if be.cursor > 0 && len(bundles) > 0 {
-		be.cursor--
-	}
-}
-
-func (be *BundleExplorer) moveDown() {
-	bundles := be.getSelectableBundles()
-	if be.cursor < len(bundles)-1 {
-		be.cursor++
-	}
-}
-
-// getSelectableBundles returns only the bundles that can be selected (filtered by category)
-func (be *BundleExplorer) getSelectableBundles() []orchestrator.BundleConfig {
-	var selectableBundles []orchestrator.BundleConfig
-	bundlesByCategory := be.groupBundlesByCategory()
-	
-	for _, category := range be.categories {
-		if be.selectedCategory != "" && be.selectedCategory != category {
-			continue
-		}
-		
-		bundles := bundlesByCategory[category]
-		selectableBundles = append(selectableBundles, bundles...)
-	}
-	
-	return selectableBundles
-}
-
-func (be *BundleExplorer) countTotalLines() int {
-	count := 0
-	bundlesByCategory := be.groupBundlesByCategory()
-	
-	for _, category := range be.categories {
-		if be.selectedCategory != "" && be.selectedCategory != category {
-			continue
-		}
-		
-		bundles := bundlesByCategory[category]
-		if len(bundles) == 0 {
-			continue
-		}
-		
-		count++ // Category header
-		
-		for _, bundle := range bundles {
-			count++ // Bundle line
-			if be.expandedBundles[bundle.Name] {
-				// Count expanded details
-				count += be.countBundleDetailLines(bundle)
-			}
-		}
-		
-		count++ // Empty line between categories
-	}
-	
-	return count
-}
-
-func (be *BundleExplorer) countBundleDetailLines(bundle orchestrator.BundleConfig) int {
-	count := 0
-	
-	if len(bundle.Tools) > 0 {
-		count++ // "Tools:" header
-		count += len(bundle.Tools)
-	}
-	
-	if len(bundle.IncludesBundles) > 0 {
-		count++ // "Includes bundles:" header
-		count += len(bundle.IncludesBundles)
-	}
-	
-	if len(bundle.SystemPackages) > 0 {
-		count++ // "System packages:" header
-		count += len(bundle.SystemPackages)
-	}
-	
-	// Action button
-	allInstalled := true
-	for _, toolName := range bundle.Tools {
-		if _, ok := be.installedTools[toolName]; !ok {
-			allInstalled = false
+		if bundle.Name == be.selectedBundle {
+			currentIndex = i
 			break
 		}
 	}
 	
-	if !allInstalled {
-		count += 2 // Empty line + button
-	}
-	
-	count++ // Empty line after details
-	
-	return count
-}
-
-func (be *BundleExplorer) toggleExpanded() {
-	// Get the selected bundle
-	bundles := be.getSelectableBundles()
-	if be.cursor >= 0 && be.cursor < len(bundles) {
-		bundle := bundles[be.cursor]
-		be.expandedBundles[bundle.Name] = !be.expandedBundles[bundle.Name]
+	// Move to previous bundle
+	if currentIndex > 0 {
+		be.selectedBundle = selectableBundles[currentIndex-1].Name
+		be.cursor = currentIndex - 1
+		
+		if be.ready {
+			be.updateViewportContentTUI()
+		}
 	}
 }
 
-func (be *BundleExplorer) cycleCategory() {
+func (be *BundleExplorerNew) moveDown() {
+	selectableBundles := be.getSelectableBundles()
+	if len(selectableBundles) == 0 {
+		return
+	}
+	
+	// Find current bundle index
+	currentIndex := -1
+	for i, bundle := range selectableBundles {
+		if bundle.Name == be.selectedBundle {
+			currentIndex = i
+			break
+		}
+	}
+	
+	// Move to next bundle
+	if currentIndex >= 0 && currentIndex < len(selectableBundles)-1 {
+		be.selectedBundle = selectableBundles[currentIndex+1].Name
+		be.cursor = currentIndex + 1
+		
+		if be.ready {
+			be.updateViewportContentTUI()
+		}
+	}
+}
+
+func (be *BundleExplorerNew) toggleExpanded() {
+	if be.selectedBundle != "" {
+		be.expandedBundles[be.selectedBundle] = !be.expandedBundles[be.selectedBundle]
+		// Need to rebuild content when expanding/collapsing
+		if be.ready {
+			be.updateViewportContentTUI()
+		}
+	}
+}
+
+func (be *BundleExplorerNew) cycleCategory() {
 	if be.selectedCategory == "" {
 		be.selectedCategory = be.categories[0]
 	} else {
@@ -585,21 +481,39 @@ func (be *BundleExplorer) cycleCategory() {
 			}
 		}
 	}
+	
+	// Reset to first bundle in new category
 	be.cursor = 0
-	be.scrollOffset = 0
+	selectableBundles := be.getSelectableBundles()
+	if len(selectableBundles) > 0 {
+		be.selectedBundle = selectableBundles[0].Name
+	} else {
+		be.selectedBundle = ""
+	}
+	
+	// Need to rebuild content when changing category
+	if be.ready {
+		be.updateViewportContentTUI()
+	}
 }
 
 // GetSelectedBundle returns the currently selected bundle
-func (be *BundleExplorer) GetSelectedBundle() *orchestrator.BundleConfig {
+func (be *BundleExplorerNew) GetSelectedBundle() *orchestrator.BundleConfig {
+	if be.selectedBundle == "" {
+		return nil
+	}
+	
 	bundles := be.getSelectableBundles()
-	if be.cursor >= 0 && be.cursor < len(bundles) {
-		return &bundles[be.cursor]
+	for _, bundle := range bundles {
+		if bundle.Name == be.selectedBundle {
+			return &bundle
+		}
 	}
 	return nil
 }
 
 // GetUninstalledTools returns the list of uninstalled tools from the selected bundle
-func (be *BundleExplorer) GetUninstalledTools(bundle *orchestrator.BundleConfig) []string {
+func (be *BundleExplorerNew) GetUninstalledTools(bundle *orchestrator.BundleConfig) []string {
 	var uninstalled []string
 	
 	for _, toolName := range bundle.Tools {
@@ -610,3 +524,5 @@ func (be *BundleExplorer) GetUninstalledTools(bundle *orchestrator.BundleConfig)
 	
 	return uninstalled
 }
+
+// CategoryBarWidget removed - using TUI best practices with header integration

@@ -6,10 +6,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/charmbracelet/bubbles/viewport"
 	tea "github.com/charmbracelet/bubbletea"
 	"github.com/charmbracelet/lipgloss"
 
-	"gearbox/cmd/gearbox/tui/styles"
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
 )
@@ -29,10 +29,13 @@ type HealthView struct {
 
 	// UI state
 	cursor         int
-	scrollOffset   int
 	selectedCheck  int
 	autoRefresh    bool
 	showDetails    bool
+
+	// TUI components (official Bubbles components)
+	viewport       viewport.Model
+	ready          bool
 }
 
 // HealthCheck represents a health check item
@@ -71,6 +74,27 @@ func NewHealthView() *HealthView {
 func (hv *HealthView) SetSize(width, height int) {
 	hv.width = width
 	hv.height = height
+	
+	// Initialize official viewport if not ready
+	if !hv.ready {
+		// Calculate viewport height: total - header - footer
+		viewportHeight := height - 3 // Reserve 3 lines for header + footer
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		
+		hv.viewport = viewport.New(width, viewportHeight)
+		hv.viewport.SetContent("")
+		hv.ready = true
+	} else {
+		// Update existing viewport
+		viewportHeight := height - 3
+		if viewportHeight < 1 {
+			viewportHeight = 1
+		}
+		hv.viewport.Width = width
+		hv.viewport.Height = viewportHeight
+	}
 }
 
 // SetData updates the health view data
@@ -79,6 +103,10 @@ func (hv *HealthView) SetData(tools []orchestrator.ToolConfig, installed map[str
 	hv.updateToolChecks(tools)
 	// Automatically run health checks when data is loaded
 	hv.runHealthChecks()
+	
+	if hv.ready {
+		hv.updateViewportContentTUI()
+	}
 }
 
 // Update handles health view updates
@@ -95,6 +123,9 @@ func (hv *HealthView) Update(msg tea.Msg) tea.Cmd {
 		case "r":
 			// Reset checks to pending state to show refresh is happening
 			hv.resetChecksToChecking()
+			if hv.ready {
+				hv.updateViewportContentTUI()
+			}
 			// Return a command that will run the health checks after a brief delay
 			return tea.Tick(time.Millisecond*100, func(time.Time) tea.Msg {
 				hv.runHealthChecks()
@@ -102,12 +133,20 @@ func (hv *HealthView) Update(msg tea.Msg) tea.Cmd {
 			})
 		case "a":
 			hv.autoRefresh = !hv.autoRefresh
+			if hv.ready {
+				hv.updateViewportContentTUI()
+			}
 		case "d":
 			hv.showDetails = !hv.showDetails
+			if hv.ready {
+				hv.updateViewportContentTUI()
+			}
 		}
 	case healthChecksCompleteMsg:
-		// Health checks are complete, no need to do anything special
-		// The view will be re-rendered automatically
+		// Health checks are complete - refresh content
+		if hv.ready {
+			hv.updateViewportContentTUI()
+		}
 		return nil
 	}
 
@@ -116,29 +155,36 @@ func (hv *HealthView) Update(msg tea.Msg) tea.Cmd {
 
 // Render returns the rendered health view
 func (hv *HealthView) Render() string {
-	if hv.width == 0 || hv.height == 0 {
-		return "Loading..."
-	}
+	return hv.renderTUIStyle()
+}
 
-	// Title
-	title := styles.TitleStyle().Render("System Health Monitor")
-
-	// Summary
+// renderTUIStyle uses proper TUI best practices with official Bubbles components
+func (hv *HealthView) renderTUIStyle() string {
+	// Header (health summary)
+	headerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("12")).
+		Bold(true).
+		Padding(0, 1)
+	
 	summary := hv.renderSummary()
-
-	// Content
-	contentHeight := hv.height - 8
-	content := hv.renderContent(contentHeight)
-
-	// Help bar
-	helpBar := hv.renderHelpBar()
-
+	header := headerStyle.Render(fmt.Sprintf("System Health Monitor | %s", summary))
+	
+	// Footer (help)
+	footerStyle := lipgloss.NewStyle().
+		Foreground(lipgloss.Color("8")).
+		Padding(0, 1)
+	
+	footer := footerStyle.Render(hv.renderHelpBar())
+	
+	// Content (health checks with cursor highlighting)
+	hv.updateViewportContentTUI()
+	
+	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
 		lipgloss.Left,
-		title,
-		summary,
-		content,
-		helpBar,
+		header,
+		hv.viewport.View(),
+		footer,
 	)
 }
 
@@ -159,31 +205,31 @@ func (hv *HealthView) renderSummary() string {
 		}
 	}
 
-	summary := fmt.Sprintf(
-		"%s Passing  %s Warning  %s Failing",
-		styles.SuccessStyle().Render(fmt.Sprintf("✓ %d", passing)),
-		styles.WarningStyle().Render(fmt.Sprintf("⚠ %d", warning)),
-		styles.ErrorStyle().Render(fmt.Sprintf("✗ %d", failing)),
-	)
-
-	return lipgloss.NewStyle().
-		Width(hv.width).
-		Padding(0, 2).
-		Render(summary)
+	return fmt.Sprintf("✓%d ⚠%d ✗%d", passing, warning, failing)
 }
 
-func (hv *HealthView) renderContent(height int) string {
+// updateViewportContentTUI rebuilds content for the official viewport
+func (hv *HealthView) updateViewportContentTUI() {
 	var lines []string
 
 	// System checks section
-	lines = append(lines, styles.SubtitleStyle().Render("System Checks"))
+	lines = append(lines, lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14")).Render("System Checks"))
 	for i, check := range hv.systemChecks {
 		isSelected := i == hv.cursor
-		lines = append(lines, hv.renderHealthCheck(check, isSelected))
+		line := hv.renderHealthCheck(check, isSelected)
+		
+		// Apply cursor highlighting here (TUI best practice)
+		if isSelected {
+			selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+			line = selectedStyle.Render(line)
+		}
+		
+		lines = append(lines, line)
 		
 		if hv.showDetails && isSelected && len(check.Details) > 0 {
 			for _, detail := range check.Details {
-				lines = append(lines, "  "+styles.MutedStyle().Render(detail))
+				detailLine := "  " + lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(detail)
+				lines = append(lines, detailLine)
 			}
 		}
 	}
@@ -191,48 +237,66 @@ func (hv *HealthView) renderContent(height int) string {
 	lines = append(lines, "")
 
 	// Tool checks section
-	lines = append(lines, styles.SubtitleStyle().Render("Tool Checks"))
+	lines = append(lines, lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("14")).Render("Tool Checks"))
 	toolCheckOffset := len(hv.systemChecks)
 	for i, check := range hv.toolChecks {
 		isSelected := toolCheckOffset+i == hv.cursor
-		lines = append(lines, hv.renderHealthCheck(check, isSelected))
+		line := hv.renderHealthCheck(check, isSelected)
+		
+		// Apply cursor highlighting here (TUI best practice)
+		if isSelected {
+			selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
+			line = selectedStyle.Render(line)
+		}
+		
+		lines = append(lines, line)
 		
 		if hv.showDetails && isSelected {
 			if len(check.Details) > 0 {
 				for _, detail := range check.Details {
-					lines = append(lines, "  "+styles.MutedStyle().Render(detail))
+					detailLine := "  " + lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(detail)
+					lines = append(lines, detailLine)
 				}
 			}
 			if len(check.Suggestions) > 0 {
-				lines = append(lines, "  "+styles.HighlightStyle().Render("Suggestions:"))
+				suggestionHeader := "  " + lipgloss.NewStyle().Bold(true).Foreground(lipgloss.Color("12")).Render("Suggestions:")
+				lines = append(lines, suggestionHeader)
 				for _, suggestion := range check.Suggestions {
-					lines = append(lines, "    • "+suggestion)
+					suggestionLine := "    • " + suggestion
+					lines = append(lines, suggestionLine)
 				}
 			}
 		}
 	}
 
-	// Handle scrolling
-	visibleLines := height - 2
-	if hv.cursor >= hv.scrollOffset+visibleLines {
-		hv.scrollOffset = hv.cursor - visibleLines + 1
-	} else if hv.cursor < hv.scrollOffset {
-		hv.scrollOffset = hv.cursor
-	}
-
-	// Get visible portion
-	if hv.scrollOffset < len(lines) {
-		end := min(hv.scrollOffset+visibleLines, len(lines))
-		lines = lines[hv.scrollOffset:end]
-	}
-
 	content := strings.Join(lines, "\n")
+	hv.viewport.SetContent(content)
 
-	return styles.BoxStyle().
-		Width(hv.width).
-		Height(height).
-		Render(content)
+	// Sync viewport with cursor position (TUI best practice)
+	hv.syncViewportWithCursor()
 }
+
+// syncViewportWithCursor ensures cursor is visible (TUI best practice)
+func (hv *HealthView) syncViewportWithCursor() {
+	if len(hv.systemChecks) == 0 && len(hv.toolChecks) == 0 {
+		return
+	}
+	
+	// Get viewport bounds
+	top := hv.viewport.YOffset
+	bottom := top + hv.viewport.Height - 1
+	
+	// Ensure cursor is visible by scrolling viewport
+	if hv.cursor < top {
+		// Cursor above viewport - scroll up
+		hv.viewport.SetYOffset(hv.cursor)
+	} else if hv.cursor > bottom {
+		// Cursor below viewport - scroll down
+		hv.viewport.SetYOffset(hv.cursor - hv.viewport.Height + 1)
+	}
+}
+
+// renderContent is deprecated - using TUI best practices instead
 
 func (hv *HealthView) renderHealthCheck(check HealthCheck, selected bool) string {
 	// Status icon
@@ -242,32 +306,28 @@ func (hv *HealthView) renderHealthCheck(check HealthCheck, selected bool) string
 	switch check.Status {
 	case HealthStatusPending:
 		icon = "○"
-		iconStyle = styles.MutedStyle()
+		iconStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("8"))
 	case HealthStatusPassing:
 		icon = "✓"
-		iconStyle = styles.SuccessStyle()
+		iconStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("10"))
 	case HealthStatusWarning:
 		icon = "⚠"
-		iconStyle = styles.WarningStyle()
+		iconStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("11"))
 	case HealthStatusFailing:
 		icon = "✗"
-		iconStyle = styles.ErrorStyle()
+		iconStyle = lipgloss.NewStyle().Foreground(lipgloss.Color("9"))
 	}
 
-	// Build the line
+	// Build the line (no selection styling - handled by caller)
 	line := fmt.Sprintf("%s %-30s %s",
 		iconStyle.Render(icon),
 		check.Name,
 		check.Message,
 	)
 
-	// Apply selection style
-	if selected {
-		return styles.SelectedStyle().Render(line)
-	}
-
+	// Apply critical error styling if needed
 	if check.Critical && check.Status == HealthStatusFailing {
-		return styles.ErrorStyle().Render(line)
+		return lipgloss.NewStyle().Foreground(lipgloss.Color("9")).Render(line)
 	}
 
 	return line
@@ -287,7 +347,7 @@ func (hv *HealthView) renderHelpBar() string {
 		helps = append(helps, "[a] Auto-refresh OFF")
 	}
 
-	return styles.MutedStyle().Render(strings.Join(helps, "  "))
+	return lipgloss.NewStyle().Foreground(lipgloss.Color("8")).Render(strings.Join(helps, "  "))
 }
 
 // Helper methods
@@ -406,6 +466,10 @@ func (hv *HealthView) updateToolChecks(tools []orchestrator.ToolConfig) {
 func (hv *HealthView) moveUp() {
 	if hv.cursor > 0 {
 		hv.cursor--
+		// Use TUI best practice: update content and sync viewport
+		if hv.ready {
+			hv.updateViewportContentTUI()
+		}
 	}
 }
 
@@ -413,12 +477,20 @@ func (hv *HealthView) moveDown() {
 	totalChecks := len(hv.systemChecks) + len(hv.toolChecks)
 	if hv.cursor < totalChecks-1 {
 		hv.cursor++
+		// Use TUI best practice: update content and sync viewport
+		if hv.ready {
+			hv.updateViewportContentTUI()
+		}
 	}
 }
 
 func (hv *HealthView) selectCheck() {
 	// Toggle details for the selected check
 	hv.showDetails = !hv.showDetails
+	// Refresh content to show/hide details
+	if hv.ready {
+		hv.updateViewportContentTUI()
+	}
 }
 
 func (hv *HealthView) runHealthChecks() {
@@ -553,6 +625,11 @@ func (hv *HealthView) runHealthChecks() {
 			"Last checked: just now",
 			"No updates available",
 		}
+	}
+
+	// Refresh content after running checks
+	if hv.ready {
+		hv.updateViewportContentTUI()
 	}
 }
 
