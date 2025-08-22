@@ -1,0 +1,15 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(ls:*)",
+      "Bash(go get:*)",
+      "Bash(go mod:*)",
+      "Bash(mkdir:*)",
+      "Bash(make:*)",
+      "Bash(./build/gearbox:*)",
+      "Bash(go build:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": []
+  }
+}

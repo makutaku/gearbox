@@ -5,13 +5,14 @@ Complete guide for installing and using essential command-line tools.
 ## Table of Contents
 
 1. [Getting Started](#getting-started)
-2. [Building the CLI](#building-the-cli)
-3. [Installation Options](#installation-options)
-4. [Individual Tools](#individual-tools)
-5. [Common Workflows](#common-workflows)
-6. [Shell Integration](#shell-integration)
-7. [Troubleshooting](#troubleshooting)
-8. [Reference](#reference)
+2. [Interactive TUI](#interactive-tui)
+3. [Building the CLI](#building-the-cli)
+4. [Installation Options](#installation-options)
+5. [Individual Tools](#individual-tools)
+6. [Common Workflows](#common-workflows)
+7. [Shell Integration](#shell-integration)
+8. [Troubleshooting](#troubleshooting)
+9. [Reference](#reference)
 
 ## Getting Started
 
@@ -97,6 +98,97 @@ If commands aren't found, refresh your shell:
 ```bash
 hash -r && source ~/.bashrc
 ```
+
+## Interactive TUI
+
+Gearbox includes a powerful Text User Interface (TUI) for visual tool management:
+
+### Launching the TUI
+
+```bash
+# Launch the interactive interface
+gearbox tui
+```
+
+### TUI Views
+
+**📊 Dashboard**
+- System overview with installation statistics
+- Recent activity and recommendations
+- Quick actions for common tasks
+- Resource usage monitoring
+
+**🔍 Tool Browser**
+- Search and filter 42+ tools
+- Real-time search as you type
+- Category filtering (Core, Development, System, etc.)
+- Multi-selection with Space key
+- Preview pane with tool details
+
+**📦 Bundle Explorer**
+- Browse 32 curated bundles
+- Organized by tiers (Foundation, Domain, Language, etc.)
+- Expand bundles to see included tools
+- One-click bundle installation
+- Installation progress tracking
+
+**🚀 Install Manager**
+- Real-time installation progress
+- Concurrent task management
+- Live output streaming
+- Progress bars with stages
+- Cancel/retry failed installations
+
+**⚙️ Configuration**
+- Interactive settings management
+- Edit build types, parallel jobs
+- Configure cache settings
+- Validate and save changes
+
+**🏥 Health Monitor**
+- System health checks
+- Tool coverage analysis
+- Toolchain verification
+- Smart issue resolution suggestions
+
+### Navigation
+
+**Global Keys:**
+- `Tab` - Switch between views
+- `↑/↓` or `j/k` - Navigate lists
+- `Enter` - Select/Confirm
+- `?` - Help screen
+- `q` - Quit
+
+**Quick View Shortcuts:**
+- `D` - Dashboard
+- `T` - Tool Browser
+- `B` - Bundle Explorer
+- `I` - Install Manager
+- `C` - Configuration
+- `H` - Health Monitor
+
+### Common TUI Workflows
+
+**Installing Tools via TUI:**
+1. Press `T` to open Tool Browser
+2. Use `/` to search for tools
+3. Press `Space` to select multiple tools
+4. Press `i` to add to install queue
+5. View progress in Install Manager
+
+**Installing Bundles:**
+1. Press `B` to open Bundle Explorer
+2. Navigate to desired bundle
+3. Press `Enter` to expand details
+4. Press `i` to install entire bundle
+
+**Checking System Health:**
+1. Press `H` to open Health Monitor
+2. Press `r` to run health checks
+3. Review suggestions for any issues
+
+The TUI provides a visual alternative to CLI commands while maintaining all functionality.
 
 ## Building the CLI
 

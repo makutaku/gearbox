@@ -36,6 +36,7 @@ Supports parallel installation, dependency resolution, and comprehensive health 
 	rootCmd.AddCommand(commands.NewDoctorCmd())
 	rootCmd.AddCommand(commands.NewStatusCmd())
 	rootCmd.AddCommand(commands.NewGenerateCmd())
+	rootCmd.AddCommand(commands.NewTUICmd())
 
 	// Global flags
 	rootCmd.PersistentFlags().BoolP("verbose", "v", false, "Enable verbose output")

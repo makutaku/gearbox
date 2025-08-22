@@ -58,6 +58,9 @@ make build
 make install
 # Then use: gearbox list, gearbox install, etc.
 
+# Launch the interactive TUI (NEW!)
+gearbox tui
+
 ### 📦 Tool Bundles
 
 Install curated collections of tools with a single command:
@@ -325,6 +328,78 @@ The one-line installer provides:
 - Fedora (dnf)
 - Any Linux with Go 1.22+
 
+## 🎨 Interactive TUI (Text User Interface)
+
+Gearbox now includes a comprehensive TUI for an intuitive, visual experience:
+
+```bash
+# Launch the TUI
+gearbox tui
+```
+
+### TUI Features
+
+**📊 Dashboard View**
+- System overview with installation statistics
+- Recent activity tracking
+- Smart recommendations based on your setup
+- Quick actions for common tasks
+
+**🔍 Tool Browser**  
+- Search and filter 42+ available tools
+- Real-time search across names, descriptions, and languages
+- Multi-selection with Space key
+- Category filtering (Core, Development, System, etc.)
+- Side-by-side tool preview with details
+
+**📦 Bundle Explorer**
+- Hierarchical view of 32 curated bundles
+- Organized by tiers (Foundation, Domain, Language, Workflow, Infrastructure)
+- Expandable details showing included tools
+- Installation status tracking
+- One-click bundle installation
+
+**🚀 Install Manager**
+- Real-time installation progress
+- Concurrent task management
+- Live output streaming
+- Progress bars with stage information
+- Cancel/retry capabilities
+
+**⚙️ Configuration**
+- Interactive settings management
+- Edit build types, parallel jobs, cache settings
+- Type-safe configuration with validation
+- Reset to defaults option
+
+**🏥 Health Monitor**
+- Comprehensive system health checks
+- Tool installation coverage analysis
+- Toolchain verification (Rust, Go, etc.)
+- Smart suggestions for issues
+- Auto-refresh capability
+
+### TUI Navigation
+
+- **Tab**: Switch between views
+- **↑/↓**: Navigate lists
+- **Enter**: Select/Confirm
+- **Space**: Toggle selection
+- **/**: Search (in Tool Browser)
+- **?**: Help screen
+- **q**: Quit
+
+### Quick View Shortcuts
+
+- **D**: Dashboard
+- **T**: Tool Browser
+- **B**: Bundle Explorer  
+- **I**: Install Manager
+- **C**: Configuration
+- **H**: Health Monitor
+
+The TUI complements the CLI, providing a visual interface for complex operations while maintaining all CLI functionality.
+
 ## Available Tools
 
 | Tool | Description | Key Features |
@@ -450,6 +525,7 @@ gearbox doctor cleanup --auto-cleanup
 - **Space monitoring**: Real-time disk usage reports and recommendations
 
 ### User Experience
+- **Interactive TUI**: Full-featured text interface with dashboard, browser, and real-time monitoring
 - **Shell integration**: Automatic setup for enhanced tools (fzf, starship, zoxide)
 - **Progress tracking**: Real-time installation progress and status updates
 - **Comprehensive CLI**: Unified interface for installation, health checks, and cleanup

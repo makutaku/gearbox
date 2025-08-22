@@ -115,6 +115,171 @@ This modular organization provides clean separation of concerns while maintainin
 3. Python tools (serena, uv, ruff) - installs Python 3.11 + uv, uses virtual environment pattern
 4. C/C++ tools (jq, ffmpeg, imagemagick, 7zip) - independent builds
 
+## TUI Development
+
+The Text User Interface (TUI) provides a rich interactive experience using the Bubble Tea framework.
+
+### TUI Architecture
+
+The TUI follows the Elm Architecture pattern with:
+- **Model**: Application state and data
+- **View**: Rendering functions for each component
+- **Update**: Message handling and state transitions
+
+### Directory Structure
+
+```
+cmd/gearbox/tui/
+├── app.go              # Main TUI application
+├── state.go            # Global state management
+├── taskprovider.go     # Task adapter interface
+├── styles/
+│   └── theme.go        # Consistent theming
+├── tasks/
+│   └── manager.go      # Background tasks
+└── views/
+    ├── interfaces.go   # Common interfaces
+    ├── dashboard.go    # Dashboard view
+    ├── toolbrowser.go  # Tool browser
+    ├── bundleexplorer.go # Bundle explorer
+    ├── installmanager.go # Install manager
+    ├── config.go       # Configuration
+    └── health.go       # Health monitor
+```
+
+### Adding a New View
+
+1. **Create the view file** in `views/`:
+```go
+package views
+
+type MyView struct {
+    width  int
+    height int
+    // Add view-specific state
+}
+
+func NewMyView() *MyView {
+    return &MyView{}
+}
+
+func (v *MyView) SetSize(width, height int) {
+    v.width = width
+    v.height = height
+}
+
+func (v *MyView) Update(msg tea.Msg) tea.Cmd {
+    // Handle messages
+    return nil
+}
+
+func (v *MyView) Render() string {
+    // Return rendered view
+    return "My View"
+}
+```
+
+2. **Add view type** to `state.go`:
+```go
+const (
+    // ... existing views
+    ViewMyView ViewType = iota
+)
+```
+
+3. **Register in app.go**:
+- Add field to Model struct
+- Initialize in NewModel()
+- Add size update in WindowSizeMsg handler
+- Add update delegation in updateCurrentView()
+- Add render method
+
+4. **Add navigation**:
+- Add keyboard shortcut in handleKeyPress()
+- Add to navigation bar tabs
+- Update help text
+
+### Styling Guidelines
+
+Use the theme system for consistent styling:
+```go
+// Use predefined styles
+styles.TitleStyle().Render("Title")
+styles.SuccessStyle().Render("✓ Success")
+styles.ErrorStyle().Render("✗ Error")
+styles.SelectedStyle().Render("Selected Item")
+
+// Use theme colors
+styles.CurrentTheme.Primary
+styles.CurrentTheme.Success
+styles.CurrentTheme.Warning
+```
+
+### Task Integration
+
+For long-running operations:
+```go
+// Add task to manager
+taskID := m.taskManager.AddTask(tool, buildType)
+
+// Track in install manager
+m.installManager.AddTaskID(taskID)
+
+// Task updates flow automatically via channels
+```
+
+### Testing TUI Components
+
+While the TUI requires a terminal, you can test individual components:
+```go
+// Test view logic
+view := NewMyView()
+view.SetSize(80, 24)
+output := view.Render()
+// Assert output structure
+
+// Test update logic
+cmd := view.Update(tea.KeyMsg{Type: tea.KeyEnter})
+// Assert state changes
+```
+
+### Common Patterns
+
+**List Navigation**:
+```go
+func (v *MyView) moveUp() {
+    if v.cursor > 0 {
+        v.cursor--
+    }
+}
+
+func (v *MyView) moveDown() {
+    if v.cursor < len(v.items)-1 {
+        v.cursor++
+    }
+}
+```
+
+**Scrolling Support**:
+```go
+visibleItems := height - headerSize - footerSize
+if v.cursor >= v.scrollOffset+visibleItems {
+    v.scrollOffset = v.cursor - visibleItems + 1
+}
+```
+
+**Search Implementation**:
+```go
+searchInput := textinput.New()
+searchInput.Placeholder = "Search..."
+
+// In Update()
+if v.searchActive {
+    v.searchInput, cmd = v.searchInput.Update(msg)
+    v.applyFilters()
+}
+```
+
 ## Development Setup
 
 ### 1. Fork and Clone

@@ -263,10 +263,11 @@ show_next_steps() {
     echo
     echo -e "${WHITE}Next steps:${NC}"
     echo -e "  ${CYAN}1.${NC} Restart your shell or run: ${YELLOW}source ~/.bashrc${NC}"
-    echo -e "  ${CYAN}2.${NC} See available tools: ${YELLOW}gearbox list${NC}"
-    echo -e "  ${CYAN}3.${NC} Install essential tools: ${YELLOW}gearbox install fd ripgrep fzf${NC}"
-    echo -e "  ${CYAN}4.${NC} Setup beautiful terminal: ${YELLOW}gearbox install nerd-fonts starship${NC}"
-    echo -e "  ${CYAN}5.${NC} Check system health: ${YELLOW}gearbox doctor${NC}"
+    echo -e "  ${CYAN}2.${NC} ${GREEN}NEW!${NC} Launch interactive TUI: ${YELLOW}gearbox tui${NC}"
+    echo -e "  ${CYAN}3.${NC} See available tools: ${YELLOW}gearbox list${NC}"
+    echo -e "  ${CYAN}4.${NC} Install essential tools: ${YELLOW}gearbox install fd ripgrep fzf${NC}"
+    echo -e "  ${CYAN}5.${NC} Setup beautiful terminal: ${YELLOW}gearbox install nerd-fonts starship${NC}"
+    echo -e "  ${CYAN}6.${NC} Check system health: ${YELLOW}gearbox doctor${NC}"
     echo
     echo -e "${WHITE}Quick start examples:${NC}"
     echo -e "  ${BLUE}# Core development tools${NC}"

@@ -74,9 +74,10 @@ show_setup_complete() {
     echo
     echo -e "${YELLOW}Next steps:${NC}"
     echo "  1. Restart your terminal"
-    echo "  2. Try: fd .md | head        # Find markdown files"
-    echo "  3. Try: rg TODO              # Search for TODOs"
-    echo "  4. Configure your editor to use the new fonts"
+    echo "  2. Try: gearbox tui          # Launch interactive interface (NEW!)"
+    echo "  3. Try: fd .md | head        # Find markdown files"
+    echo "  4. Try: rg TODO              # Search for TODOs"
+    echo "  5. Configure your editor to use the new fonts"
     echo
 }
 

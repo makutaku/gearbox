@@ -436,6 +436,103 @@ export GEARBOX_DEBUG=true
 gearbox doctor cleanup --verbose tool_name
 ```
 
+## TUI Issues
+
+### Error: "could not open a new TTY"
+
+**Symptom**: TUI fails to launch with TTY error.
+
+**Causes**:
+- Running in non-interactive environment (SSH without TTY, Docker, CI/CD)
+- Terminal doesn't support required features
+
+**Solutions**:
+
+1. **SSH users**: Use `-t` flag
+   ```bash
+   ssh -t user@host gearbox tui
+   ```
+
+2. **Docker users**: Run with interactive terminal
+   ```bash
+   docker run -it myimage gearbox tui
+   ```
+
+3. **Use CLI instead**: All TUI functionality is available via CLI
+   ```bash
+   gearbox list
+   gearbox install fd ripgrep
+   gearbox doctor
+   ```
+
+### TUI Display Issues
+
+**Symptom**: Garbled display, incorrect colors, or missing characters.
+
+**Solutions**:
+
+1. **Check terminal compatibility**:
+   ```bash
+   echo $TERM
+   # Should be xterm-256color or similar
+   
+   # Set if needed
+   export TERM=xterm-256color
+   ```
+
+2. **UTF-8 support**:
+   ```bash
+   locale | grep UTF
+   # Should show UTF-8
+   
+   # Set if needed
+   export LANG=en_US.UTF-8
+   export LC_ALL=en_US.UTF-8
+   ```
+
+3. **Font issues**: Install Nerd Fonts for proper icon display
+   ```bash
+   gearbox install nerd-fonts
+   ```
+
+### TUI Performance Issues
+
+**Symptom**: Slow response, lag, or high CPU usage.
+
+**Solutions**:
+
+1. **Large terminal windows**: Resize to smaller size
+2. **Remote connections**: Use local CLI instead
+3. **Check system resources**:
+   ```bash
+   gearbox doctor system
+   ```
+
+### TUI Navigation Not Working
+
+**Symptom**: Keys don't respond as expected.
+
+**Common issues**:
+- Terminal emulator capturing keys
+- Shell keybindings conflict
+- Tmux/screen interference
+
+**Solutions**:
+
+1. **Try basic navigation**:
+   - Use arrow keys instead of `hjkl`
+   - Use Tab instead of shortcuts
+   - Press `?` for help
+
+2. **Check for conflicts**:
+   ```bash
+   # Temporarily disable custom keybindings
+   bash --norc
+   gearbox tui
+   ```
+
+3. **Tmux users**: Check prefix key doesn't conflict
+
 ### Community Support
 
 - **GitHub Issues**: Report bugs and feature requests

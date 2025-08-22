@@ -752,6 +752,176 @@ The project documentation is organized across multiple locations for different a
 - **Advanced Configuration**: See `docs/CONFIGURATION_MIGRATION.md`
 - **Migration Planning**: Review `docs/GO_MIGRATION_PLAN.md`
 
+## Interactive TUI Implementation
+
+The project now includes a comprehensive Text User Interface (TUI) built with the Bubble Tea framework, providing an intuitive visual interface for all gearbox operations.
+
+### TUI Architecture
+
+**Framework**: Bubble Tea (Elm architecture for Go)
+- Model-View-Update pattern for reactive UI
+- Tea commands for async operations
+- Lipgloss for consistent styling
+- Full keyboard navigation support
+
+**Package Structure** (`cmd/gearbox/tui/`):
+```
+tui/
+├── app.go              # Main TUI application and model
+├── state.go            # Global application state management
+├── taskprovider.go     # Task manager adapter interface
+├── styles/
+│   └── theme.go        # Consistent styling and theming
+├── tasks/
+│   └── manager.go      # Background task management
+└── views/
+    ├── interfaces.go   # Common interfaces (TaskProvider, TaskStatus)
+    ├── dashboard.go    # System overview and quick actions
+    ├── toolbrowser.go  # Tool search and selection
+    ├── bundleexplorer.go # Bundle browsing and installation
+    ├── installmanager.go # Installation progress tracking
+    ├── config.go       # Configuration management
+    └── health.go       # System health monitoring
+```
+
+### TUI Features
+
+**1. Dashboard View** (`views/dashboard.go`)
+- System statistics (installed/available tools)
+- Recent activity tracking
+- Smart recommendations based on installed tools
+- Quick action buttons for common operations
+- System resource overview
+
+**2. Tool Browser** (`views/toolbrowser.go`)
+- Real-time search across names, descriptions, and languages
+- Category-based filtering (Core, Development, System, etc.)
+- Multi-selection support with Space key
+- Side-by-side preview pane with detailed information
+- Installation status indicators
+
+**3. Bundle Explorer** (`views/bundleexplorer.go`)
+- Hierarchical bundle display organized by tiers
+- Expandable bundle details showing included tools
+- Installation progress tracking per bundle
+- Smart category filtering
+- One-click bundle installation
+
+**4. Install Manager** (`views/installmanager.go`)
+- Real-time installation progress with stage information
+- Concurrent task management (configurable parallelism)
+- Live output streaming from installation processes
+- Progress bars with percentage and time estimates
+- Cancel/retry capabilities for failed installations
+
+**5. Configuration View** (`views/config.go`)
+- Interactive settings editing with type validation
+- Support for string, number, boolean, and choice types
+- Live validation with error feedback
+- Reset to defaults option
+- Prepared for integration with ~/.gearboxrc
+
+**6. Health Monitor** (`views/health.go`)
+- Comprehensive system health checks
+- Tool installation coverage analysis
+- Toolchain verification (Rust, Go, build tools)
+- Smart suggestions for resolving issues
+- Auto-refresh capability for monitoring
+
+### Technical Implementation Details
+
+**State Management**:
+```go
+type AppState struct {
+    CurrentView    ViewType
+    Tools          []orchestrator.ToolConfig
+    Bundles        []orchestrator.BundleConfig
+    InstalledTools map[string]*manifest.InstallationRecord
+    TaskQueue      []string
+}
+```
+
+**Task System Architecture**:
+- Background goroutines for parallel installations
+- Channel-based updates via `TaskUpdateMsg`
+- TaskProvider interface for view/model decoupling
+- Simulated installations with realistic progress stages
+- Proper cancellation support with context
+
+**UI Component Patterns**:
+```go
+// Common view interface pattern
+type View interface {
+    SetSize(width, height int)
+    Update(msg tea.Msg) tea.Cmd
+    Render() string
+}
+```
+
+**Integration Points**:
+- Seamless CLI/TUI integration via `gearbox tui` command
+- Shared orchestrator backend for consistency
+- Manifest tracking across CLI and TUI operations
+- Configuration management via shared config system
+
+### Usage Examples
+
+```bash
+# Launch TUI
+gearbox tui
+
+# Navigation
+Tab         - Switch between views
+↑/↓ or j/k  - Navigate lists
+Enter       - Select/Confirm
+Space       - Toggle selection
+/           - Search (in Tool Browser)
+?           - Help screen
+q           - Quit
+
+# View-specific shortcuts
+D - Dashboard
+T - Tool Browser
+B - Bundle Explorer
+I - Install Manager
+C - Configuration
+H - Health Monitor
+
+# Tool Browser operations
+Space - Select/deselect tool
+i     - Install selected tools
+c     - Cycle categories
+p     - Toggle preview
+
+# Bundle Explorer operations
+Enter - Expand/collapse bundle
+i     - Install bundle
+c     - Cycle category filter
+
+# Install Manager operations
+s     - Start pending installations
+c     - Cancel current task
+o     - Toggle output display
+```
+
+### Development Guidelines for TUI
+
+**Adding New Views**:
+1. Create view struct in `views/` implementing common methods
+2. Add view type to `ViewType` enum in `state.go`
+3. Register view in `app.go` NewModel and update methods
+4. Add navigation shortcut and help text
+
+**Styling Consistency**:
+- Use `styles.CurrentTheme` for all colors
+- Apply consistent spacing and borders
+- Use semantic style names (SuccessStyle, ErrorStyle, etc.)
+
+**Task Integration**:
+- All long-running operations should use TaskManager
+- Provide real-time feedback via progress updates
+- Handle cancellation gracefully
+
 ## Recent Improvements & Best Practices
 
 ### Code Quality Enhancements (2024)
