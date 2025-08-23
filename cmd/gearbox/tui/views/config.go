@@ -305,7 +305,7 @@ func (cv *ConfigView) renderTUIStyle() string {
 	footer := footerStyle.Render(cv.renderHelpBar())
 	
 	// Content (configuration items with cursor highlighting)
-	cv.updateViewportContentTUI()
+	cv.updateContent()
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
@@ -314,6 +314,16 @@ func (cv *ConfigView) renderTUIStyle() string {
 		cv.viewport.View(),
 		footer,
 	)
+}
+
+// updateContent shows appropriate content based on current state
+func (cv *ConfigView) updateContent() {
+	if !cv.ready {
+		return
+	}
+	
+	// Config view always has its configuration items ready
+	cv.updateViewportContentTUI()
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -440,7 +450,7 @@ func (cv *ConfigView) moveUp() {
 		cv.cursor--
 		// Use TUI best practice: update content and sync viewport
 		if cv.ready {
-			cv.updateViewportContentTUI()
+			cv.updateContent()
 		}
 	}
 }
@@ -450,7 +460,7 @@ func (cv *ConfigView) moveDown() {
 		cv.cursor++
 		// Use TUI best practice: update content and sync viewport
 		if cv.ready {
-			cv.updateViewportContentTUI()
+			cv.updateContent()
 		}
 	}
 }

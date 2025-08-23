@@ -91,7 +91,7 @@ func (im *InstallManagerNew) AddTaskID(taskID string) {
 	im.progressBars[taskID] = prog
 	
 	if im.ready {
-		im.updateViewportContentTUI()
+		im.updateContent()
 	}
 }
 
@@ -99,7 +99,7 @@ func (im *InstallManagerNew) AddTaskID(taskID string) {
 func (im *InstallManagerNew) HandleTaskUpdate(taskID string, progress float64) {
 	// Update will refresh the content automatically
 	if im.ready {
-		im.updateViewportContentTUI()
+		im.updateContent()
 	}
 }
 
@@ -149,7 +149,7 @@ func (im *InstallManagerNew) Update(msg tea.Msg) tea.Cmd {
 	}
 	
 	if im.ready {
-		im.updateViewportContentTUI()
+		im.updateContent()
 	}
 	
 	return tea.Batch(cmds...)
@@ -183,7 +183,7 @@ func (im *InstallManagerNew) renderTUIStyle() string {
 	)
 	
 	// Content (task list with cursor highlighting)
-	im.updateViewportContentTUI()
+	im.updateContent()
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
@@ -192,6 +192,16 @@ func (im *InstallManagerNew) renderTUIStyle() string {
 		im.viewport.View(),
 		footer,
 	)
+}
+
+// updateContent shows appropriate content based on current installation manager state
+func (im *InstallManagerNew) updateContent() {
+	if !im.ready {
+		return
+	}
+	
+	// Install manager always shows its content (could be empty state)
+	im.updateViewportContentTUI()
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -388,7 +398,7 @@ func (im *InstallManagerNew) moveUp() {
 		im.cursor--
 		// Use TUI best practice: update content and sync viewport
 		if im.ready {
-			im.updateViewportContentTUI()
+			im.updateContent()
 		}
 	}
 }
@@ -398,7 +408,7 @@ func (im *InstallManagerNew) moveDown() {
 		im.cursor++
 		// Use TUI best practice: update content and sync viewport
 		if im.ready {
-			im.updateViewportContentTUI()
+			im.updateContent()
 		}
 	}
 }
