@@ -156,6 +156,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.healthView.SetData(m.state.Tools, msg.installed)
 		return m, nil
 
+	case toolBrowserContentLoadedMsg:
+		// Tool browser content loaded in background - no additional action needed
+		// The content was already loaded by the command
+		return m, nil
+
 	case errMsg:
 		m.err = msg.err
 		return m, nil
@@ -231,7 +236,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return m, nil
 	case "t", "T":
 		m.state.CurrentView = ViewToolBrowser
-		return m, nil
+		// Load full content asynchronously when switching to tool browser
+		return m, m.loadToolBrowserContent()
 	case "b", "B":
 		m.state.CurrentView = ViewBundleExplorer
 		return m, nil
@@ -353,6 +359,15 @@ func (m Model) loadInitialData() tea.Cmd {
 			bundles:   bundles,
 			installed: installed,
 		}
+	}
+}
+
+// loadToolBrowserContent loads tool browser content asynchronously  
+func (m Model) loadToolBrowserContent() tea.Cmd {
+	return func() tea.Msg {
+		// Load full content for tool browser in background
+		m.toolBrowser.LoadFullContent()
+		return toolBrowserContentLoadedMsg{}
 	}
 }
 
@@ -806,6 +821,8 @@ type manifestReloadedMsg struct {
 type unifiedStatusLoadedMsg struct {
 	installed map[string]*manifest.InstallationRecord
 }
+
+type toolBrowserContentLoadedMsg struct{}
 
 type errMsg struct {
 	err error
