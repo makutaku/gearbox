@@ -11,22 +11,25 @@ import (
 
 // Dependencies holds all the dependencies for the TUI application
 type Dependencies struct {
-	// Core services
-	Orchestrator *orchestrator.Orchestrator
-	Manifest     *manifest.Manager
-	TaskManager  *tasks.TaskManager
+	// Core services (now using interfaces)
+	Orchestrator OrchestratorService
+	Manifest     ManifestService
+	TaskManager  TaskService
 	
-	// Handlers  
-	Navigator *NavigationHandler
-	Router    *MessageRouter
+	// Handlers (now using interfaces)
+	Navigator NavigationService
+	Router    MessageRoutingService
 	
-	// Views
-	Dashboard      *views.Dashboard
-	ToolBrowser    *views.ToolBrowserNew
-	BundleExplorer *views.BundleExplorerNew
-	InstallManager *views.InstallManagerNew
-	ConfigView     *views.ConfigView
-	HealthView     *views.HealthView
+	// Lifecycle management
+	Lifecycle *ViewLifecycleManager
+	
+	// Views (now using interfaces)
+	Dashboard      DashboardService
+	ToolBrowser    ToolBrowserService
+	BundleExplorer BundleExplorerService
+	InstallManager InstallManagerService
+	ConfigView     ConfigService
+	HealthView     HealthService
 }
 
 // DependencyFactory creates and manages dependencies
@@ -43,7 +46,7 @@ func NewDependencyFactory(opts orchestrator.InstallationOptions) *DependencyFact
 
 // CreateDependencies creates all dependencies for the TUI application
 func (f *DependencyFactory) CreateDependencies() (*Dependencies, error) {
-	// Create core services
+	// Create core services (concrete types)
 	orch, err := orchestrator.NewOrchestrator(f.orchestratorOpts)
 	if err != nil {
 		return nil, err
@@ -52,10 +55,10 @@ func (f *DependencyFactory) CreateDependencies() (*Dependencies, error) {
 	manifestMgr := manifest.NewManager()
 	taskManager := tasks.NewTaskManager(orch, DefaultMaxParallel)
 	
-	// Create handlers
-	navigator := NewNavigationHandler()
+	// Create handlers (concrete types)
+	navigationHandler := NewNavigationHandler()
 	
-	// Create views
+	// Create views (concrete types)
 	dashboard := views.NewDashboard()
 	toolBrowser := views.NewToolBrowserNew()
 	bundleExplorer := views.NewBundleExplorerNew()
@@ -67,21 +70,40 @@ func (f *DependencyFactory) CreateDependencies() (*Dependencies, error) {
 	taskProvider := NewTaskManagerProvider(taskManager)
 	installManager.SetTaskProvider(taskProvider)
 	
-	// Create and setup message router
-	router := f.createMessageRouter(healthView)
+	// Create message router (concrete type)
+	messageRouter := f.createMessageRouter(healthView)
 	
+	// Create lifecycle manager and register view services
+	lifecycle := NewViewLifecycleManager()
+	dashboardService := NewDashboardAdapter(dashboard)
+	toolBrowserService := NewToolBrowserAdapter(toolBrowser)
+	bundleExplorerService := NewBundleExplorerAdapter(bundleExplorer)
+	installManagerService := NewInstallManagerAdapter(installManager)
+	configService := NewConfigAdapter(configView)
+	healthService := NewHealthAdapter(healthView)
+	
+	// Register views with lifecycle manager
+	lifecycle.RegisterView(ViewDashboard, dashboardService)
+	lifecycle.RegisterView(ViewToolBrowser, toolBrowserService)
+	lifecycle.RegisterView(ViewBundleExplorer, bundleExplorerService)
+	lifecycle.RegisterView(ViewMonitor, installManagerService)
+	lifecycle.RegisterView(ViewConfig, configService)
+	lifecycle.RegisterView(ViewHealth, healthService)
+	
+	// Wrap concrete types in adapters to implement interfaces
 	return &Dependencies{
-		Orchestrator:   orch,
-		Manifest:       manifestMgr,
-		TaskManager:    taskManager,
-		Navigator:      navigator,
-		Router:         router,
-		Dashboard:      dashboard,
-		ToolBrowser:    toolBrowser,
-		BundleExplorer: bundleExplorer,
-		InstallManager: installManager,
-		ConfigView:     configView,
-		HealthView:     healthView,
+		Orchestrator:   NewOrchestratorAdapter(orch),
+		Manifest:       NewManifestAdapter(manifestMgr),
+		TaskManager:    NewTaskAdapter(taskManager),
+		Navigator:      NewNavigationAdapter(navigationHandler),
+		Router:         NewMessageRoutingAdapter(messageRouter),
+		Lifecycle:      lifecycle,
+		Dashboard:      dashboardService,
+		ToolBrowser:    toolBrowserService,
+		BundleExplorer: bundleExplorerService,
+		InstallManager: installManagerService,
+		ConfigView:     configService,
+		HealthView:     healthService,
 	}, nil
 }
 
@@ -89,7 +111,8 @@ func (f *DependencyFactory) CreateDependencies() (*Dependencies, error) {
 func (f *DependencyFactory) createMessageRouter(healthView *views.HealthView) *MessageRouter {
 	router := NewMessageRouter()
 	
-	// Register health view handler
+	// Register health view handler with the concrete view
+	// We keep using the concrete view here since the handler needs the specific implementation
 	healthHandler := NewHealthViewMessageHandler(healthView)
 	
 	// Setup router with handler (using the existing setupMessageRouter pattern)

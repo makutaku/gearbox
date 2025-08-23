@@ -2,6 +2,7 @@ package testing
 
 import (
 	"context"
+	"io"
 	"testing"
 	"time"
 	
@@ -93,10 +94,18 @@ func (ts *TestSession) WaitForFinish() *TestResult {
 	
 	ts.tm.WaitFinished(ts.framework.t, teatest.WithFinalTimeout(ts.framework.config.Timeout))
 	
+	// Read the output from io.Reader and convert to string
+	outputReader := ts.tm.FinalOutput(ts.framework.t)
+	outputBytes, err := io.ReadAll(outputReader)
+	if err != nil {
+		ts.framework.t.Errorf("Failed to read final output: %v", err)
+	}
+	outputString := string(outputBytes)
+
 	return &TestResult{
 		session: ts,
 		model:   ts.tm.FinalModel(ts.framework.t),
-		output:  ts.tm.FinalOutput(ts.framework.t),
+		output:  outputString,
 		context: ctx,
 	}
 }

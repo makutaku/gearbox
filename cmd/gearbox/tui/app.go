@@ -15,29 +15,61 @@ import (
 	zlog "github.com/rs/zerolog/log"
 
 	"gearbox/cmd/gearbox/tui/tasks"
-	"gearbox/cmd/gearbox/tui/views"
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
 	"gearbox/pkg/status"
 )
 
+// TUIModel defines the interface that all TUI models must implement
+type TUIModel interface {
+	tea.Model // Embeds Init(), Update(), View()
+	
+	// Size management
+	SetSize(width, height int)
+	GetSize() (width, height int)
+	
+	// State management
+	GetCurrentView() ViewType
+	SetCurrentView(view ViewType)
+	IsReady() bool
+	GetState() *AppState
+	GetError() error
+	
+	// Navigation operations
+	SwitchToView(view ViewType) tea.Cmd
+	HandleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd)
+	
+	// View access for testing and inspection (now returning interfaces)
+	GetDashboard() DashboardService
+	GetToolBrowser() ToolBrowserService
+	GetBundleExplorer() BundleExplorerService
+	GetInstallManager() InstallManagerService
+	GetConfigView() ConfigService
+	GetHealthView() HealthService
+}
+
+
 type Model struct {
-	orchestrator *orchestrator.Orchestrator
-	manifest     *manifest.Manager
+	// Core services (now using interfaces)
+	orchestrator OrchestratorService
+	manifest     ManifestService
+	taskManager  TaskService
 	state        *AppState
-	taskManager  *tasks.TaskManager
 	
-	// Views
-	dashboard      *views.Dashboard
-	toolBrowser    *views.ToolBrowserNew
-	bundleExplorer *views.BundleExplorerNew
-	installManager *views.InstallManagerNew
-	configView     *views.ConfigView
-	healthView     *views.HealthView
+	// Views (now using interfaces)
+	dashboard      DashboardService
+	toolBrowser    ToolBrowserService
+	bundleExplorer BundleExplorerService
+	installManager InstallManagerService
+	configView     ConfigService
+	healthView     HealthService
 	
-	// Navigation and messaging
-	navigator *NavigationHandler
-	router    *MessageRouter
+	// Navigation and messaging (now using interfaces)
+	navigator NavigationService
+	router    MessageRoutingService
+	
+	// Lifecycle management
+	lifecycle *ViewLifecycleManager
 	
 	// UI state
 	width    int
@@ -46,7 +78,7 @@ type Model struct {
 	err      error
 }
 
-func NewModel() (*Model, error) {
+func NewModel() (TUIModel, error) {
 	// Set up file-based logging for TUI to avoid interfering with the interface
 	logFile, err := os.OpenFile("/tmp/gearbox-tui.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0666)
 	if err == nil {
@@ -82,6 +114,7 @@ func NewModel() (*Model, error) {
 		healthView:     deps.HealthView,
 		navigator:      deps.Navigator,
 		router:         deps.Router,
+		lifecycle:      deps.Lifecycle,
 		ready:          true, // Start ready since we're not blocking on data
 		width:          DefaultWidth,
 		height:         DefaultHeight,
@@ -111,9 +144,97 @@ func (m Model) watchTaskUpdates() tea.Cmd {
 	return m.taskManager.WatchUpdates()
 }
 
+// TUIModel interface implementation
+
+// SetSize updates the model dimensions and all views
+func (m *Model) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+	
+	// Update view sizes
+	viewHeight := max(MinViewportHeight, height - HeaderHeight - FooterHeight)
+	m.dashboard.SetSize(width, viewHeight)
+	m.toolBrowser.SetSize(width, viewHeight)
+	m.bundleExplorer.SetSize(width, viewHeight)
+	m.installManager.SetSize(width, viewHeight)
+	m.configView.SetSize(width, viewHeight)
+	m.healthView.SetSize(width, viewHeight)
+}
+
+// GetSize returns the current model dimensions
+func (m Model) GetSize() (width, height int) {
+	return m.width, m.height
+}
+
+// GetCurrentView returns the current active view
+func (m Model) GetCurrentView() ViewType {
+	return m.state.CurrentView
+}
+
+// SetCurrentView sets the current active view
+func (m *Model) SetCurrentView(view ViewType) {
+	m.state.CurrentView = view
+}
+
+// IsReady returns whether the model is ready for interaction
+func (m Model) IsReady() bool {
+	return m.ready
+}
+
+// GetState returns the app state
+func (m Model) GetState() *AppState {
+	return m.state
+}
+
+// GetError returns the current error if any
+func (m Model) GetError() error {
+	return m.err
+}
+
+// SwitchToView switches to the specified view
+func (m *Model) SwitchToView(view ViewType) tea.Cmd {
+	m.state.CurrentView = view
+	return nil
+}
+
+// HandleNavigation handles navigation key presses
+func (m Model) HandleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	return m.handleKeyPress(msg)
+}
+
+// View access methods for testing and inspection
+
+// GetDashboard returns the dashboard view
+func (m Model) GetDashboard() DashboardService {
+	return m.dashboard
+}
+
+// GetToolBrowser returns the tool browser view
+func (m Model) GetToolBrowser() ToolBrowserService {
+	return m.toolBrowser
+}
+
+// GetBundleExplorer returns the bundle explorer view
+func (m Model) GetBundleExplorer() BundleExplorerService {
+	return m.bundleExplorer
+}
+
+// GetInstallManager returns the install manager view
+func (m Model) GetInstallManager() InstallManagerService {
+	return m.installManager
+}
+
+// GetConfigView returns the config view
+func (m Model) GetConfigView() ConfigService {
+	return m.configView
+}
+
+// GetHealthView returns the health view
+func (m Model) GetHealthView() HealthService {
+	return m.healthView
+}
+
 func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
-	// Track previous view to detect when we switch TO health view
-	previousView := m.state.CurrentView
 	
 	switch msg := msg.(type) {
 	case tea.WindowSizeMsg:
@@ -135,6 +256,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m.handleKeyPress(msg)
 
 	case dataLoadedMsg:
+		// Update state with new data
 		m.state.Tools = msg.tools
 		m.state.Bundles = msg.bundles
 		m.state.InstalledTools = msg.installed
@@ -218,39 +340,13 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Delegate to current view
 	if m.ready {
-		newModel, cmd := m.updateCurrentView(msg)
-		
-		// Check if we switched to health view and trigger auto-refresh
-		if autoHealthCmd := m.checkForHealthViewSwitch(previousView); autoHealthCmd != nil {
-			// Combine the current command with health check trigger
-			if cmd != nil {
-				return newModel, tea.Batch(cmd, autoHealthCmd)
-			}
-			return newModel, autoHealthCmd
-		}
-		
-		return newModel, cmd
+		return m.updateCurrentView(msg)
 	}
 
 	return m, nil
 }
 
-// checkForHealthViewSwitch detects when we switch TO health view and returns health check command
-func (m Model) checkForHealthViewSwitch(previousView ViewType) tea.Cmd {
-	// Only trigger if we just switched TO health view (not already on it)
-	if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-		debugLog("checkForHealthViewSwitch() - Auto-detected switch from %v to Health view, triggering health checks", previousView)
-		return m.healthView.RunNextHealthCheck(0)
-	}
-	
-	if previousView == ViewHealth && m.state.CurrentView == ViewHealth {
-		debugLog("checkForHealthViewSwitch() - Already on health view, no action needed")
-	} else if m.state.CurrentView != ViewHealth {
-		debugLog("checkForHealthViewSwitch() - Current view is %v, no health checks needed", m.state.CurrentView)
-	}
-	
-	return nil
-}
+// checkForHealthViewSwitch method has been replaced by ViewLifecycleManager
 
 func (m Model) View() string {
 	if m.err != nil {
@@ -290,16 +386,22 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		
 		// Check for view change
 		if newView != m.state.CurrentView {
+			// Update state
 			m.state.CurrentView = newView
 			
-			// Handle special cases for certain views
-			switch newView {
-			case ViewToolBrowser:
-				// Load full content asynchronously when switching to tool browser
-				return m, combineCmd(m.loadToolBrowserContentAsync())
-			default:
-				return m, combineCmd(navCmd)
+			// Use lifecycle manager to handle view transitions
+			lifecycleCmd := m.lifecycle.SwitchToView(newView)
+			
+			// Combine navigation and lifecycle commands
+			var commands []tea.Cmd
+			if navCmd != nil {
+				commands = append(commands, navCmd)
 			}
+			if lifecycleCmd != nil {
+				commands = append(commands, lifecycleCmd)
+			}
+			
+			return m, combineCmd(tea.Batch(commands...))
 		}
 		
 		return m, combineCmd(navCmd)
@@ -321,76 +423,6 @@ var mainViews = []ViewType{
 	ViewHealth,
 }
 
-func (m *Model) nextView() tea.Cmd {
-	// Don't navigate away from Help view with arrows
-	if m.state.CurrentView == ViewHelp {
-		return nil
-	}
-	
-	previousView := m.state.CurrentView
-	
-	currentIndex := -1
-	for i, v := range mainViews {
-		if v == m.state.CurrentView {
-			currentIndex = i
-			break
-		}
-	}
-	
-	if currentIndex >= 0 {
-		nextIndex := (currentIndex + 1) % len(mainViews)
-		newView := mainViews[nextIndex]
-		
-		debugLog("DEBUG: nextView() - navigating from %v to %v", m.state.CurrentView, newView)
-		
-		m.state.CurrentView = newView
-		
-		// Check if we switched to health view and return health check command
-		if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-			debugLog("DEBUG: Arrow navigation to health view, triggering health checks")
-			return m.healthView.RunNextHealthCheck(0)
-		}
-	}
-	
-	return nil
-}
-
-func (m *Model) previousView() tea.Cmd {
-	// Don't navigate away from Help view with arrows
-	if m.state.CurrentView == ViewHelp {
-		return nil
-	}
-	
-	previousView := m.state.CurrentView
-	
-	currentIndex := -1
-	for i, v := range mainViews {
-		if v == m.state.CurrentView {
-			currentIndex = i
-			break
-		}
-	}
-	
-	if currentIndex >= 0 {
-		prevIndex := currentIndex - 1
-		if prevIndex < 0 {
-			prevIndex = len(mainViews) - 1
-		}
-		newView := mainViews[prevIndex]
-		
-		debugLog("DEBUG: previousView() - navigating from %v to %v", m.state.CurrentView, newView)
-		
-		m.state.CurrentView = newView
-		
-		// Check if we switched to health view and return health check command
-		if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-			debugLog("DEBUG: Arrow navigation to health view, triggering health checks")
-			return m.healthView.RunNextHealthCheck(0)
-		}
-	}
-	
-	return nil
-}
 
 func (m Model) loadInitialData() tea.Cmd {
 	return func() tea.Msg {

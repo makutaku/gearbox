@@ -8,33 +8,39 @@ import (
 )
 
 func TestApp_HealthViewAutomaticTrigger(t *testing.T) {
-	// Create a new model
-	model, err := NewModel()
+	// Create a new demo model (works without config files)
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing (we know it's a DemoModel)
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize the model
 	model.ready = true
 	model.state.Initialized = true
 
-	// Simulate pressing 'h' key to switch to health view
+	// Simulate pressing 'H' key to switch to health view
 	keyMsg := tea.KeyMsg{
 		Type:  tea.KeyRunes,
-		Runes: []rune{'h'},
+		Runes: []rune{'H'},
 	}
 
 	// Process the key press
 	newModel, cmd := model.handleKeyPress(keyMsg)
-	if m, ok := newModel.(Model); ok {
+	if m, ok := newModel.(DemoModel); ok {
 		*model = m
 	} else {
-		t.Fatalf("Expected Model, got %T", newModel)
+		t.Fatalf("Expected DemoModel, got %T", newModel)
 	}
 
 	// Should switch to health view
-	if model.state.CurrentView != ViewHealth {
-		t.Errorf("Expected current view to be ViewHealth, got %v", model.state.CurrentView)
+	if tuiModel.GetCurrentView() != ViewHealth {
+		t.Errorf("Expected current view to be ViewHealth, got %v", tuiModel.GetCurrentView())
 	}
 
 	// Should return a command to trigger health checks
@@ -42,47 +48,71 @@ func TestApp_HealthViewAutomaticTrigger(t *testing.T) {
 		t.Error("Expected command to trigger health checks, got nil")
 	}
 
-	// Execute the command to see if it returns healthCheckTriggerMsg
+	// Execute the command to see if it returns a BatchMsg (from RunNextHealthCheck)
 	if cmd != nil {
 		msg := cmd()
-		if _, ok := msg.(healthCheckTriggerMsg); !ok {
-			t.Errorf("Expected healthCheckTriggerMsg, got %T", msg)
+		if _, ok := msg.(tea.BatchMsg); !ok {
+			t.Errorf("Expected tea.BatchMsg from RunNextHealthCheck, got %T", msg)
 		}
 	}
 }
 
-func TestApp_HealthCheckTriggerHandling(t *testing.T) {
-	// Create a new model
-	model, err := NewModel()
+func TestApp_HealthCheckManualRefresh(t *testing.T) {
+	// Create a new demo model
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize and set to health view
 	model.ready = true
 	model.state.Initialized = true
-	model.state.CurrentView = ViewHealth
+	tuiModel.SetCurrentView(ViewHealth)
+	tuiModel.SetSize(80, 24)
 
-	// Send healthCheckTriggerMsg
-	triggerMsg := healthCheckTriggerMsg{}
-	newModel, cmd := model.Update(triggerMsg)
-	if m, ok := newModel.(Model); ok {
+	// Simulate pressing 'r' key for manual refresh
+	keyMsg := tea.KeyMsg{
+		Type:  tea.KeyRunes,
+		Runes: []rune{'r'},
+	}
+	newModel, cmd := model.updateCurrentView(keyMsg)
+	if m, ok := newModel.(DemoModel); ok {
 		*model = m
 	} else {
-		t.Fatalf("Expected Model, got %T", newModel)
+		t.Fatalf("Expected DemoModel, got %T", newModel)
 	}
 
-	// Should generate a command to trigger 'r' key in health view
+	// Should generate a command to start health checks
 	if cmd == nil {
 		t.Error("Expected command to trigger health refresh, got nil")
+	}
+
+	// Should be a BatchMsg from RunNextHealthCheck
+	if cmd != nil {
+		msg := cmd()
+		if _, ok := msg.(tea.BatchMsg); !ok {
+			t.Errorf("Expected tea.BatchMsg from manual refresh, got %T", msg)
+		}
 	}
 }
 
 func TestApp_ZeroLatencyHealthViewSwitch(t *testing.T) {
 	// Create a new model
-	model, err := NewModel()
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize the model
@@ -94,14 +124,14 @@ func TestApp_ZeroLatencyHealthViewSwitch(t *testing.T) {
 
 	keyMsg := tea.KeyMsg{
 		Type:  tea.KeyRunes,
-		Runes: []rune{'h'},
+		Runes: []rune{'H'},
 	}
 
 	newModel, _ := model.handleKeyPress(keyMsg)
-	if m, ok := newModel.(Model); ok {
+	if m, ok := newModel.(DemoModel); ok {
 		*model = m
 	} else {
-		t.Fatalf("Expected Model, got %T", newModel)
+		t.Fatalf("Expected DemoModel, got %T", newModel)
 	}
 
 	elapsed := time.Since(start)
@@ -112,24 +142,29 @@ func TestApp_ZeroLatencyHealthViewSwitch(t *testing.T) {
 	}
 
 	// Should switch to health view
-	if model.state.CurrentView != ViewHealth {
-		t.Errorf("Expected current view to be ViewHealth, got %v", model.state.CurrentView)
+	if tuiModel.GetCurrentView() != ViewHealth {
+		t.Errorf("Expected current view to be ViewHealth, got %v", tuiModel.GetCurrentView())
 	}
 }
 
 func TestApp_HealthViewRenderPerformance(t *testing.T) {
 	// Create a new model
-	model, err := NewModel()
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize and set to health view
 	model.ready = true
 	model.state.Initialized = true
-	model.state.CurrentView = ViewHealth
-	model.width = 80
-	model.height = 24
+	tuiModel.SetCurrentView(ViewHealth)
+	tuiModel.SetSize(80, 24)
 
 	// Measure render time
 	start := time.Now()
@@ -154,9 +189,15 @@ func TestApp_HealthViewRenderPerformance(t *testing.T) {
 
 func TestApp_NavigationResponsiveness(t *testing.T) {
 	// Create a new model
-	model, err := NewModel()
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize
@@ -168,12 +209,12 @@ func TestApp_NavigationResponsiveness(t *testing.T) {
 		key      rune
 		expected ViewType
 	}{
-		{'d', ViewDashboard},
-		{'t', ViewToolBrowser},
-		{'b', ViewBundleExplorer},
-		{'m', ViewMonitor},
-		{'c', ViewConfig},
-		{'h', ViewHealth},
+		{'D', ViewDashboard},
+		{'T', ViewToolBrowser},
+		{'B', ViewBundleExplorer},
+		{'M', ViewMonitor},
+		{'C', ViewConfig},
+		{'H', ViewHealth},
 	}
 
 	for _, test := range testKeys {
@@ -185,10 +226,10 @@ func TestApp_NavigationResponsiveness(t *testing.T) {
 		}
 
 		newModel, _ := model.handleKeyPress(keyMsg)
-		if m, ok := newModel.(Model); ok {
+		if m, ok := newModel.(DemoModel); ok {
 			*model = m
 		} else {
-			t.Fatalf("Expected Model, got %T", newModel)
+			t.Fatalf("Expected DemoModel, got %T", newModel)
 		}
 
 		elapsed := time.Since(start)
@@ -199,39 +240,50 @@ func TestApp_NavigationResponsiveness(t *testing.T) {
 		}
 
 		// Should switch to correct view
-		if model.state.CurrentView != test.expected {
-			t.Errorf("Key '%c' should switch to view %v, got %v", test.key, test.expected, model.state.CurrentView)
+		if tuiModel.GetCurrentView() != test.expected {
+			t.Errorf("Key '%c' should switch to view %v, got %v", test.key, test.expected, tuiModel.GetCurrentView())
 		}
 	}
 }
 
 func TestApp_HealthViewInitialState(t *testing.T) {
 	// Create a new model
-	model, err := NewModel()
+	tuiModel, err := NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create model: %v", err)
+	}
+
+	// Cast to concrete type for testing
+	model, ok := tuiModel.(*DemoModel)
+	if !ok {
+		t.Fatalf("Expected *DemoModel, got %T", tuiModel)
 	}
 
 	// Initialize and set to health view
 	model.ready = true
 	model.state.Initialized = true
-	model.state.CurrentView = ViewHealth
+	tuiModel.SetCurrentView(ViewHealth)
+	tuiModel.SetSize(80, 24)
+
+	// Set up health view with data like the actual model does
+	model.healthView.SetData(model.tools, model.installedTools)
 
 	// Render the health view
 	content := model.renderCurrentView()
 
-	// Should show initial "Checking..." states
+	// Should show initial "Checking..." states or other pending messages
 	checkingCount := 0
 	lines := splitLines(content)
 	for _, line := range lines {
-		if containsString(line, "Checking...") {
+		// Count any line with "Checking" (covers "Checking...", "Checking version...", etc.)
+		if containsString(line, "Checking") {
 			checkingCount++
 		}
 	}
 
-	// Should have several items in checking state initially
+	// Should have several items in checking state initially (3 exact "Checking..." + others with "Checking")
 	if checkingCount < 3 {
-		t.Errorf("Expected at least 3 items showing 'Checking...', got %d", checkingCount)
+		t.Errorf("Expected at least 3 items showing 'Checking', got %d. Content:\n%s", checkingCount, content)
 	}
 
 	// Should have system health monitor title

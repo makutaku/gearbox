@@ -111,7 +111,7 @@ func (d *Dashboard) renderTUIStyle() string {
 		Padding(0, 1)
 	
 	footer := footerStyle.Render(
-		"[T] Tool Browser  [B] Bundle Explorer  [I] Install Manager  [C] Configuration  [H] Health Check",
+		"[T] Tool Browser  [B] Bundle Explorer  [M] Monitor  [C] Configuration  [H] Health Check",
 	)
 	
 	// Content (dashboard sections)
@@ -149,6 +149,7 @@ func (d *Dashboard) updateViewportContentTUI() {
 	quickActionsSection := "🚀 Quick Actions\n" +
 		"   [T] Install Tools\n" +
 		"   [B] Browse Bundles\n" +
+		"   [M] Monitor Installations\n" +
 		"   [C] Configuration\n" +
 		"   [H] Health Check"
 	

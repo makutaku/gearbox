@@ -75,19 +75,22 @@ func (m *Model) setupMessageRouter() *MessageRouter {
 	router := NewMessageRouter()
 	
 	// Register health view handler for all health check messages
-	healthHandler := NewHealthViewMessageHandler(m.healthView)
-	
-	// Register all health check message types
-	router.Register(reflect.TypeOf(views.MemoryCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.DiskCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.InternetCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.BuildToolsCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.GitCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.PathCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.RustToolchainCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.GoToolchainCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.ToolUpdatesCheckCompleteMsg{}), healthHandler)
-	router.Register(reflect.TypeOf(views.NextHealthCheckMsg{}), healthHandler)
+	// Cast interface back to concrete type for handler
+	if healthAdapter, ok := m.healthView.(*HealthAdapter); ok {
+		healthHandler := NewHealthViewMessageHandler(healthAdapter.health)
+		
+		// Register all health check message types
+		router.Register(reflect.TypeOf(views.MemoryCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.DiskCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.InternetCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.BuildToolsCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.GitCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.PathCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.RustToolchainCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.GoToolchainCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.ToolUpdatesCheckCompleteMsg{}), healthHandler)
+		router.Register(reflect.TypeOf(views.NextHealthCheckMsg{}), healthHandler)
+	}
 	
 	return router
 }

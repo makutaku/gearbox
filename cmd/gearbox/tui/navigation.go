@@ -16,17 +16,11 @@ type NavigationHandler struct {
 // NewNavigationHandler creates a new navigation handler with default keybindings
 func NewNavigationHandler() *NavigationHandler {
 	keyBindings := map[string]ViewType{
-		"d":   ViewDashboard,
 		"D":   ViewDashboard,
-		"t":   ViewToolBrowser,
 		"T":   ViewToolBrowser,
-		"b":   ViewBundleExplorer,
 		"B":   ViewBundleExplorer,
-		"m":   ViewMonitor,
 		"M":   ViewMonitor,
-		"c":   ViewConfig,
 		"C":   ViewConfig,
-		"h":   ViewHealth,
 		"H":   ViewHealth,
 		"?":   ViewHelp,
 		"tab": ViewNext,
@@ -45,7 +39,7 @@ func (n *NavigationHandler) HandleKeyPress(msg tea.KeyMsg, currentView ViewType)
 		return currentView, func() tea.Msg { return QuitRequestedMsg{} }, true
 	}
 	
-	// Handle tab navigation
+	// Handle tab and arrow navigation
 	switch msg.Type {
 	case tea.KeyTab:
 		nextView := n.getNextView(currentView)
@@ -56,6 +50,24 @@ func (n *NavigationHandler) HandleKeyPress(msg tea.KeyMsg, currentView ViewType)
 		prevView := n.getPreviousView(currentView)
 		debugLog("Navigation: Shift+Tab pressed, switching from %v to %v", currentView, prevView)
 		return prevView, nil, true
+		
+	case tea.KeyLeft:
+		// Don't navigate away from Help view with arrows
+		if currentView == ViewHelp {
+			return currentView, nil, false
+		}
+		prevView := n.getPreviousView(currentView)
+		debugLog("Navigation: Left arrow pressed, switching from %v to %v", currentView, prevView)
+		return prevView, nil, true
+		
+	case tea.KeyRight:
+		// Don't navigate away from Help view with arrows
+		if currentView == ViewHelp {
+			return currentView, nil, false
+		}
+		nextView := n.getNextView(currentView)
+		debugLog("Navigation: Right arrow pressed, switching from %v to %v", currentView, nextView)
+		return nextView, nil, true
 	}
 	
 	// Handle single key shortcuts

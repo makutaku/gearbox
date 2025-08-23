@@ -29,6 +29,7 @@ func TestTUIDemoMode(t *testing.T) {
 
 // TestTUINavigation tests basic navigation through the TUI
 func TestTUINavigation(t *testing.T) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create demo model: %v", err)
@@ -40,7 +41,8 @@ func TestTUINavigation(t *testing.T) {
 	}
 
 	// Set up model size
-	model, cmd := model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, cmd := model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 	if cmd != nil {
 		t.Logf("Initial command: %T", cmd)
 	}
@@ -67,7 +69,8 @@ func TestTUINavigation(t *testing.T) {
 				Runes: []rune(tc.key),
 			}
 
-			model, cmd := model.Update(keyMsg)
+			updatedModel, cmd := model.Update(keyMsg)
+			model = updatedModel.(tui.TUIModel)
 			if cmd != nil {
 				t.Logf("Command after %s: %T", tc.key, cmd)
 			}
@@ -89,25 +92,31 @@ func TestTUINavigation(t *testing.T) {
 
 // TestTUIToolSelection tests tool selection and installation flow
 func TestTUIToolSelection(t *testing.T) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create demo model: %v", err)
 	}
 
 	// Set up model size
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	// Navigate to tools view
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("t")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("t")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Navigate down to select a tool
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("down")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("down")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Select the tool
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(" ")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Install selected tools
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	model = updatedModel.(tui.TUIModel)
 
 	// This should navigate to install manager and add a task
 	output := model.View()
@@ -121,25 +130,31 @@ func TestTUIToolSelection(t *testing.T) {
 
 // TestTUIBundleInstallation tests bundle installation flow
 func TestTUIBundleInstallation(t *testing.T) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create demo model: %v", err)
 	}
 
 	// Set up model size
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	// Navigate to bundles view
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Navigate down to select a bundle
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("down")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("down")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Expand bundle details
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("enter")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("enter")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Install bundle
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("i")})
+	model = updatedModel.(tui.TUIModel)
 
 	// Check that we can render without issues
 	output := model.View()
@@ -190,6 +205,7 @@ func TestTUIErrorHandling(t *testing.T) {
 
 // TestTUIPerformance tests TUI startup and rendering performance
 func TestTUIPerformance(t *testing.T) {
+	var updatedModel tea.Model
 	start := time.Now()
 
 	model, err := tui.NewDemoModel()
@@ -200,7 +216,8 @@ func TestTUIPerformance(t *testing.T) {
 	creationTime := time.Since(start)
 
 	// Set up model
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	// Render the view
 	renderStart := time.Now()
@@ -226,6 +243,7 @@ func TestTUIPerformance(t *testing.T) {
 
 // TestTUIMemoryUsage tests that the TUI doesn't leak memory
 func TestTUIMemoryUsage(t *testing.T) {
+	var updatedModel tea.Model
 	// Create and destroy models multiple times
 	for i := 0; i < 10; i++ {
 		model, err := tui.NewDemoModel()
@@ -234,12 +252,14 @@ func TestTUIMemoryUsage(t *testing.T) {
 		}
 
 		// Exercise the model
-		model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+		updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 		_ = model.View()
 
 		// Navigate through views
 		for _, key := range []string{"t", "b", "i", "c", "h", "d"} {
-			model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
+			updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
+	model = updatedModel.(tui.TUIModel)
 			_ = model.View()
 		}
 	}
@@ -250,16 +270,19 @@ func TestTUIMemoryUsage(t *testing.T) {
 
 // TestTUIDataIntegrity tests that mock data is consistent and realistic
 func TestTUIDataIntegrity(t *testing.T) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		t.Fatalf("Failed to create demo model: %v", err)
 	}
 
 	// Set up model
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	// Test that tools view has data
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("t")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("t")})
+	model = updatedModel.(tui.TUIModel)
 	toolsOutput := model.View()
 
 	if !strings.Contains(toolsOutput, "Tools") {
@@ -267,7 +290,8 @@ func TestTUIDataIntegrity(t *testing.T) {
 	}
 
 	// Test that bundles view has data
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("b")})
+	model = updatedModel.(tui.TUIModel)
 	bundlesOutput := model.View()
 
 	if !strings.Contains(bundlesOutput, "Bundle") {
@@ -275,7 +299,8 @@ func TestTUIDataIntegrity(t *testing.T) {
 	}
 
 	// Test that dashboard shows summary
-	model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("d")})
+	updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune("d")})
+	model = updatedModel.(tui.TUIModel)
 	dashboardOutput := model.View()
 
 	if !strings.Contains(dashboardOutput, "Dashboard") {
@@ -285,12 +310,14 @@ func TestTUIDataIntegrity(t *testing.T) {
 
 // BenchmarkTUIRendering benchmarks the TUI rendering performance
 func BenchmarkTUIRendering(b *testing.B) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		b.Fatalf("Failed to create demo model: %v", err)
 	}
 
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
@@ -300,18 +327,21 @@ func BenchmarkTUIRendering(b *testing.B) {
 
 // BenchmarkTUINavigation benchmarks view navigation performance
 func BenchmarkTUINavigation(b *testing.B) {
+	var updatedModel tea.Model
 	model, err := tui.NewDemoModel()
 	if err != nil {
 		b.Fatalf("Failed to create demo model: %v", err)
 	}
 
-	model, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	updatedModel, _ = model.Update(tea.WindowSizeMsg{Width: 120, Height: 30})
+	model = updatedModel.(tui.TUIModel)
 
 	keys := []string{"t", "b", "i", "c", "h", "d"}
 
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {
 		key := keys[i%len(keys)]
-		model, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
+		updatedModel, _ = model.Update(tea.KeyMsg{Type: tea.KeyRunes, Runes: []rune(key)})
+	model = updatedModel.(tui.TUIModel)
 	}
 }

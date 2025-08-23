@@ -51,6 +51,9 @@ type DemoModel struct {
 	configView     *views.ConfigView
 	healthView     *views.HealthView
 	
+	// Navigation
+	navigator *NavigationHandler
+	
 	// UI state
 	state   *AppState
 	width   int
@@ -60,7 +63,7 @@ type DemoModel struct {
 }
 
 // NewModelWithOptions creates a new TUI model with specific options
-func NewModelWithOptions(opts Options) (tea.Model, error) {
+func NewModelWithOptions(opts Options) (TUIModel, error) {
 	if opts.DemoMode {
 		return NewDemoModel()
 	}
@@ -70,7 +73,7 @@ func NewModelWithOptions(opts Options) (tea.Model, error) {
 }
 
 // NewDemoModel creates a TUI model with mock data for safe testing
-func NewDemoModel() (*DemoModel, error) {
+func NewDemoModel() (TUIModel, error) {
 	// Create mock orchestrator
 	mockOrch := &MockOrchestrator{
 		tools:   generateMockTools(),
@@ -112,6 +115,7 @@ func NewDemoModel() (*DemoModel, error) {
 		installManager: installManager,
 		configView:     configView,
 		healthView:     healthView,
+		navigator:      NewNavigationHandler(),
 		state:          state,
 		ready:          true, // Start ready for testing
 	}
@@ -153,6 +157,15 @@ func (m DemoModel) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case tea.KeyMsg:
 		return m.handleKeyPress(msg)
+	
+	// Handle health check messages (same as main Model)
+	default:
+		// Delegate to current view for health check messages
+		if m.ready && m.state.CurrentView == ViewHealth {
+			// Let health view handle its own messages
+			cmd := m.healthView.Update(msg)
+			return m, cmd
+		}
 	}
 
 	// Delegate to current view
@@ -176,112 +189,153 @@ func (m DemoModel) View() string {
 	return m.renderCurrentView()
 }
 
+// TUIModel interface implementation for DemoModel
+
+// SetSize updates the model dimensions and all views
+func (m *DemoModel) SetSize(width, height int) {
+	m.width = width
+	m.height = height
+	
+	// Update view sizes
+	viewHeight := max(5, height - 2) // Minimum 5 lines for views
+	m.dashboard.SetSize(width, viewHeight)
+	m.toolBrowser.SetSize(width, viewHeight)
+	m.bundleExplorer.SetSize(width, viewHeight)
+	m.installManager.SetSize(width, viewHeight)
+	m.configView.SetSize(width, viewHeight)
+	m.healthView.SetSize(width, viewHeight)
+}
+
+// GetSize returns the current model dimensions
+func (m DemoModel) GetSize() (width, height int) {
+	return m.width, m.height
+}
+
+// GetCurrentView returns the current active view
+func (m DemoModel) GetCurrentView() ViewType {
+	return m.state.CurrentView
+}
+
+// SetCurrentView sets the current active view
+func (m *DemoModel) SetCurrentView(view ViewType) {
+	m.state.CurrentView = view
+}
+
+// IsReady returns whether the model is ready for interaction
+func (m DemoModel) IsReady() bool {
+	return m.ready
+}
+
+// GetState returns the app state
+func (m DemoModel) GetState() *AppState {
+	return m.state
+}
+
+// GetError returns the current error if any
+func (m DemoModel) GetError() error {
+	return m.err
+}
+
+// SwitchToView switches to the specified view
+func (m *DemoModel) SwitchToView(view ViewType) tea.Cmd {
+	m.state.CurrentView = view
+	return nil
+}
+
+// HandleNavigation handles navigation key presses
+func (m DemoModel) HandleNavigation(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	return m.handleKeyPress(msg)
+}
+
+// View access methods for testing and inspection
+
+// GetDashboard returns the dashboard view
+func (m DemoModel) GetDashboard() DashboardService {
+	return NewDashboardAdapter(m.dashboard)
+}
+
+// GetToolBrowser returns the tool browser view
+func (m DemoModel) GetToolBrowser() ToolBrowserService {
+	return NewToolBrowserAdapter(m.toolBrowser)
+}
+
+// GetBundleExplorer returns the bundle explorer view
+func (m DemoModel) GetBundleExplorer() BundleExplorerService {
+	return NewBundleExplorerAdapter(m.bundleExplorer)
+}
+
+// GetInstallManager returns the install manager view
+func (m DemoModel) GetInstallManager() InstallManagerService {
+	return NewInstallManagerAdapter(m.installManager)
+}
+
+// GetConfigView returns the config view
+func (m DemoModel) GetConfigView() ConfigService {
+	return NewConfigAdapter(m.configView)
+}
+
+// GetHealthView returns the health view
+func (m DemoModel) GetHealthView() HealthService {
+	return NewHealthAdapter(m.healthView)
+}
+
 // DemoModel helper methods
 
 func (m DemoModel) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Global keybindings
-	switch msg.String() {
-	case "q", "ctrl+c":
-		return m, tea.Quit
-	case "?":
-		m.state.CurrentView = ViewHelp
-		return m, nil
-	case "tab":
-		m.nextView()
-		return m, nil
-	case "shift+tab":
-		m.previousView()
-		return m, nil
+	// Track previous view to detect when we switch TO health view
+	previousView := m.state.CurrentView
+	
+	// Handle navigation first using NavigationHandler
+	newView, navCmd, handled := m.navigator.HandleKeyPress(msg, m.state.CurrentView)
+	if handled {
+		// Check for view change
+		if newView != m.state.CurrentView {
+			m.state.CurrentView = newView
+			
+			// Check if we switched to health view and trigger auto-refresh
+			if autoHealthCmd := m.checkForHealthViewSwitch(previousView); autoHealthCmd != nil {
+				// Combine the navigation command with health check trigger
+				if navCmd != nil {
+					return m, tea.Batch(navCmd, autoHealthCmd)
+				}
+				return m, autoHealthCmd
+			}
+			
+			return m, navCmd
+		}
+		return m, navCmd
 	}
 
-	// View-specific keybindings
-	switch msg.String() {
-	case "d", "D":
-		m.state.CurrentView = ViewDashboard
-		return m, nil
-	case "t", "T":
-		m.state.CurrentView = ViewToolBrowser
-		return m, nil
-	case "b", "B":
-		m.state.CurrentView = ViewBundleExplorer
-		return m, nil
-	case "i", "I":
-		m.state.CurrentView = ViewMonitor
-		return m, nil
-	case "c", "C":
-		m.state.CurrentView = ViewConfig
-		return m, nil
-	case "h", "H":
-		m.state.CurrentView = ViewHealth
-		return m, nil
-	}
-
-	// If the key wasn't handled above, delegate to the current view
+	// If the key wasn't handled by navigation, delegate to the current view
 	if m.ready {
-		return m.updateCurrentView(msg)
+		newModel, currentViewCmd := m.updateCurrentView(msg)
+		
+		// Check if we switched to health view and trigger auto-refresh
+		if autoHealthCmd := m.checkForHealthViewSwitch(previousView); autoHealthCmd != nil {
+			// Combine the current view command with health check trigger
+			if currentViewCmd != nil {
+				return newModel, tea.Batch(currentViewCmd, autoHealthCmd)
+			}
+			return newModel, autoHealthCmd
+		}
+		
+		return newModel, currentViewCmd
 	}
 
 	return m, nil
 }
 
-func (m *DemoModel) nextView() {
-	if m.state.CurrentView == ViewHelp {
-		return
+// checkForHealthViewSwitch detects when we switch TO health view and returns health check command
+func (m DemoModel) checkForHealthViewSwitch(previousView ViewType) tea.Cmd {
+	// Only trigger if we just switched TO health view (not already on it)
+	if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
+		// Trigger health checks
+		return m.healthView.RunNextHealthCheck(0)
 	}
 	
-	mainViews := []ViewType{
-		ViewDashboard,
-		ViewToolBrowser,
-		ViewBundleExplorer,
-		ViewMonitor,
-		ViewConfig,
-		ViewHealth,
-	}
-	
-	currentIndex := -1
-	for i, v := range mainViews {
-		if v == m.state.CurrentView {
-			currentIndex = i
-			break
-		}
-	}
-	
-	if currentIndex >= 0 {
-		nextIndex := (currentIndex + 1) % len(mainViews)
-		m.state.CurrentView = mainViews[nextIndex]
-	}
+	return nil
 }
 
-func (m *DemoModel) previousView() {
-	if m.state.CurrentView == ViewHelp {
-		return
-	}
-	
-	mainViews := []ViewType{
-		ViewDashboard,
-		ViewToolBrowser,
-		ViewBundleExplorer,
-		ViewMonitor,
-		ViewConfig,
-		ViewHealth,
-	}
-	
-	currentIndex := -1
-	for i, v := range mainViews {
-		if v == m.state.CurrentView {
-			currentIndex = i
-			break
-		}
-	}
-	
-	if currentIndex >= 0 {
-		prevIndex := currentIndex - 1
-		if prevIndex < 0 {
-			prevIndex = len(mainViews) - 1
-		}
-		m.state.CurrentView = mainViews[prevIndex]
-	}
-}
 
 func (m DemoModel) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch m.state.CurrentView {
