@@ -35,6 +35,10 @@ type Model struct {
 	configView     *views.ConfigView
 	healthView     *views.HealthView
 	
+	// Navigation and messaging
+	navigator *NavigationHandler
+	router    *MessageRouter
+	
 	// UI state
 	width    int
 	height   int
@@ -49,11 +53,8 @@ func NewModel() (*Model, error) {
 		log.SetOutput(logFile)
 	}
 	
-	// Log session start
-	if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-		fmt.Fprintf(debugFile, "\n=== TUI SESSION STARTED ===\n")
-		debugFile.Close()
-	}
+	// Log session start (only in debug builds)
+	debugLog("=== TUI SESSION STARTED ===")
 	
 	// Initialize orchestrator with default options
 	opts := orchestrator.InstallationOptions{
@@ -71,7 +72,7 @@ func NewModel() (*Model, error) {
 	state := NewAppState()
 	
 	// Create task manager
-	taskManager := tasks.NewTaskManager(orch, 2)
+	taskManager := tasks.NewTaskManager(orch, DefaultMaxParallel)
 	
 	// Create task provider
 	taskProvider := NewTaskManagerProvider(taskManager)
@@ -96,13 +97,17 @@ func NewModel() (*Model, error) {
 		installManager: installManager,
 		configView:     configView,
 		healthView:     healthView,
+		navigator:      NewNavigationHandler(),
 		ready:          true, // Start ready since we're not blocking on data
-		width:          80,   // Sensible default width
-		height:         24,   // Sensible default height
+		width:          DefaultWidth,
+		height:         DefaultHeight,
 	}
+	
+	// Setup message router
+	model.router = model.setupMessageRouter()
 
 	// Initialize views with default sizes so they work immediately
-	viewHeight := max(5, model.height - 2)
+	viewHeight := max(MinViewportHeight, model.height - HeaderHeight - FooterHeight)
 	model.dashboard.SetSize(model.width, viewHeight)
 	model.toolBrowser.SetSize(model.width, viewHeight)
 	model.bundleExplorer.SetSize(model.width, viewHeight)
@@ -136,8 +141,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// TUI is already ready from initialization, just update sizes
 		// Update view sizes
 		// Calculate available height for content (excluding nav and status bars)
-		// Nav bar and status bar each take 1 line, so views get height - 2
-		viewHeight := max(5, m.height - 2) // Minimum 5 lines for views
+		viewHeight := max(MinViewportHeight, m.height - HeaderHeight - FooterHeight)
 		m.dashboard.SetSize(m.width, viewHeight)
 		m.toolBrowser.SetSize(m.width, viewHeight)
 		m.bundleExplorer.SetSize(m.width, viewHeight)
@@ -200,44 +204,10 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	// Removed startupDataLoadMsg handler - using lazy initialization instead
 
-	// Handle health check completion messages explicitly to ensure they get routed
-	// even if there are any timing or view switching issues
-	case views.MemoryCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.DiskCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.InternetCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.BuildToolsCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.GitCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.PathCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.RustToolchainCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.GoToolchainCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	case views.ToolUpdatesCheckCompleteMsg:
-		cmd := m.healthView.Update(msg)
-		return m, cmd
-	
-	// Handle sequential health check continuation message
-	case views.NextHealthCheckMsg:
-		if m.state.CurrentView == ViewHealth {
-			cmd := m.healthView.Update(msg)
-			return m, cmd
-		}
-		return m, nil
-
+	case QuitRequestedMsg:
+		debugLog("=== TUI SESSION ENDED (quit key pressed) ===")
+		return m, tea.Quit
+		
 	case errMsg:
 		m.err = msg.err
 		return m, nil
@@ -257,6 +227,12 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		
 		// Continue watching for more updates
 		return m, m.watchTaskUpdates()
+	
+	default:
+		// Try message router for health check and other messages
+		if cmd := m.router.Route(msg); cmd != nil {
+			return m, cmd
+		}
 	}
 
 	// Delegate to current view
@@ -282,20 +258,14 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 func (m Model) checkForHealthViewSwitch(previousView ViewType) tea.Cmd {
 	// Only trigger if we just switched TO health view (not already on it)
 	if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: checkForHealthViewSwitch() - Auto-detected switch from %v to Health view, triggering health checks\n", previousView)
-			debugFile.Close()
-		}
+		debugLog("checkForHealthViewSwitch() - Auto-detected switch from %v to Health view, triggering health checks", previousView)
 		return m.healthView.RunNextHealthCheck(0)
 	}
 	
-	if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-		if previousView == ViewHealth && m.state.CurrentView == ViewHealth {
-			fmt.Fprintf(debugFile, "DEBUG: checkForHealthViewSwitch() - Already on health view, no action needed\n")
-		} else if m.state.CurrentView != ViewHealth {
-			fmt.Fprintf(debugFile, "DEBUG: checkForHealthViewSwitch() - Current view is %v, no health checks needed\n", m.state.CurrentView)
-		}
-		debugFile.Close()
+	if previousView == ViewHealth && m.state.CurrentView == ViewHealth {
+		debugLog("checkForHealthViewSwitch() - Already on health view, no action needed")
+	} else if m.state.CurrentView != ViewHealth {
+		debugLog("checkForHealthViewSwitch() - Current view is %v, no health checks needed", m.state.CurrentView)
 	}
 	
 	return nil
@@ -315,27 +285,6 @@ func (m Model) View() string {
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
-	// Comprehensive debug logging - filter out terminal escape sequences
-	keyStr := msg.String()
-	shouldLog := true
-	
-	// Filter out common terminal escape sequences that interfere with logging
-	if msg.Type == tea.KeyRunes {
-		// Skip escape sequences like [D, [C, ?6c, etc.
-		if strings.HasPrefix(keyStr, "[") || 
-		   strings.Contains(keyStr, "?") ||
-		   len(keyStr) == 1 && (keyStr[0] < 32 || keyStr[0] > 126) { // non-printable chars
-			shouldLog = false
-		}
-	}
-	
-	if shouldLog {
-		if logFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(logFile, "DEBUG: Key pressed: '%s' (Type: %v, Alt: %v) from view: %v\n", keyStr, msg.Type, msg.Alt, m.state.CurrentView)
-			logFile.Close()
-		}
-	}
-
 	// Lazy initialization on first key press - ensures instant responsiveness
 	var initCmd tea.Cmd
 	if !m.state.Initialized {
@@ -354,83 +303,25 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		return cmd
 	}
 
-	// Global keybindings
-	switch {
-	case key.Matches(msg, keys.Quit):
-		// Log session end before quitting
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "=== TUI SESSION ENDED (quit key pressed) ===\n\n")
-			debugFile.Close()
+	// Handle navigation first
+	newView, navCmd, handled := m.navigator.HandleKeyPress(msg, m.state.CurrentView)
+	if handled {
+		
+		// Check for view change
+		if newView != m.state.CurrentView {
+			m.state.CurrentView = newView
+			
+			// Handle special cases for certain views
+			switch newView {
+			case ViewToolBrowser:
+				// Load full content asynchronously when switching to tool browser
+				return m, combineCmd(m.loadToolBrowserContentAsync())
+			default:
+				return m, combineCmd(navCmd)
+			}
 		}
-		return m, tea.Quit // Don't combine with initCmd on quit
-	case key.Matches(msg, keys.Help):
-		m.state.CurrentView = ViewHelp
-		return m, combineCmd(nil)
-	case key.Matches(msg, keys.Tab):
-		// Cycle through views forward
-		navCmd := m.nextView()
+		
 		return m, combineCmd(navCmd)
-	case msg.String() == "shift+tab":
-		// Cycle through views backward
-		navCmd := m.previousView()
-		return m, combineCmd(navCmd)
-	case key.Matches(msg, keys.Right):
-		// Navigate to next view with right arrow
-		navCmd := m.nextView()
-		return m, combineCmd(navCmd)
-	case key.Matches(msg, keys.Left):
-		// Navigate to previous view with left arrow
-		navCmd := m.previousView()
-		return m, combineCmd(navCmd)
-	}
-
-	// View-specific keybindings  
-	switch keyStr {
-	case "D":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: Switching to Dashboard view\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewDashboard
-		return m, combineCmd(nil)
-	case "T":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: Switching to Tool Browser view\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewToolBrowser
-		// Load full content asynchronously when switching to tool browser
-		// Return immediately without blocking - content loads in background
-		return m, combineCmd(m.loadToolBrowserContentAsync())
-	case "B":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: Switching to Bundle Explorer view\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewBundleExplorer
-		return m, combineCmd(nil)
-	case "M":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: Switching to Monitor view\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewMonitor
-		return m, combineCmd(nil)
-	case "C":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: Switching to Config view\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewConfig
-		return m, combineCmd(nil)
-	case "H":
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: h/H pressed, switching to health view (auto-refresh will trigger)\n")
-			debugFile.Close()
-		}
-		m.state.CurrentView = ViewHealth
-		// Health checks will be triggered automatically by checkForHealthViewSwitch
-		return m, combineCmd(nil)
 	}
 
 	// Always handle key presses - don't wait for ready state
@@ -469,19 +360,13 @@ func (m *Model) nextView() tea.Cmd {
 		nextIndex := (currentIndex + 1) % len(mainViews)
 		newView := mainViews[nextIndex]
 		
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: nextView() - navigating from %v to %v\n", m.state.CurrentView, newView)
-			debugFile.Close()
-		}
+		debugLog("DEBUG: nextView() - navigating from %v to %v", m.state.CurrentView, newView)
 		
 		m.state.CurrentView = newView
 		
 		// Check if we switched to health view and return health check command
 		if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-			if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-				fmt.Fprintf(debugFile, "DEBUG: Arrow navigation to health view, triggering health checks\n")
-				debugFile.Close()
-			}
+			debugLog("DEBUG: Arrow navigation to health view, triggering health checks")
 			return m.healthView.RunNextHealthCheck(0)
 		}
 	}
@@ -512,19 +397,13 @@ func (m *Model) previousView() tea.Cmd {
 		}
 		newView := mainViews[prevIndex]
 		
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: previousView() - navigating from %v to %v\n", m.state.CurrentView, newView)
-			debugFile.Close()
-		}
+		debugLog("DEBUG: previousView() - navigating from %v to %v", m.state.CurrentView, newView)
 		
 		m.state.CurrentView = newView
 		
 		// Check if we switched to health view and return health check command
 		if previousView != ViewHealth && m.state.CurrentView == ViewHealth {
-			if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-				fmt.Fprintf(debugFile, "DEBUG: Arrow navigation to health view, triggering health checks\n")
-				debugFile.Close()
-			}
+			debugLog("DEBUG: Arrow navigation to health view, triggering health checks")
 			return m.healthView.RunNextHealthCheck(0)
 		}
 	}
@@ -1113,18 +992,12 @@ func Run() error {
 	p := tea.NewProgram(model, tea.WithAltScreen())
 	if _, err := p.Run(); err != nil {
 		// Log session end on error
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "=== TUI SESSION ENDED (error: %v) ===\n\n", err)
-			debugFile.Close()
-		}
+		debugLog("=== TUI SESSION ENDED (error: %v) ===", err)
 		return errors.Wrap(err, "failed to run TUI")
 	}
 
 	// Log normal session end
-	if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-		fmt.Fprintf(debugFile, "=== TUI SESSION ENDED (normal exit) ===\n\n")
-		debugFile.Close()
-	}
+	debugLog("=== TUI SESSION ENDED (normal exit) ===")
 
 	return nil
 }

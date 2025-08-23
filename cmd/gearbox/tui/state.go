@@ -19,6 +19,10 @@ const (
 	ViewConfig
 	ViewHealth
 	ViewHelp
+	
+	// Navigation helpers (not actual views)
+	ViewNext
+	ViewPrevious
 )
 
 // AppState holds the global application state
