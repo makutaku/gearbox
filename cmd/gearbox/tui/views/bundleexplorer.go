@@ -265,6 +265,8 @@ func (be *BundleExplorerNew) SetData(bundles []orchestrator.BundleConfig, instal
 	
 	if be.ready {
 		be.updateContent()
+		// Ensure selected bundle is visible after data changes
+		be.ensureSelectionVisible()
 	}
 }
 
@@ -566,6 +568,8 @@ func (be *BundleExplorerNew) cycleCategory() {
 	// Need to rebuild content when changing category
 	if be.ready {
 		be.updateContent()
+		// Ensure selected bundle is visible after category change
+		be.ensureSelectionVisible()
 	}
 }
 
