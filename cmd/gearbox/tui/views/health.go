@@ -582,23 +582,17 @@ func (hv *HealthView) RunNextHealthCheck(checkIndex int) tea.Cmd {
 	
 	if checkIndex >= len(healthChecks) {
 		// Log completion of all health checks
-		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-			fmt.Fprintf(debugFile, "DEBUG: RunNextHealthCheck() - All health checks completed (index %d >= %d)\n", checkIndex, len(healthChecks))
-			debugFile.Close()
-		}
+		debugLog("DEBUG: RunNextHealthCheck() - All health checks completed (index %d >= %d)", checkIndex, len(healthChecks))
 		return nil // All checks completed
 	}
 	
 	// Log which health check is being started
 	checkNames := []string{"Memory", "Disk", "Internet", "Build Tools", "Git", "PATH", "Rust Toolchain", "Go Toolchain", "Tool Updates"}
-	if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
-		checkName := "Unknown"
-		if checkIndex < len(checkNames) {
-			checkName = checkNames[checkIndex]
-		}
-		fmt.Fprintf(debugFile, "DEBUG: RunNextHealthCheck() - Starting check %d: %s\n", checkIndex, checkName)
-		debugFile.Close()
+	checkName := "Unknown"
+	if checkIndex < len(checkNames) {
+		checkName = checkNames[checkIndex]
 	}
+	debugLog("DEBUG: RunNextHealthCheck() - Starting check %d: %s", checkIndex, checkName)
 	
 	// Run current check and trigger next one
 	return tea.Batch(
