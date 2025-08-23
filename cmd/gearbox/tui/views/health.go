@@ -2,7 +2,10 @@ package views
 
 import (
 	"fmt"
+	"os"
+	"os/exec"
 	"runtime"
+	"strconv"
 	"strings"
 	"time"
 
@@ -14,8 +17,50 @@ import (
 	"gearbox/pkg/orchestrator"
 )
 
-// healthChecksCompleteMsg is sent when health checks are complete
-type healthChecksCompleteMsg struct{}
+// Individual health check result messages - one per check (exported for app routing)
+type MemoryCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type DiskCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type InternetCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type BuildToolsCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type GitCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type PathCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type RustToolchainCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type GoToolchainCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type ToolUpdatesCheckCompleteMsg struct {
+	Result HealthCheckUpdate
+}
+
+type HealthCheckUpdate struct {
+	Index       int
+	Status      HealthStatus  
+	Message     string
+	Details     []string
+	Suggestions []string
+}
 
 // HealthView represents the health monitor view
 type HealthView struct {
@@ -101,12 +146,8 @@ func (hv *HealthView) SetSize(width, height int) {
 func (hv *HealthView) SetData(tools []orchestrator.ToolConfig, installed map[string]*manifest.InstallationRecord) {
 	hv.installedTools = installed
 	hv.updateToolChecks(tools)
-	// Automatically run health checks when data is loaded
-	hv.runHealthChecks()
-	
-	if hv.ready {
-		hv.updateViewportContentTUI()
-	}
+	// Don't run health checks synchronously - will be done on demand
+	// This prevents blocking when switching to health view
 }
 
 // Update handles health view updates
@@ -124,30 +165,52 @@ func (hv *HealthView) Update(msg tea.Msg) tea.Cmd {
 			// Reset checks to pending state to show refresh is happening
 			hv.resetChecksToChecking()
 			if hv.ready {
-				hv.updateViewportContentTUI()
+				hv.updateContent()
 			}
-			// Return a command that will run the health checks after a brief delay
-			return tea.Tick(time.Millisecond*100, func(time.Time) tea.Msg {
-				hv.runHealthChecks()
-				return healthChecksCompleteMsg{}
-			})
+			// Start health checks sequentially to avoid overwhelming the system
+			return hv.RunNextHealthCheck(0)
 		case "a":
 			hv.autoRefresh = !hv.autoRefresh
 			if hv.ready {
-				hv.updateViewportContentTUI()
+				hv.updateContent()
 			}
 		case "d":
 			hv.showDetails = !hv.showDetails
 			if hv.ready {
-				hv.updateViewportContentTUI()
+				hv.updateContent()
 			}
 		}
-	case healthChecksCompleteMsg:
-		// Health checks are complete - refresh content
-		if hv.ready {
-			hv.updateViewportContentTUI()
-		}
+	// Handle individual health check completion messages
+	case MemoryCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
 		return nil
+	case DiskCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
+		return nil
+	case InternetCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
+		return nil
+	case BuildToolsCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
+		return nil
+	case GitCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
+		return nil
+	case PathCheckCompleteMsg:
+		hv.applySystemCheckResult(msg.Result)
+		return nil
+	case RustToolchainCheckCompleteMsg:
+		hv.applyToolCheckResult(msg.Result)
+		return nil
+	case GoToolchainCheckCompleteMsg:
+		hv.applyToolCheckResult(msg.Result)
+		return nil
+	case ToolUpdatesCheckCompleteMsg:
+		hv.applyToolCheckResult(msg.Result)
+		return nil
+	case NextHealthCheckMsg:
+		// Continue with next health check in sequence
+		return hv.RunNextHealthCheck(msg.NextIndex)
 	}
 
 	return nil
@@ -177,7 +240,8 @@ func (hv *HealthView) renderTUIStyle() string {
 	footer := footerStyle.Render(hv.renderHelpBar())
 	
 	// Content (health checks with cursor highlighting)
-	hv.updateViewportContentTUI()
+	// Show appropriate content based on current state
+	hv.updateContent()
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
@@ -206,6 +270,16 @@ func (hv *HealthView) renderSummary() string {
 	}
 
 	return fmt.Sprintf("✓%d ⚠%d ✗%d", passing, warning, failing)
+}
+
+// updateContent shows appropriate content based on current health data state
+func (hv *HealthView) updateContent() {
+	if !hv.ready {
+		return
+	}
+	
+	// Always show the health checks - they have initial states
+	hv.updateViewportContentTUI()
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -358,8 +432,8 @@ func initializeSystemChecks() []HealthCheck {
 			Name:     "Operating System",
 			Category: "system",
 			Status:   HealthStatusPassing,
-			Message:  fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH),
-			Details:  []string{fmt.Sprintf("Go version: %s", runtime.Version())},
+			Message:  getLinuxDistribution(),
+			Details:  []string{fmt.Sprintf("Architecture: %s", runtime.GOARCH), fmt.Sprintf("Go version: %s", runtime.Version())},
 		},
 		{
 			Name:     "CPU Cores",
@@ -409,58 +483,27 @@ func initializeSystemChecks() []HealthCheck {
 }
 
 func (hv *HealthView) updateToolChecks(tools []orchestrator.ToolConfig) {
-	hv.toolChecks = []HealthCheck{}
-
-	// Check common toolchains
-	rustCheck := HealthCheck{
-		Name:     "Rust Toolchain",
-		Category: "toolchain",
-		Status:   HealthStatusPending,
-		Message:  "Checking...",
+	// Initialize tool checks based on available toolchains and tools
+	hv.toolChecks = []HealthCheck{
+		{
+			Name:     "Rust Toolchain",
+			Category: "toolchain",
+			Status:   HealthStatusPending,
+			Message:  "Checking rustc, cargo...",
+		},
+		{
+			Name:     "Go Toolchain", 
+			Category: "toolchain",
+			Status:   HealthStatusPending,
+			Message:  "Checking go version...",
+		},
+		{
+			Name:     "Tool Updates",
+			Category: "tools",
+			Status:   HealthStatusPending,
+			Message:  "Checking for updates...",
+		},
 	}
-	
-	goCheck := HealthCheck{
-		Name:     "Go Toolchain",
-		Category: "toolchain",
-		Status:   HealthStatusPending,
-		Message:  "Checking...",
-	}
-
-	// Check installed tools
-	installedCount := len(hv.installedTools)
-	totalCount := len(tools)
-	
-	coverageCheck := HealthCheck{
-		Name:     "Tool Coverage",
-		Category: "tools",
-		Status:   HealthStatusPassing,
-		Message:  fmt.Sprintf("%d/%d tools installed", installedCount, totalCount),
-	}
-
-	if installedCount == 0 {
-		coverageCheck.Status = HealthStatusWarning
-		coverageCheck.Suggestions = []string{
-			"Run 'gearbox install --bundle beginner' to get started",
-			"Or use the Tool Browser to select individual tools",
-		}
-	} else if installedCount < totalCount/4 {
-		coverageCheck.Status = HealthStatusWarning
-		coverageCheck.Suggestions = []string{
-			fmt.Sprintf("You have %d more tools available", totalCount-installedCount),
-			"Explore bundles for curated tool collections",
-		}
-	}
-
-	// Check for updates
-	updateCheck := HealthCheck{
-		Name:     "Tool Updates",
-		Category: "tools",
-		Status:   HealthStatusPending,
-		Message:  "Checking for updates...",
-		Details:  []string{"Run health check to scan for updates"},
-	}
-
-	hv.toolChecks = append(hv.toolChecks, rustCheck, goCheck, coverageCheck, updateCheck)
 }
 
 func (hv *HealthView) moveUp() {
@@ -468,7 +511,7 @@ func (hv *HealthView) moveUp() {
 		hv.cursor--
 		// Use TUI best practice: update content and sync viewport
 		if hv.ready {
-			hv.updateViewportContentTUI()
+			hv.updateContent()
 		}
 	}
 }
@@ -479,7 +522,7 @@ func (hv *HealthView) moveDown() {
 		hv.cursor++
 		// Use TUI best practice: update content and sync viewport
 		if hv.ready {
-			hv.updateViewportContentTUI()
+			hv.updateContent()
 		}
 	}
 }
@@ -489,165 +532,573 @@ func (hv *HealthView) selectCheck() {
 	hv.showDetails = !hv.showDetails
 	// Refresh content to show/hide details
 	if hv.ready {
-		hv.updateViewportContentTUI()
+		hv.updateContent()
 	}
 }
 
-func (hv *HealthView) runHealthChecks() {
-	// TODO: Actually run health checks
-	// For now, just simulate some results
-	
-	// Update OS check
-	if len(hv.systemChecks) > 0 {
-		hv.systemChecks[0].Status = HealthStatusPassing
-		hv.systemChecks[0].Message = "Linux (Debian-based)"
-		hv.systemChecks[0].Details = []string{
-			"Kernel: " + runtime.GOOS,
-			"Architecture: " + runtime.GOARCH,
-		}
-	}
-	
-	// Update CPU cores check
-	if len(hv.systemChecks) > 1 {
-		hv.systemChecks[1].Status = HealthStatusPassing
-		hv.systemChecks[1].Message = fmt.Sprintf("%d cores available", runtime.NumCPU())
-		hv.systemChecks[1].Details = []string{
-			fmt.Sprintf("Logical CPUs: %d", runtime.NumCPU()),
-			"GOMAXPROCS: " + fmt.Sprintf("%d", runtime.GOMAXPROCS(0)),
-		}
-	}
-	
-	// Update memory check
-	if len(hv.systemChecks) > 2 {
-		hv.systemChecks[2].Status = HealthStatusPassing
-		hv.systemChecks[2].Message = fmt.Sprintf("%.1f GB available", 8.5)
-		hv.systemChecks[2].Details = []string{
-			"Total: 16.0 GB",
-			"Used: 7.5 GB",
-			"Free: 8.5 GB",
-		}
-	}
-
-	// Update disk space
-	if len(hv.systemChecks) > 3 {
-		hv.systemChecks[3].Status = HealthStatusWarning
-		hv.systemChecks[3].Message = "Low disk space (15% free)"
-		hv.systemChecks[3].Details = []string{
-			"Total: 500 GB",
-			"Used: 425 GB", 
-			"Free: 75 GB",
-		}
-		hv.systemChecks[3].Suggestions = []string{
-			"Consider cleaning build cache: gearbox cache clean",
-			"Remove old tool versions: gearbox uninstall --old",
-		}
-	}
-
-	// Update internet check
-	if len(hv.systemChecks) > 4 {
-		hv.systemChecks[4].Status = HealthStatusPassing
-		hv.systemChecks[4].Message = "Connected"
-	}
-
-	// Update build tools
-	if len(hv.systemChecks) > 5 {
-		hv.systemChecks[5].Status = HealthStatusPassing
-		hv.systemChecks[5].Message = "All required build tools installed"
-		hv.systemChecks[5].Details = []string{
-			"gcc 11.4.0",
-			"make 4.3",
-			"cmake 3.22.1",
-		}
-	}
-
-	// Update git
-	if len(hv.systemChecks) > 6 {
-		hv.systemChecks[6].Status = HealthStatusPassing
-		hv.systemChecks[6].Message = "git version 2.34.1"
-	}
-
-	// Update PATH
-	if len(hv.systemChecks) > 7 {
-		hv.systemChecks[7].Status = HealthStatusPassing
-		hv.systemChecks[7].Message = "Correctly configured"
-		hv.systemChecks[7].Details = []string{
-			"/usr/local/bin is in PATH",
-			"~/.cargo/bin is in PATH",
-		}
-	}
-
-	// Update toolchain checks
-	if len(hv.toolChecks) > 0 {
-		hv.toolChecks[0].Status = HealthStatusPassing
-		hv.toolChecks[0].Message = "rustc 1.88.0"
-		hv.toolChecks[0].Details = []string{
-			"cargo 1.88.0",
-			"rustup 1.26.0",
-		}
-	}
-
-	if len(hv.toolChecks) > 1 {
-		hv.toolChecks[1].Status = HealthStatusPassing
-		hv.toolChecks[1].Message = "go version go1.23.4"
-		hv.toolChecks[1].Details = []string{
-			"GOPATH: ~/go",
-			"GOROOT: /usr/local/go",
-		}
-	}
-	
-	// Update tool coverage check
-	if len(hv.toolChecks) > 2 {
-		installedCount := len(hv.installedTools)
-		totalTools := 42 // This would come from the tools config in real implementation
-		percentage := float64(installedCount) / float64(totalTools) * 100
+// Helper functions to apply individual health check results
+func (hv *HealthView) applySystemCheckResult(result HealthCheckUpdate) {
+	if result.Index >= 0 && result.Index < len(hv.systemChecks) {
+		hv.systemChecks[result.Index].Status = result.Status
+		hv.systemChecks[result.Index].Message = result.Message
+		hv.systemChecks[result.Index].Details = result.Details
+		hv.systemChecks[result.Index].Suggestions = result.Suggestions
 		
-		hv.toolChecks[2].Status = HealthStatusPassing
-		hv.toolChecks[2].Message = fmt.Sprintf("%d/%d tools (%.0f%%)", installedCount, totalTools, percentage)
-		hv.toolChecks[2].Details = []string{
-			fmt.Sprintf("Installed: %d", installedCount),
-			fmt.Sprintf("Available: %d", totalTools),
-			fmt.Sprintf("Missing: %d", totalTools-installedCount),
+		// Refresh content to show the updated check
+		if hv.ready {
+			hv.updateContent()
 		}
+	}
+}
+
+func (hv *HealthView) applyToolCheckResult(result HealthCheckUpdate) {
+	if result.Index >= 0 && result.Index < len(hv.toolChecks) {
+		hv.toolChecks[result.Index].Status = result.Status
+		hv.toolChecks[result.Index].Message = result.Message
+		hv.toolChecks[result.Index].Details = result.Details
+		hv.toolChecks[result.Index].Suggestions = result.Suggestions
 		
-		if percentage < 50 {
-			hv.toolChecks[2].Suggestions = []string{
-				"Run 'gearbox install --bundle beginner' for essential tools",
-				"Browse available tools with 'gearbox list'",
-			}
+		// Refresh content to show the updated check
+		if hv.ready {
+			hv.updateContent()
 		}
+	}
+}
+
+// RunNextHealthCheck runs health checks sequentially to avoid overwhelming the system
+func (hv *HealthView) RunNextHealthCheck(checkIndex int) tea.Cmd {
+	healthChecks := []func() tea.Cmd{
+		hv.RunMemoryCheckAsync,
+		hv.RunDiskCheckAsync,
+		hv.RunInternetCheckAsync,
+		hv.RunBuildToolsCheckAsync,
+		hv.RunGitCheckAsync,
+		hv.RunPathCheckAsync,
+		// Tool checks re-enabled
+		hv.RunRustToolchainCheckAsync,
+		hv.RunGoToolchainCheckAsync,
+		hv.RunToolUpdatesCheckAsync,
 	}
 	
-	// Update the tool updates check
-	if len(hv.toolChecks) > 3 {
-		hv.toolChecks[3].Status = HealthStatusPassing
-		hv.toolChecks[3].Message = "All tools up to date"
-		hv.toolChecks[3].Details = []string{
-			"Last checked: just now",
-			"No updates available",
+	if checkIndex >= len(healthChecks) {
+		// Log completion of all health checks
+		if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+			fmt.Fprintf(debugFile, "DEBUG: RunNextHealthCheck() - All health checks completed (index %d >= %d)\n", checkIndex, len(healthChecks))
+			debugFile.Close()
 		}
+		return nil // All checks completed
 	}
+	
+	// Log which health check is being started
+	checkNames := []string{"Memory", "Disk", "Internet", "Build Tools", "Git", "PATH", "Rust Toolchain", "Go Toolchain", "Tool Updates"}
+	if debugFile, err := os.OpenFile("/tmp/gearbox-debug.log", os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0644); err == nil {
+		checkName := "Unknown"
+		if checkIndex < len(checkNames) {
+			checkName = checkNames[checkIndex]
+		}
+		fmt.Fprintf(debugFile, "DEBUG: RunNextHealthCheck() - Starting check %d: %s\n", checkIndex, checkName)
+		debugFile.Close()
+	}
+	
+	// Run current check and trigger next one
+	return tea.Batch(
+		healthChecks[checkIndex](),
+		func() tea.Msg {
+			return NextHealthCheckMsg{NextIndex: checkIndex + 1}
+		},
+	)
+}
 
-	// Refresh content after running checks
-	if hv.ready {
-		hv.updateViewportContentTUI()
+type NextHealthCheckMsg struct {
+	NextIndex int
+}
+
+// CheckMemoryDirect performs memory check synchronously and returns result
+func (hv *HealthView) CheckMemoryDirect() HealthCheckUpdate {
+	return hv.checkMemory()
+}
+
+// CheckToolUpdatesDirect performs tool updates check synchronously and returns result
+func (hv *HealthView) CheckToolUpdatesDirect() HealthCheckUpdate {
+	return hv.checkToolUpdates()
+}
+
+// Individual asynchronous health check commands - each runs independently
+func (hv *HealthView) RunMemoryCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkMemory()
+		return MemoryCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunDiskCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkDiskSpace()
+		return DiskCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunInternetCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkInternet()
+		return InternetCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunBuildToolsCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkBuildTools()
+		return BuildToolsCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunGitCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkGit()
+		return GitCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunPathCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkPATH()
+		return PathCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunRustToolchainCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkRustToolchain()
+		return RustToolchainCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunGoToolchainCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkGoToolchain()
+		return GoToolchainCheckCompleteMsg{Result: result}
+	}
+}
+
+func (hv *HealthView) RunToolUpdatesCheckAsync() tea.Cmd {
+	return func() tea.Msg {
+		result := hv.checkToolUpdates()
+		return ToolUpdatesCheckCompleteMsg{Result: result}
 	}
 }
 
 func (hv *HealthView) resetChecksToChecking() {
-	// Reset all system checks to pending/checking state
-	for i := range hv.systemChecks {
-		hv.systemChecks[i].Status = HealthStatusPending
-		hv.systemChecks[i].Message = "Checking..."
-		hv.systemChecks[i].Details = nil
-		hv.systemChecks[i].Suggestions = nil
+	// Reset dynamic system checks (Memory=2, Disk=3, Internet=4, Build Tools=5, Git=6, PATH=7)
+	dynamicSystemIndices := []int{2, 3, 4, 5, 6, 7}
+	for _, i := range dynamicSystemIndices {
+		if i < len(hv.systemChecks) {
+			hv.systemChecks[i].Status = HealthStatusPending
+			hv.systemChecks[i].Message = "Checking..."
+			hv.systemChecks[i].Details = nil
+			hv.systemChecks[i].Suggestions = nil
+		}
 	}
 	
-	// Reset all tool checks to pending/checking state
+	// Reset all tool checks
 	for i := range hv.toolChecks {
 		hv.toolChecks[i].Status = HealthStatusPending
 		hv.toolChecks[i].Message = "Checking..."
 		hv.toolChecks[i].Details = nil
 		hv.toolChecks[i].Suggestions = nil
 	}
+}
+
+// Actual health check implementations
+
+func (hv *HealthView) checkMemory() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 2}
+	
+	// Read memory info from /proc/meminfo
+	data, err := os.ReadFile("/proc/meminfo")
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "Could not read memory info"
+		return result
+	}
+
+	lines := strings.Split(string(data), "\n")
+	var totalKB, availableKB int
+
+	for _, line := range lines {
+		if strings.HasPrefix(line, "MemTotal:") {
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				if val, err := strconv.Atoi(parts[1]); err == nil {
+					totalKB = val
+				}
+			}
+		} else if strings.HasPrefix(line, "MemAvailable:") {
+			parts := strings.Fields(line)
+			if len(parts) >= 2 {
+				if val, err := strconv.Atoi(parts[1]); err == nil {
+					availableKB = val
+				}
+			}
+		}
+	}
+
+	if totalKB > 0 && availableKB > 0 {
+		totalGB := float64(totalKB) / 1024 / 1024
+		availableGB := float64(availableKB) / 1024 / 1024
+		usedGB := totalGB - availableGB
+		usagePercent := (usedGB / totalGB) * 100
+
+		result.Status = HealthStatusPassing
+		if usagePercent > 90 {
+			result.Status = HealthStatusWarning
+		}
+		
+		result.Message = fmt.Sprintf("%.1f GB available", availableGB)
+		result.Details = []string{
+			fmt.Sprintf("Total: %.1f GB", totalGB),
+			fmt.Sprintf("Used: %.1f GB (%.0f%%)", usedGB, usagePercent),
+			fmt.Sprintf("Available: %.1f GB", availableGB),
+		}
+	} else {
+		result.Status = HealthStatusWarning
+		result.Message = "Could not parse memory info"
+	}
+	
+	return result
+}
+
+func (hv *HealthView) checkDiskSpace() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 3}
+	
+	// Check disk space for current directory
+	cmd := exec.Command("df", "-h", ".")
+	output, err := cmd.Output()
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "Could not check disk space"
+		return result
+	}
+
+	lines := strings.Split(string(output), "\n")
+	if len(lines) >= 2 {
+		fields := strings.Fields(lines[1])
+		if len(fields) >= 5 {
+			usage := strings.TrimSuffix(fields[4], "%")
+			if usageInt, err := strconv.Atoi(usage); err == nil {
+				if usageInt > 90 {
+					result.Status = HealthStatusWarning
+					result.Message = fmt.Sprintf("Low disk space (%d%% used)", usageInt)
+					result.Suggestions = []string{
+						"Consider cleaning build cache",
+						"Remove unused tools or files",
+					}
+				} else {
+					result.Status = HealthStatusPassing
+					result.Message = fmt.Sprintf("%s available (%d%% used)", fields[3], usageInt)
+				}
+				result.Details = []string{
+					fmt.Sprintf("Filesystem: %s", fields[0]),
+					fmt.Sprintf("Size: %s", fields[1]),
+					fmt.Sprintf("Used: %s", fields[2]),
+					fmt.Sprintf("Available: %s", fields[3]),
+				}
+			}
+		}
+	}
+	
+	return result
+}
+
+func (hv *HealthView) checkInternet() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 4}
+	
+	// Test internet connectivity
+	cmd := exec.Command("ping", "-c", "1", "-W", "3", "github.com")
+	err := cmd.Run()
+	
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "No internet connection"
+		result.Suggestions = []string{
+			"Check network connection",
+			"Some installs may fail without internet",
+		}
+	} else {
+		result.Status = HealthStatusPassing
+		result.Message = "Connected"
+	}
+	
+	return result
+}
+
+func (hv *HealthView) checkBuildTools() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 5}
+	var details []string
+	var missing []string
+	
+	tools := map[string]string{
+		"gcc":   "--version",
+		"make":  "--version", 
+		"cmake": "--version",
+	}
+
+	allPresent := true
+	for tool, flag := range tools {
+		cmd := exec.Command(tool, flag)
+		output, err := cmd.Output()
+		if err != nil {
+			missing = append(missing, tool)
+			allPresent = false
+		} else {
+			lines := strings.Split(string(output), "\n")
+			if len(lines) > 0 {
+				// Extract version from first line
+				firstLine := strings.TrimSpace(lines[0])
+				if len(firstLine) > 50 {
+					firstLine = firstLine[:50] + "..."
+				}
+				details = append(details, firstLine)
+			}
+		}
+	}
+
+	if allPresent {
+		result.Status = HealthStatusPassing
+		result.Message = "All required build tools installed"
+		result.Details = details
+	} else {
+		result.Status = HealthStatusWarning
+		result.Message = fmt.Sprintf("Missing tools: %s", strings.Join(missing, ", "))
+		result.Suggestions = []string{
+			"Install build essentials: sudo apt install build-essential",
+			"Install cmake: sudo apt install cmake",
+		}
+	}
+	
+	return result
+}
+
+func (hv *HealthView) checkGit() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 6}
+	
+	cmd := exec.Command("git", "--version")
+	output, err := cmd.Output()
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "Git not installed"
+		result.Suggestions = []string{
+			"Install git: sudo apt install git",
+		}
+	} else {
+		version := strings.TrimSpace(string(output))
+		result.Status = HealthStatusPassing
+		result.Message = version
+	}
+	
+	return result
+}
+
+func (hv *HealthView) checkPATH() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 7}
+	
+	path := os.Getenv("PATH")
+	pathDirs := strings.Split(path, ":")
+	
+	var details []string
+	hasUsrLocal := false
+	hasCargo := false
+	
+	for _, dir := range pathDirs {
+		if dir == "/usr/local/bin" {
+			hasUsrLocal = true
+			details = append(details, "/usr/local/bin is in PATH")
+		}
+		if strings.Contains(dir, ".cargo/bin") {
+			hasCargo = true
+			details = append(details, "~/.cargo/bin is in PATH")
+		}
+	}
+	
+	if hasUsrLocal && hasCargo {
+		result.Status = HealthStatusPassing
+		result.Message = "Correctly configured"
+	} else if hasUsrLocal {
+		result.Status = HealthStatusWarning
+		result.Message = "Missing ~/.cargo/bin in PATH"
+		result.Suggestions = []string{
+			"Add ~/.cargo/bin to PATH for Rust tools",
+		}
+	} else {
+		result.Status = HealthStatusWarning
+		result.Message = "PATH may need configuration"
+		result.Suggestions = []string{
+			"Ensure /usr/local/bin is in PATH",
+			"Add ~/.cargo/bin to PATH for Rust tools",
+		}
+	}
+	
+	result.Details = details
+	return result
+}
+
+func (hv *HealthView) checkRustToolchain() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 0}
+	
+	cmd := exec.Command("rustc", "--version")
+	output, err := cmd.Output()
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "Rust not installed"
+		result.Suggestions = []string{
+			"Install Rust: curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh",
+		}
+		return result
+	}
+
+	rustcVersion := strings.TrimSpace(string(output))
+	result.Status = HealthStatusPassing
+	result.Message = rustcVersion
+
+	// Check cargo and rustup
+	var details []string
+	details = append(details, rustcVersion)
+
+	if cargoCmd := exec.Command("cargo", "--version"); cargoCmd.Run() == nil {
+		if cargoOutput, err := cargoCmd.Output(); err == nil {
+			details = append(details, strings.TrimSpace(string(cargoOutput)))
+		}
+	}
+
+	if rustupCmd := exec.Command("rustup", "--version"); rustupCmd.Run() == nil {
+		if rustupOutput, err := rustupCmd.Output(); err == nil {
+			details = append(details, strings.TrimSpace(string(rustupOutput)))
+		}
+	}
+
+	result.Details = details
+	return result
+}
+
+func (hv *HealthView) checkGoToolchain() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 1}
+	
+	cmd := exec.Command("go", "version")
+	output, err := cmd.Output()
+	if err != nil {
+		result.Status = HealthStatusWarning
+		result.Message = "Go not installed"
+		result.Suggestions = []string{
+			"Install Go from https://golang.org/dl/",
+		}
+		return result
+	}
+
+	goVersion := strings.TrimSpace(string(output))
+	result.Status = HealthStatusPassing
+	result.Message = goVersion
+
+	var details []string
+	if gopath := os.Getenv("GOPATH"); gopath != "" {
+		details = append(details, "GOPATH: "+gopath)
+	}
+	if goroot := os.Getenv("GOROOT"); goroot != "" {
+		details = append(details, "GOROOT: "+goroot)
+	}
+
+	result.Details = details
+	return result
+}
+
+func (hv *HealthView) checkToolUpdates() HealthCheckUpdate {
+	result := HealthCheckUpdate{Index: 2}
+	
+	// Simple check - in a real implementation this would check for tool updates
+	result.Status = HealthStatusPassing
+	result.Message = "Update check complete"
+	result.Details = []string{
+		"Last checked: " + time.Now().Format("15:04:05"),
+		"Use 'gearbox update' to check for tool updates",
+	}
+	
+	return result
+}
+
+// getLinuxDistribution detects the Linux distribution and version
+func getLinuxDistribution() string {
+	// Try to read /etc/os-release first (standard method)
+	if data, err := os.ReadFile("/etc/os-release"); err == nil {
+		lines := strings.Split(string(data), "\n")
+		var prettyName, name, version string
+		
+		for _, line := range lines {
+			if strings.HasPrefix(line, "PRETTY_NAME=") {
+				prettyName = strings.Trim(strings.TrimPrefix(line, "PRETTY_NAME="), "\"")
+			} else if strings.HasPrefix(line, "NAME=") {
+				name = strings.Trim(strings.TrimPrefix(line, "NAME="), "\"")
+			} else if strings.HasPrefix(line, "VERSION=") {
+				version = strings.Trim(strings.TrimPrefix(line, "VERSION="), "\"")
+			}
+		}
+		
+		// Return PRETTY_NAME if available, otherwise combine NAME and VERSION
+		if prettyName != "" {
+			return prettyName
+		}
+		if name != "" && version != "" {
+			return fmt.Sprintf("%s %s", name, version)
+		}
+		if name != "" {
+			return name
+		}
+	}
+	
+	// Fallback: try /etc/lsb-release
+	if data, err := os.ReadFile("/etc/lsb-release"); err == nil {
+		lines := strings.Split(string(data), "\n")
+		var distrib, release string
+		
+		for _, line := range lines {
+			if strings.HasPrefix(line, "DISTRIB_DESCRIPTION=") {
+				return strings.Trim(strings.TrimPrefix(line, "DISTRIB_DESCRIPTION="), "\"")
+			} else if strings.HasPrefix(line, "DISTRIB_ID=") {
+				distrib = strings.TrimPrefix(line, "DISTRIB_ID=")
+			} else if strings.HasPrefix(line, "DISTRIB_RELEASE=") {
+				release = strings.TrimPrefix(line, "DISTRIB_RELEASE=")
+			}
+		}
+		
+		if distrib != "" && release != "" {
+			return fmt.Sprintf("%s %s", distrib, release)
+		}
+	}
+	
+	// Fallback: check specific distribution files
+	distroFiles := map[string]string{
+		"/etc/debian_version": "Debian",
+		"/etc/redhat-release": "",
+		"/etc/centos-release": "",
+		"/etc/fedora-release": "",
+		"/etc/arch-release":   "Arch Linux",
+		"/etc/alpine-release": "Alpine Linux",
+	}
+	
+	for file, defaultName := range distroFiles {
+		if data, err := os.ReadFile(file); err == nil {
+			content := strings.TrimSpace(string(data))
+			if file == "/etc/debian_version" {
+				return fmt.Sprintf("Debian %s", content)
+			}
+			// For redhat/centos/fedora-release, the file contains the full description
+			if content != "" && defaultName == "" {
+				return content
+			}
+			if defaultName != "" {
+				return fmt.Sprintf("%s %s", defaultName, content)
+			}
+		}
+	}
+	
+	// Ultimate fallback
+	return fmt.Sprintf("%s %s", runtime.GOOS, runtime.GOARCH)
 }
 

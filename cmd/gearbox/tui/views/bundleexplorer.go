@@ -123,7 +123,7 @@ func (be *BundleExplorerNew) renderTUIStyle() string {
 	)
 	
 	// Content (bundle list with cursor highlighting)
-	be.updateViewportContentTUI()
+	be.updateContent()
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
@@ -132,6 +132,31 @@ func (be *BundleExplorerNew) renderTUIStyle() string {
 		be.viewport.View(),
 		footer,
 	)
+}
+
+// updateContent shows appropriate content based on current bundle data state
+func (be *BundleExplorerNew) updateContent() {
+	if !be.ready {
+		return
+	}
+	
+	// If no bundles data loaded yet, show loading state
+	if len(be.bundles) == 0 {
+		be.setLoadingState()
+		return
+	}
+	
+	// Show bundles content
+	be.updateViewportContentTUI()
+}
+
+// setLoadingState shows loading message without any processing
+func (be *BundleExplorerNew) setLoadingState() {
+	loadingContent := `Loading bundles...
+
+Discovering available tool bundles.
+This happens in the background.`
+	be.viewport.SetContent(loadingContent)
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -174,13 +199,31 @@ func (be *BundleExplorerNew) syncViewportWithLine(lineIndex int) {
 	top := be.viewport.YOffset
 	bottom := top + be.viewport.Height - 1
 	
+	// Calculate how many lines this bundle needs (header + expanded details if applicable)
+	totalLinesNeeded := 1 // Always need at least the header line
+	if be.selectedBundle != "" && be.expandedBundles[be.selectedBundle] {
+		// Find the bundle to calculate its expanded content size
+		for _, bundle := range be.bundles {
+			if bundle.Name == be.selectedBundle {
+				details := be.renderBundleDetails(bundle)
+				totalLinesNeeded += len(details)
+				break
+			}
+		}
+	}
+	
 	// Ensure selected line is visible by scrolling viewport
 	if lineIndex < top {
 		// Line above viewport - scroll up
 		be.viewport.SetYOffset(lineIndex)
-	} else if lineIndex > bottom {
-		// Line below viewport - scroll down
-		be.viewport.SetYOffset(lineIndex - be.viewport.Height + 1)
+	} else if lineIndex + totalLinesNeeded - 1 > bottom {
+		// Line (plus expanded content) extends below viewport - scroll down
+		// Ensure there's enough space to show the header and all expanded details
+		newOffset := lineIndex - be.viewport.Height + totalLinesNeeded
+		if newOffset < 0 {
+			newOffset = 0
+		}
+		be.viewport.SetYOffset(newOffset)
 	}
 }
 
@@ -210,7 +253,7 @@ func (be *BundleExplorerNew) SetData(bundles []orchestrator.BundleConfig, instal
 	}
 	
 	if be.ready {
-		be.updateViewportContentTUI()
+		be.updateContent()
 	}
 }
 
@@ -437,7 +480,7 @@ func (be *BundleExplorerNew) moveUp() {
 		be.cursor = currentIndex - 1
 		
 		if be.ready {
-			be.updateViewportContentTUI()
+			be.updateContent()
 			// Ensure selected line stays visible after navigation
 			be.ensureSelectionVisible()
 		}
@@ -465,7 +508,7 @@ func (be *BundleExplorerNew) moveDown() {
 		be.cursor = currentIndex + 1
 		
 		if be.ready {
-			be.updateViewportContentTUI()
+			be.updateContent()
 			// Ensure selected line stays visible after navigation
 			be.ensureSelectionVisible()
 		}
@@ -477,7 +520,7 @@ func (be *BundleExplorerNew) toggleExpanded() {
 		be.expandedBundles[be.selectedBundle] = !be.expandedBundles[be.selectedBundle]
 		// Need to rebuild content when expanding/collapsing
 		if be.ready {
-			be.updateViewportContentTUI()
+			be.updateContent()
 			// Ensure selected line stays visible after expansion/collapse
 			be.ensureSelectionVisible()
 		}
@@ -511,7 +554,7 @@ func (be *BundleExplorerNew) cycleCategory() {
 	
 	// Need to rebuild content when changing category
 	if be.ready {
-		be.updateViewportContentTUI()
+		be.updateContent()
 	}
 }
 
