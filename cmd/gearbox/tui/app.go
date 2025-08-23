@@ -56,55 +56,36 @@ func NewModel() (*Model, error) {
 	// Log session start (only in debug builds)
 	debugLog("=== TUI SESSION STARTED ===")
 	
-	// Initialize orchestrator with default options
-	opts := orchestrator.InstallationOptions{
+	// Use factory pattern to create dependencies
+	factory := NewDependencyFactory(orchestrator.InstallationOptions{
 		BuildType: "standard",
-	}
-	orch, err := orchestrator.NewOrchestrator(opts)
+	})
+	
+	deps, err := factory.CreateDependencies()
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to create orchestrator")
+		return nil, errors.Wrap(err, "failed to create dependencies")
 	}
-
-	// Initialize manifest manager
-	manifestMgr := manifest.NewManager()
 
 	// Create app state
 	state := NewAppState()
 	
-	// Create task manager
-	taskManager := tasks.NewTaskManager(orch, DefaultMaxParallel)
-	
-	// Create task provider
-	taskProvider := NewTaskManagerProvider(taskManager)
-	
-	// Create views
-	dashboard := views.NewDashboard()
-	toolBrowser := views.NewToolBrowserNew()
-	bundleExplorer := views.NewBundleExplorerNew()
-	installManager := views.NewInstallManagerNew()
-	installManager.SetTaskProvider(taskProvider)
-	configView := views.NewConfigView()
-	healthView := views.NewHealthView()
-	
 	model := &Model{
-		orchestrator:   orch,
-		manifest:       manifestMgr,
+		orchestrator:   deps.Orchestrator,
+		manifest:       deps.Manifest,
 		state:          state,
-		taskManager:    taskManager,
-		dashboard:      dashboard,
-		toolBrowser:    toolBrowser,
-		bundleExplorer: bundleExplorer,
-		installManager: installManager,
-		configView:     configView,
-		healthView:     healthView,
-		navigator:      NewNavigationHandler(),
+		taskManager:    deps.TaskManager,
+		dashboard:      deps.Dashboard,
+		toolBrowser:    deps.ToolBrowser,
+		bundleExplorer: deps.BundleExplorer,
+		installManager: deps.InstallManager,
+		configView:     deps.ConfigView,
+		healthView:     deps.HealthView,
+		navigator:      deps.Navigator,
+		router:         deps.Router,
 		ready:          true, // Start ready since we're not blocking on data
 		width:          DefaultWidth,
 		height:         DefaultHeight,
 	}
-	
-	// Setup message router
-	model.router = model.setupMessageRouter()
 
 	// Initialize views with default sizes so they work immediately
 	viewHeight := max(MinViewportHeight, model.height - HeaderHeight - FooterHeight)
