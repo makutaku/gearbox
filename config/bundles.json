@@ -85,7 +85,7 @@
       "name": "intermediate",
       "description": "Productive developer environment with git workflow and development tools",
       "category": "foundation",
-      "tools": ["delta", "lazygit", "gh", "tokei", "sd", "tealdeer", "just", "mise"],
+      "tools": ["delta", "lazygit", "gh", "tokei", "sd", "tealdeer", "just", "mise", "gopls"],
       "system_packages": ["git", "curl", "wget", "tree"],
       "package_managers": {
         "apt": ["git", "curl", "wget", "tree"],
@@ -414,7 +414,7 @@
       "name": "go-dev",
       "description": "Complete Go development environment with essential tools",
       "category": "language",
-      "tools": [],
+      "tools": ["gopls"],
       "system_packages": ["golang-go"],
       "package_managers": {
         "apt": ["golang-go"],
@@ -422,7 +422,6 @@
         "dnf": ["golang"]
       },
       "post_install": [
-        "go install golang.org/x/tools/gopls@latest",
         "go install github.com/golangci/golangci-lint/cmd/golangci-lint@latest",
         "go install github.com/air-verse/air@latest",
         "go install honnef.co/go/tools/cmd/staticcheck@latest",
