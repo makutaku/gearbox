@@ -327,6 +327,26 @@
       "test_command": "--version"
     },
     {
+      "name": "gopls",
+      "description": "Official Go language server (Go)",
+      "category": "development",
+      "repository": "https://github.com/golang/tools.git",
+      "binary_name": "gopls",
+      "language": "go",
+      "build_types": {
+        "minimal": "-m",
+        "standard": "-s",
+        "maximum": "-o"
+      },
+      "dependencies": [
+        "go",
+        "build-essential"
+      ],
+      "min_version": "1.19.0",
+      "shell_integration": false,
+      "test_command": "version"
+    },
+    {
       "name": "bottom",
       "description": "Cross-platform system monitor (Rust)",
       "category": "system",
