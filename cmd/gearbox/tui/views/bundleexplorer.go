@@ -215,7 +215,18 @@ func (be *BundleExplorerNew) syncViewportWithLine(lineIndex int) {
 	// Ensure selected line is visible by scrolling viewport
 	if lineIndex < top {
 		// Line above viewport - scroll up
-		be.viewport.SetYOffset(lineIndex)
+		// Try to include category header context when possible
+		contextOffset := lineIndex
+		
+		// Look backwards for a category header (ends with " Tier")
+		for i := lineIndex - 1; i >= 0 && i >= lineIndex - 3; i-- {
+			if i < len(be.renderedLines) && strings.HasSuffix(be.renderedLines[i], " Tier") {
+				contextOffset = i
+				break
+			}
+		}
+		
+		be.viewport.SetYOffset(contextOffset)
 	} else if lineIndex + totalLinesNeeded - 1 > bottom {
 		// Line (plus expanded content) extends below viewport - scroll down
 		// Ensure there's enough space to show the header and all expanded details
