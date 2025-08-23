@@ -35,6 +35,7 @@ type AppState struct {
 	SearchQuery    string
 	SelectedTools  map[string]bool
 	SelectedBundle string
+	Initialized    bool // Track whether lazy initialization has occurred
 	
 	// Background tasks
 	InstallQueue   []InstallTask

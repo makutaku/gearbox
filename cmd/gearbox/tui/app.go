@@ -72,7 +72,7 @@ func NewModel() (*Model, error) {
 	configView := views.NewConfigView()
 	healthView := views.NewHealthView()
 	
-	return &Model{
+	model := &Model{
 		orchestrator:   orch,
 		manifest:       manifestMgr,
 		state:          state,
@@ -83,16 +83,30 @@ func NewModel() (*Model, error) {
 		installManager: installManager,
 		configView:     configView,
 		healthView:     healthView,
-	}, nil
+		ready:          true, // Start ready since we're not blocking on data
+		width:          80,   // Sensible default width
+		height:         24,   // Sensible default height
+	}
+
+	// Initialize views with default sizes so they work immediately
+	viewHeight := max(5, model.height - 2)
+	model.dashboard.SetSize(model.width, viewHeight)
+	model.toolBrowser.SetSize(model.width, viewHeight)
+	model.bundleExplorer.SetSize(model.width, viewHeight)
+	model.installManager.SetSize(model.width, viewHeight)
+	model.configView.SetSize(model.width, viewHeight)
+	model.healthView.SetSize(model.width, viewHeight)
+
+	return model, nil
 }
 
 func (m Model) Init() tea.Cmd {
-	return tea.Batch(
-		m.loadInitialData(),
-		tea.EnterAltScreen,
-		m.watchTaskUpdates(),
-	)
+	// ABSOLUTE MINIMUM - only screen setup, zero other operations
+	// Everything else is triggered lazily on first user interaction
+	return tea.EnterAltScreen
 }
+
+// Removed loadDataAfterStartup - using lazy initialization on first key press instead
 
 func (m Model) watchTaskUpdates() tea.Cmd {
 	return m.taskManager.WatchUpdates()
@@ -103,9 +117,7 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tea.WindowSizeMsg:
 		m.width = msg.Width
 		m.height = msg.Height
-		if !m.ready {
-			m.ready = true
-		}
+		// TUI is already ready from initialization, just update sizes
 		// Update view sizes
 		// Calculate available height for content (excluding nav and status bars)
 		// Nav bar and status bar each take 1 line, so views get height - 2
@@ -157,9 +169,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		return m, nil
 
 	case toolBrowserContentLoadedMsg:
-		// Tool browser content loaded in background - no additional action needed
-		// The content was already loaded by the command
+		// Tool browser content loaded in background - trigger re-render
+		// This ensures the UI updates to show the loaded tools
 		return m, nil
+
+	// Removed startupDataLoadMsg handler - using lazy initialization instead
 
 	case errMsg:
 		m.err = msg.err
@@ -204,62 +218,77 @@ func (m Model) View() string {
 }
 
 func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
+	// Lazy initialization on first key press - ensures instant responsiveness
+	var initCmd tea.Cmd
+	if !m.state.Initialized {
+		m.state.Initialized = true
+		initCmd = tea.Batch(
+			m.watchTaskUpdates(),
+			m.loadInitialData(),
+		)
+	}
+
+	// Helper to combine commands
+	combineCmd := func(cmd tea.Cmd) tea.Cmd {
+		if initCmd != nil {
+			return tea.Batch(initCmd, cmd)
+		}
+		return cmd
+	}
+
 	// Global keybindings
 	switch {
 	case key.Matches(msg, keys.Quit):
-		return m, tea.Quit
+		return m, tea.Quit // Don't combine with initCmd on quit
 	case key.Matches(msg, keys.Help):
 		m.state.CurrentView = ViewHelp
-		return m, nil
+		return m, combineCmd(nil)
 	case key.Matches(msg, keys.Tab):
 		// Cycle through views forward
 		m.nextView()
-		return m, nil
+		return m, combineCmd(nil)
 	case msg.String() == "shift+tab":
 		// Cycle through views backward
 		m.previousView()
-		return m, nil
+		return m, combineCmd(nil)
 	case key.Matches(msg, keys.Right):
 		// Navigate to next view with right arrow
 		m.nextView()
-		return m, nil
+		return m, combineCmd(nil)
 	case key.Matches(msg, keys.Left):
 		// Navigate to previous view with left arrow
 		m.previousView()
-		return m, nil
+		return m, combineCmd(nil)
 	}
 
 	// View-specific keybindings
 	switch msg.String() {
 	case "d", "D":
 		m.state.CurrentView = ViewDashboard
-		return m, nil
+		return m, combineCmd(nil)
 	case "t", "T":
 		m.state.CurrentView = ViewToolBrowser
 		// Load full content asynchronously when switching to tool browser
 		// Return immediately without blocking - content loads in background
-		return m, m.loadToolBrowserContentAsync()
+		return m, combineCmd(m.loadToolBrowserContentAsync())
 	case "b", "B":
 		m.state.CurrentView = ViewBundleExplorer
-		return m, nil
+		return m, combineCmd(nil)
 	case "m", "M":
 		m.state.CurrentView = ViewMonitor
-		return m, nil
+		return m, combineCmd(nil)
 	case "c", "C":
 		m.state.CurrentView = ViewConfig
-		return m, nil
+		return m, combineCmd(nil)
 	case "h", "H":
 		m.state.CurrentView = ViewHealth
-		return m, nil
+		return m, combineCmd(nil)
 	}
 
-	// If the key wasn't handled above, delegate to the current view
-	// This allows arrow keys and other navigation to work
-	if m.ready {
-		return m.updateCurrentView(msg)
-	}
-
-	return m, nil
+	// Always handle key presses - don't wait for ready state
+	// This ensures immediate responsiveness even during initialization
+	newModel, currentViewCmd := m.updateCurrentView(msg)
+	return newModel, combineCmd(currentViewCmd)
 }
 
 // Define the main navigation views (excluding Help)

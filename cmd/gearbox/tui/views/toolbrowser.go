@@ -198,11 +198,8 @@ func (tb *ToolBrowserNew) renderTUIStyle() string {
 	)
 	
 	// Content (list items with cursor highlighting)
-	// Show loading message immediately if no content - completely non-blocking
-	// Don't do ANY processing, just show placeholder
-	if tb.ready && tb.viewport.TotalLineCount() == 0 {
-		tb.setLoadingState()
-	}
+	// Show appropriate content based on current state
+	tb.updateContent()
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
 	return lipgloss.JoinVertical(
@@ -213,13 +210,48 @@ func (tb *ToolBrowserNew) renderTUIStyle() string {
 	)
 }
 
+// updateContent shows appropriate content based on current data state
+func (tb *ToolBrowserNew) updateContent() {
+	if !tb.ready {
+		return
+	}
+	
+	// If no tools data loaded yet, show loading state
+	if len(tb.tools) == 0 {
+		tb.setLoadingState()
+		return
+	}
+	
+	// If tools data is loaded but filtered tools is empty, apply filters
+	if len(tb.filteredTools) == 0 {
+		tb.applyFilters()
+	}
+	
+	// If still no filtered tools after applying filters, show empty state
+	if len(tb.filteredTools) == 0 {
+		tb.setEmptyState()
+		return
+	}
+	
+	// Show tools content
+	tb.updateViewportContentTUI()
+}
+
 // setLoadingState shows loading message without any processing
 func (tb *ToolBrowserNew) setLoadingState() {
 	loadingContent := `Loading tools...
 
-This might take a moment on first access.
-Press any key to continue once loaded.`
+Discovering available development tools.
+This happens in the background.`
 	tb.viewport.SetContent(loadingContent)
+}
+
+// setEmptyState shows when no tools match current filters
+func (tb *ToolBrowserNew) setEmptyState() {
+	emptyContent := `No tools found.
+
+Try changing the category filter or search terms.`
+	tb.viewport.SetContent(emptyContent)
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -254,8 +286,10 @@ func (tb *ToolBrowserNew) SetData(tools []orchestrator.ToolConfig, installed map
 
 // LoadFullContent loads the complete viewport content (called when view becomes active)
 func (tb *ToolBrowserNew) LoadFullContent() {
+	// This method is called from the async task
+	// It should ensure content is properly loaded and displayed
 	if tb.ready {
-		tb.updateViewportContentTUI()
+		tb.updateContent()
 	}
 }
 
