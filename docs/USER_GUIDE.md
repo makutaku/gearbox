@@ -494,6 +494,35 @@ gearbox doctor nerd-fonts --verbose
 fc-list | grep -i nerd
 ```
 
+### Zoxide Navigation Diagnostics
+
+Check zoxide installation, database status, and shell integration:
+
+```bash
+# Basic zoxide health check
+gearbox doctor zoxide
+
+# Detailed analysis with database contents
+gearbox doctor zoxide --verbose
+
+# Check installation status  
+gearbox status zoxide
+```
+
+**Zoxide Doctor Coverage:**
+- ✅ **Installation Status**: Binary location and version verification
+- ✅ **Database Health**: Entry counting and query functionality
+- ✅ **Shell Integration**: Multi-shell configuration detection (bash/zsh/fish)
+- ✅ **Alias Functionality**: 'z' command availability and testing
+- ✅ **Performance Check**: Database query response validation
+- ✅ **Suggestions**: Actionable recommendations for detected issues
+
+**Common Issues Resolved:**
+- Missing shell integration setup
+- Empty database requiring navigation
+- Alias conflicts or configuration problems
+- Performance optimization recommendations
+
 **Status Output Example:**
 ```
 ✅ Found 375 Nerd Fonts from 13 font families

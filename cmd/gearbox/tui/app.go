@@ -17,6 +17,7 @@ import (
 	"gearbox/cmd/gearbox/tui/views"
 	"gearbox/pkg/manifest"
 	"gearbox/pkg/orchestrator"
+	"gearbox/pkg/status"
 )
 
 type Model struct {
@@ -132,6 +133,27 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 		m.bundleExplorer.SetData(msg.bundles, msg.installed)
 		// Update health view data
 		m.healthView.SetData(msg.tools, msg.installed)
+		// Start background unified status loading
+		return m, m.loadUnifiedStatusBackground()
+
+	case manifestReloadedMsg:
+		// Update only the installed tools data
+		m.state.InstalledTools = msg.installed
+		// Update all views with the new installed tools data
+		m.dashboard.SetData(m.state.Tools, m.state.Bundles, msg.installed)
+		m.toolBrowser.SetData(m.state.Tools, msg.installed)
+		m.bundleExplorer.SetData(m.state.Bundles, msg.installed)
+		m.healthView.SetData(m.state.Tools, msg.installed)
+		return m, nil
+
+	case unifiedStatusLoadedMsg:
+		// Update with unified status data (background loading complete)
+		m.state.InstalledTools = msg.installed
+		// Update all views with the comprehensive status data
+		m.dashboard.SetData(m.state.Tools, m.state.Bundles, msg.installed)
+		m.toolBrowser.SetData(m.state.Tools, msg.installed)
+		m.bundleExplorer.SetData(m.state.Bundles, msg.installed)
+		m.healthView.SetData(m.state.Tools, msg.installed)
 		return m, nil
 
 	case errMsg:
@@ -141,9 +163,16 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case tasks.TaskUpdateMsg:
 		// Handle task updates
 		// Pass updates to install manager if it's the current view
-		if m.state.CurrentView == ViewInstallManager {
+		if m.state.CurrentView == ViewMonitor {
 			m.installManager.HandleTaskUpdate(msg.TaskID, msg.Progress)
 		}
+		
+		// If a task completed successfully, reload manifest data to show newly installed tools
+		if msg.Status == tasks.TaskStatusCompleted {
+			// Reload manifest data to refresh installed tools
+			return m, tea.Batch(m.watchTaskUpdates(), m.reloadManifestData())
+		}
+		
 		// Continue watching for more updates
 		return m, m.watchTaskUpdates()
 	}
@@ -206,8 +235,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "b", "B":
 		m.state.CurrentView = ViewBundleExplorer
 		return m, nil
-	case "i", "I":
-		m.state.CurrentView = ViewInstallManager
+	case "m", "M":
+		m.state.CurrentView = ViewMonitor
 		return m, nil
 	case "c", "C":
 		m.state.CurrentView = ViewConfig
@@ -231,7 +260,7 @@ var mainViews = []ViewType{
 	ViewDashboard,
 	ViewToolBrowser,
 	ViewBundleExplorer,
-	ViewInstallManager,
+	ViewMonitor,
 	ViewConfig,
 	ViewHealth,
 }
@@ -311,18 +340,105 @@ func (m Model) loadInitialData() tea.Cmd {
 			}
 		}
 		
-		// Load installed tools from manifest
-		manifestData, err := m.manifest.Load()
+		// Load installed tools - use fast manifest-only loading for initial display
+		// The unified status will be loaded in the background after initial render
 		installed := make(map[string]*manifest.InstallationRecord)
-		if err != nil {
-			log.Warn().Err(err).Msg("Failed to load manifest")
-		} else if manifestData != nil && manifestData.Installations != nil {
+		manifestData, err := m.manifest.Load()
+		if err == nil && manifestData != nil && manifestData.Installations != nil {
 			installed = manifestData.Installations
 		}
 
 		return dataLoadedMsg{
 			tools:     tools,
 			bundles:   bundles,
+			installed: installed,
+		}
+	}
+}
+
+// loadUnifiedStatusBackground loads unified status in background without blocking UI
+func (m Model) loadUnifiedStatusBackground() tea.Cmd {
+	return func() tea.Msg {
+		// Load unified status service (this is the expensive operation)
+		unifiedStatus, err := status.NewUnifiedStatusService()
+		if err != nil {
+			log.Warn().Err(err).Msg("Background unified status loading failed")
+			return nil // No update needed
+		}
+		
+		// Get all tool status from unified service
+		allStatus, err := unifiedStatus.GetAllToolsStatus()
+		if err != nil {
+			log.Warn().Err(err).Msg("Background unified status check failed")
+			return nil // No update needed
+		}
+		
+		// Convert unified status to manifest records for TUI compatibility
+		installed := make(map[string]*manifest.InstallationRecord)
+		for toolName, toolStatus := range allStatus {
+			if toolStatus.Installed {
+				record := &manifest.InstallationRecord{
+					Version:     toolStatus.Version,
+					BinaryPaths: toolStatus.BinaryPaths,
+				}
+				if toolStatus.Source == "gearbox" {
+					record.Method = "gearbox"
+				} else {
+					record.Method = "system" // For pre-existing tools
+				}
+				installed[toolName] = record
+			}
+		}
+		
+		return unifiedStatusLoadedMsg{
+			installed: installed,
+		}
+	}
+}
+
+// reloadManifestData reloads the installation data using unified status
+func (m Model) reloadManifestData() tea.Cmd {
+	return func() tea.Msg {
+		// Load installed tools using unified status service
+		installed := make(map[string]*manifest.InstallationRecord)
+		
+		unifiedStatus, err := status.NewUnifiedStatusService()
+		if err != nil {
+			log.Warn().Err(err).Msg("Failed to create unified status service during reload")
+			// Fallback to manifest-only loading
+			manifestData, err := m.manifest.Load()
+			if err == nil && manifestData != nil && manifestData.Installations != nil {
+				installed = manifestData.Installations
+			}
+		} else {
+			// Get all tool status from unified service
+			allStatus, err := unifiedStatus.GetAllToolsStatus()
+			if err != nil {
+				log.Warn().Err(err).Msg("Failed to get unified status during reload")
+				manifestData, err := m.manifest.Load()
+				if err == nil && manifestData != nil && manifestData.Installations != nil {
+					installed = manifestData.Installations
+				}
+			} else {
+				// Convert unified status to manifest records for TUI compatibility
+				for toolName, toolStatus := range allStatus {
+					if toolStatus.Installed {
+						record := &manifest.InstallationRecord{
+							Version:     toolStatus.Version,
+							BinaryPaths: toolStatus.BinaryPaths,
+						}
+						if toolStatus.Source == "gearbox" {
+							record.Method = "gearbox"
+						} else {
+							record.Method = "system"
+						}
+						installed[toolName] = record
+					}
+				}
+			}
+		}
+
+		return manifestReloadedMsg{
 			installed: installed,
 		}
 	}
@@ -338,6 +454,7 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 		if keyMsg, ok := msg.(tea.KeyMsg); ok && keyMsg.String() == "i" {
 			// Add selected tools to task manager
 			selectedTools := m.toolBrowser.GetSelectedTools()
+			var addedTaskIDs []string
 			for _, toolName := range selectedTools {
 				// Find the tool config
 				for _, tool := range m.state.Tools {
@@ -346,6 +463,9 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 						taskID := m.taskManager.AddTask(tool, "standard")
 						// Add task ID to install manager
 						m.installManager.AddTaskID(taskID)
+						// Start the task immediately
+						m.taskManager.StartTask(taskID)
+						addedTaskIDs = append(addedTaskIDs, taskID)
 						break
 					}
 				}
@@ -353,8 +473,8 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 			if len(selectedTools) > 0 {
 				// Clear selection
 				m.toolBrowser.ClearSelection()
-				// Switch to install manager view
-				m.state.CurrentView = ViewInstallManager
+				// Switch to monitor view to show progress
+				m.state.CurrentView = ViewMonitor
 				return m, nil
 			}
 		}
@@ -379,14 +499,16 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 							taskID := m.taskManager.AddTask(tool, "standard")
 							// Add task ID to install manager
 							m.installManager.AddTaskID(taskID)
+							// Start the task immediately
+							m.taskManager.StartTask(taskID)
 							break
 						}
 					}
 				}
 				
 				if len(uninstalledTools) > 0 {
-					// Switch to install manager view
-					m.state.CurrentView = ViewInstallManager
+					// Switch to monitor view
+					m.state.CurrentView = ViewMonitor
 					return m, nil
 				}
 			}
@@ -394,8 +516,8 @@ func (m Model) updateCurrentView(msg tea.Msg) (tea.Model, tea.Cmd) {
 		// Delegate to bundle explorer
 		cmd := m.bundleExplorer.Update(msg)
 		return m, cmd
-	case ViewInstallManager:
-		// Delegate to install manager
+	case ViewMonitor:
+		// Delegate to installation monitor
 		cmd := m.installManager.Update(msg)
 		return m, cmd
 	case ViewConfig:
@@ -421,8 +543,8 @@ func (m Model) renderCurrentView() string {
 		viewContent = m.renderToolBrowser()
 	case ViewBundleExplorer:
 		viewContent = m.renderBundleExplorer()
-	case ViewInstallManager:
-		viewContent = m.renderInstallManager()
+	case ViewMonitor:
+		viewContent = m.renderMonitor()
 	case ViewConfig:
 		viewContent = m.renderConfig()
 	case ViewHealth:
@@ -532,7 +654,7 @@ func (m Model) renderNavigationBar() string {
 		{"[D]ashboard", ViewDashboard},
 		{"[T]ools", ViewToolBrowser},
 		{"[B]undles", ViewBundleExplorer},
-		{"[I]nstall", ViewInstallManager},
+		{"[M]onitor", ViewMonitor},
 		{"[C]onfig", ViewConfig},
 		{"[H]ealth", ViewHealth},
 	}
@@ -584,7 +706,7 @@ func (m Model) renderBundleExplorer() string {
 	return m.bundleExplorer.Render()
 }
 
-func (m Model) renderInstallManager() string {
+func (m Model) renderMonitor() string {
 	return m.installManager.Render()
 }
 
@@ -614,24 +736,24 @@ Views:
   D - Dashboard         - Overview and quick actions
   T - Tool Browser      - Browse and install individual tools
   B - Bundle Explorer   - Explore curated tool collections
-  I - Install Manager   - Manage installation queue and progress
+  M - Monitor           - Monitor installation tasks and progress
   C - Configuration     - Configure Gearbox settings
   H - Health Monitor    - System and tool health checks
   ? - Help             - This help screen
 
 Tool Browser:
   Space     - Select/Deselect tool
-  i         - Install selected tools
+  i         - Install selected tools (starts immediately)
   c         - Cycle categories
   p         - Toggle preview
 
 Bundle Explorer:
   Enter     - Expand/Collapse bundle
-  i         - Install bundle
+  i         - Install bundle (starts immediately)
   c         - Cycle categories
 
-Install Manager:
-  s         - Start installations
+Monitor:
+  s         - Start queued installations
   c         - Cancel current task
   o         - Toggle output display
 
@@ -674,6 +796,14 @@ func (m Model) errorView() string {
 type dataLoadedMsg struct {
 	tools     []orchestrator.ToolConfig
 	bundles   []orchestrator.BundleConfig
+	installed map[string]*manifest.InstallationRecord
+}
+
+type manifestReloadedMsg struct {
+	installed map[string]*manifest.InstallationRecord
+}
+
+type unifiedStatusLoadedMsg struct {
 	installed map[string]*manifest.InstallationRecord
 }
 

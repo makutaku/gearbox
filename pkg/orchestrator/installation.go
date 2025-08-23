@@ -313,7 +313,7 @@ func (o *Orchestrator) showInstallationPlan(tools []ToolConfig) {
 
 // installCommonDependencies installs common dependencies
 func (o *Orchestrator) installCommonDependencies() error {
-	commonDepsScript := filepath.Join(o.scriptsDir, "install-common-deps.sh")
+	commonDepsScript := filepath.Join(o.scriptsDir, "installation", "common", "install-common-deps.sh")
 	
 	if _, err := os.Stat(commonDepsScript); os.IsNotExist(err) {
 		return fmt.Errorf("common dependencies script not found: %s", commonDepsScript)
@@ -380,11 +380,32 @@ func (o *Orchestrator) executeInstallations(tools []ToolConfig) error {
 	return nil
 }
 
+// findToolScript finds the installation script for a tool by searching category directories
+func (o *Orchestrator) findToolScript(toolName string) string {
+	// List of category directories to search
+	categories := []string{"core", "development", "system", "text", "media", "ui"}
+	
+	scriptName := fmt.Sprintf("install-%s.sh", toolName)
+	
+	// Search in each category directory
+	for _, category := range categories {
+		scriptPath := filepath.Join(o.scriptsDir, "installation", "categories", category, scriptName)
+		if _, err := os.Stat(scriptPath); err == nil {
+			return scriptPath
+		}
+	}
+	
+	// Fallback: try the old path (directly in scripts dir)
+	fallbackPath := filepath.Join(o.scriptsDir, scriptName)
+	return fallbackPath
+}
+
 // installTool installs a single tool
 func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 	start := time.Now()
 	
-	scriptPath := filepath.Join(o.scriptsDir, fmt.Sprintf("install-%s.sh", tool.Name))
+	// Find the script in the appropriate category directory
+	scriptPath := o.findToolScript(tool.Name)
 	
 	// Check if script exists
 	if _, err := os.Stat(scriptPath); os.IsNotExist(err) {
@@ -396,16 +417,24 @@ func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 		}
 	}
 
-	// Build command arguments
+	// Build command arguments using standard protocol
 	var args []string
 	args = append(args, scriptPath)
 
-	// Add build flag
-	if buildFlag, exists := tool.BuildTypes[o.options.BuildType]; exists && buildFlag != "" {
-		args = append(args, buildFlag)
+	// Add standardized build type flag
+	switch o.options.BuildType {
+	case "minimal":
+		args = append(args, "--minimal")
+	case "standard":
+		args = append(args, "--standard")
+	case "maximum":
+		args = append(args, "--maximum")
+	default:
+		// Default to standard if unknown build type
+		args = append(args, "--standard")
 	}
 
-	// Add common options
+	// Add common options using standard protocol
 	args = append(args, "--skip-deps") // Dependencies handled separately
 	args = append(args, "--force")     // Always force to avoid interactive prompts
 	
@@ -415,6 +444,14 @@ func (o *Orchestrator) installTool(tool ToolConfig) InstallationResult {
 	
 	if o.options.NoShell && tool.ShellIntegration {
 		args = append(args, "--no-shell")
+	}
+	
+	if o.options.Verbose {
+		args = append(args, "--verbose")
+	}
+	
+	if o.options.DryRun {
+		args = append(args, "--dry-run")
 	}
 
 	// Execute installation

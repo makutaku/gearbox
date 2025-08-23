@@ -1,7 +1,7 @@
 #!/bin/bash
 
-# zoxide Installation Script for Debian Linux
-# Automated dependency installation, installation via cargo, and shell integration
+# zoxide Installation Script - Gearbox Standard Protocol
+# Smart cd command (Rust)
 # Usage: ./install-zoxide.sh [OPTIONS]
 
 set -e  # Exit on any error
@@ -9,7 +9,7 @@ set -e  # Exit on any error
 # Find the script directory and load common library
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_DIR="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"
-REPO_DIR="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"
+
 # Source common library for shared functions
 if [[ -f "$REPO_DIR/scripts/lib/common.sh" ]]; then
     source "$REPO_DIR/scripts/lib/common.sh"
@@ -18,93 +18,192 @@ else
     exit 1
 fi
 
+# Script metadata
+SCRIPT_VERSION="1.0.0"
+TOOL_NAME="zoxide"
+TOOL_DESCRIPTION="Smart cd command (Rust)"
 
-# Configuration
-RUST_MIN_VERSION="1.85.0"
-
-# Default options
-MODE="install"         # config, install
+# Standard protocol variables
+BUILD_TYPE="standard"
+MODE="install" 
 SKIP_DEPS=false
-FORCE_INSTALL=false
-SETUP_SHELL=true
-INSTALL_FZF=false
+FORCE=false
+RUN_TESTS=false
+NO_SHELL=false
+DRY_RUN=false
+VERBOSE=false
+QUIET=false
 
-# Show help
+# Tool-specific configuration
+RUST_MIN_VERSION="1.85.0"
+INSTALL_FZF=false  # Legacy option
+
+# Standard help display
 show_help() {
     cat << EOF
-zoxide Installation Script for Debian Linux
+$TOOL_NAME Installation Script - Gearbox Standard Protocol
 
-Usage: $0 [OPTIONS]
+DESCRIPTION:
+    $TOOL_DESCRIPTION
 
-Modes:
-  -c, --config-only     Configure only (prepare installation)
-  -i, --install         Install zoxide and setup shell integration (default)
+USAGE:
+    $0 [OPTIONS]
 
-Options:
-  --skip-deps          Skip dependency installation
-  --force              Force reinstallation if already installed
-  --no-shell           Skip shell integration setup
-  --install-fzf        Also install fzf via cargo (simple method - for advanced options use ./install-fzf.sh)
-  -h, --help           Show this help message
+BUILD TYPES:
+    --minimal           Fast build with essential features only
+    --standard          Balanced build with reasonable features (default)
+    --maximum           Full-featured build with all optimizations
 
-Examples:
-  $0                   # Default: install with shell integration
-  $0 --install-fzf     # Install with basic fzf (prefer: ./install-fzf.sh for more options)
-  $0 --no-shell        # Install without shell integration
-  $0 -c                # Configuration check only
-  
-Recommended for enhanced functionality:
-  $0 && ./install-fzf.sh    # Install zoxide, then fzf with advanced build options
+EXECUTION MODES:
+    --config-only       Configure only (prepare build environment)
+    --build-only        Configure and build (no installation)
+    --install           Configure, build, and install (default)
+
+COMMON OPTIONS:
+    --skip-deps         Skip dependency installation
+    --force             Force reinstallation if already installed
+    --run-tests         Run test suite after building
+    --no-shell          Skip shell integration setup
+    --dry-run           Show what would be done without executing
+    --verbose           Enable verbose output
+    --quiet             Suppress non-error output
+    --help, -h          Show this help message
+    --version           Show script version
+
+LEGACY OPTIONS (deprecated):
+    --install-fzf       Also install fzf via cargo (use ./install-fzf.sh instead)
+
+EXAMPLES:
+    $0                              # Standard build and install
+    $0 --minimal --config-only      # Minimal build, config only  
+    $0 --maximum --force            # Maximum build, force reinstall
+    $0 --dry-run --verbose          # Preview with verbose output
 
 EOF
 }
 
-# Parse command line arguments
-while [[ $# -gt 0 ]]; do
-    case $1 in
-        -c|--config-only)
-            MODE="config"
-            shift
-            ;;
-        -i|--install)
-            MODE="install"
-            shift
-            ;;
-        --skip-deps)
-            SKIP_DEPS=true
-            shift
-            ;;
-        --force)
-            FORCE_INSTALL=true
-            shift
-            ;;
-        --no-shell)
-            SETUP_SHELL=false
-            shift
-            ;;
-        --install-fzf)
-            INSTALL_FZF=true
-            shift
-            ;;
-        -h|--help)
-            show_help
-            exit 0
-            ;;
-        *)
-            echo "Unknown option: $1"
-            show_help
-            exit 1
-            ;;
-    esac
-done
+# Standard argument parsing
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --minimal)
+                BUILD_TYPE="minimal"
+                shift
+                ;;
+            --standard)
+                BUILD_TYPE="standard"
+                shift
+                ;;
+            --maximum)
+                BUILD_TYPE="maximum"
+                shift
+                ;;
+            --config-only)
+                MODE="config"
+                shift
+                ;;
+            --build-only)
+                MODE="build"
+                shift
+                ;;
+            --install)
+                MODE="install"
+                shift
+                ;;
+            --skip-deps)
+                SKIP_DEPS=true
+                shift
+                ;;
+            --force)
+                FORCE=true
+                shift
+                ;;
+            --run-tests)
+                RUN_TESTS=true
+                shift
+                ;;
+            --no-shell)
+                NO_SHELL=true
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --verbose)
+                VERBOSE=true
+                shift
+                ;;
+            --quiet)
+                QUIET=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            --version)
+                echo "$TOOL_NAME installation script version: $SCRIPT_VERSION"
+                exit 0
+                ;;
+            # Legacy options for backward compatibility
+            -c|--config-only-legacy)
+                MODE="config"
+                shift
+                ;;
+            -i|--install-legacy)
+                MODE="install"
+                shift
+                ;;
+            --install-fzf)
+                INSTALL_FZF=true
+                warning "Option --install-fzf is deprecated, use ./install-fzf.sh instead"
+                shift
+                ;;
+            -*)
+                warning "Unknown option: $1 (ignoring)"
+                shift
+                ;;
+            *)
+                error "Unexpected argument: $1"
+                ;;
+        esac
+    done
+}
 
-# Note: Logging functions now provided by lib/common.sh
+# Parse arguments
+parse_args "$@"
 
-# Note: Logging functions now provided by lib/common.sh
+# Standard logging functions (override common.sh if needed)
+log() {
+    [[ $QUIET == false ]] && echo "📦 $TOOL_NAME: $@"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+log_verbose() {
+    [[ $VERBOSE == true ]] && echo "🔍 $TOOL_NAME: $@"
+}
 
-# Note: Logging functions now provided by lib/common.sh
+log_success() {
+    [[ $QUIET == false ]] && success "$@"
+}
+
+log_error() {
+    error "$@"
+}
+
+log_warning() {
+    warning "$@"
+}
+
+# Dry run helper
+execute() {
+    if [[ $DRY_RUN == true ]]; then
+        log_verbose "DRY RUN: $@"
+    else
+        log_verbose "Executing: $@"
+        "$@"
+    fi
+}
 
 ask_user() {
     while true; do

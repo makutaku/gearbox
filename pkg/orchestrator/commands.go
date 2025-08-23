@@ -113,8 +113,8 @@ func showCmd() *cobra.Command {
 
 // statusCmd creates the status command
 func statusCmd() *cobra.Command {
-	return &cobra.Command{
-		Use:   "status",
+	cmd := &cobra.Command{
+		Use:   "status [tools...]",
 		Short: "Show installation status of tools",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			orchestrator, err := NewOrchestrator(InstallationOptions{})
@@ -122,9 +122,20 @@ func statusCmd() *cobra.Command {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
 
-			return orchestrator.ShowStatus(args)
+			manifestOnly, _ := cmd.Flags().GetBool("manifest-only")
+			unified, _ := cmd.Flags().GetBool("unified")
+			
+			return orchestrator.ShowStatus(args, manifestOnly, unified)
 		},
 	}
+	
+	cmd.Flags().Bool("manifest-only", false, "Show only manifest-tracked tools")
+	cmd.Flags().Bool("unified", false, "Show unified view (manifest + live detection)")
+	cmd.Flags().Bool("all", false, "Show status for all tools (default)")
+	cmd.Flags().Bool("installed", false, "Show only installed tools")
+	cmd.Flags().Bool("missing", false, "Show only missing tools")
+	
+	return cmd
 }
 
 // verifyCmd creates the verify command

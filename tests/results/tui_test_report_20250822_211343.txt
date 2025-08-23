@@ -1,0 +1,25 @@
+TUI Test Report
+===============
+Generated: Fri Aug 22 09:13:47 PM UTC 2025
+Test Duration: 4s
+
+Summary:
+- Tests Run: 9
+- Tests Passed: 8
+- Tests Failed: 1
+- Success Rate: 88%
+
+Environment:
+- Gearbox Binary: ./build/gearbox
+- System: Linux devbox-01 6.8.12-11-pve #1 SMP PREEMPT_DYNAMIC PMX 6.8.12-11 (2025-05-22T09:39Z) x86_64 GNU/Linux
+- Terminal: xterm
+
+Test Results:
+- ./tests/results/invalid_scenario_20250822_211343.log
+- ./tests/results/tui_demo_help_20250822_211343.log
+- ./tests/results/tui_help_20250822_211343.log
+- ./tests/results/scenario_basic_nav_20250822_211343.log
+- ./tests/results/scenario_tool_install_20250822_211343.log
+- ./tests/results/scenario_bundle_install_20250822_211343.log
+- ./tests/results/demo_mode_launch_20250822_211343.log
+

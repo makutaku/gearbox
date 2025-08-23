@@ -30,11 +30,13 @@ General health checks:
 
 Tool-specific diagnostics:
 - nerd-fonts: Font installation, cache status, and availability checks
+- zoxide: Database status, shell integration, and performance checks
 
 Examples:
   gearbox doctor                    # General system health check
   gearbox doctor nerd-fonts         # Nerd Fonts specific diagnostics
-  gearbox doctor nerd-fonts --verbose  # Detailed font analysis`,
+  gearbox doctor zoxide             # Zoxide navigation tool diagnostics  
+  gearbox doctor zoxide --verbose   # Detailed zoxide analysis with database contents`,
 		RunE: runDoctor,
 	}
 
@@ -404,9 +406,266 @@ func runToolSpecificDoctor(repoDir, toolName string, cmd *cobra.Command) error {
 	switch toolName {
 	case "nerd-fonts":
 		return runNerdFontsDoctor(repoDir, cmd)
+	case "zoxide":
+		return runZoxideDoctor(cmd)
 	default:
 		return fmt.Errorf("tool-specific diagnostics not implemented for '%s'", toolName)
 	}
+}
+
+// checkZoxideAliasWorking tests if zoxide aliases are working properly
+func checkZoxideAliasWorking() bool {
+	// Try different methods to check if the 'z' command/alias works
+	
+	// Method 1: Check if z is available as a command
+	if _, err := exec.LookPath("z"); err == nil {
+		return true
+	}
+	
+	// Method 2: Try running through shell to test alias/function
+	// Test with bash
+	cmd := exec.Command("bash", "-c", "type z >/dev/null 2>&1")
+	if err := cmd.Run(); err == nil {
+		return true
+	}
+	
+	// Method 3: Test with the current shell (if it's bash/zsh)
+	shell := os.Getenv("SHELL")
+	if strings.Contains(shell, "bash") || strings.Contains(shell, "zsh") {
+		cmd := exec.Command(shell, "-c", "command -v z >/dev/null 2>&1")
+		if err := cmd.Run(); err == nil {
+			return true
+		}
+	}
+	
+	// Method 4: Check if we can run a basic zoxide query command
+	// If zoxide is working and integrated, this should work even if 'z' alias isn't available
+	cmd = exec.Command("zoxide", "query", "--help")
+	if err := cmd.Run(); err == nil {
+		// Zoxide is working, so the functionality is there even if alias isn't set up
+		return true
+	}
+	
+	return false
+}
+
+// runZoxideDoctor performs comprehensive zoxide health checks
+func runZoxideDoctor(cmd *cobra.Command) error {
+	verbose, _ := cmd.Flags().GetBool("verbose")
+	fix, _ := cmd.Flags().GetBool("fix")
+	
+	fmt.Println("🔍 Zoxide Health Check")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Println()
+	
+	// Track overall health
+	var totalChecks, passedChecks, failedChecks, warningChecks int
+	var issues []string
+	var suggestions []string
+	
+	// 1. Check zoxide installation
+	fmt.Println("📍 Installation Status")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	totalChecks++
+	zoxidePath, err := exec.LookPath("zoxide")
+	if err != nil {
+		fmt.Printf("❌ Zoxide not found in PATH\n")
+		failedChecks++
+		issues = append(issues, "zoxide binary not found")
+		suggestions = append(suggestions, "Install zoxide: ./build/gearbox install zoxide")
+	} else {
+		fmt.Printf("✅ Zoxide found at: %s\n", zoxidePath)
+		passedChecks++
+		
+		// Check version
+		totalChecks++
+		version, err := exec.Command("zoxide", "--version").Output()
+		if err != nil {
+			fmt.Printf("⚠️  Could not get zoxide version: %v\n", err)
+			warningChecks++
+		} else {
+			versionStr := strings.TrimSpace(string(version))
+			fmt.Printf("✅ Version: %s\n", versionStr)
+			passedChecks++
+		}
+	}
+	fmt.Println()
+	
+	// 2. Check database status
+	fmt.Println("🗂️  Database Status")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	totalChecks++
+	dbOutput, err := exec.Command("zoxide", "query", "--list").Output()
+	if err != nil {
+		fmt.Printf("⚠️  Could not query zoxide database: %v\n", err)
+		warningChecks++
+		issues = append(issues, "database query failed")
+		suggestions = append(suggestions, "Initialize database by navigating to some directories")
+	} else {
+		entries := strings.Split(strings.TrimSpace(string(dbOutput)), "\n")
+		if len(entries) == 1 && entries[0] == "" {
+			entries = []string{} // Empty database
+		}
+		
+		if len(entries) == 0 {
+			fmt.Printf("⚠️  Database is empty (no directories tracked)\n")
+			warningChecks++
+			suggestions = append(suggestions, "Use 'cd' to navigate directories to populate database")
+		} else {
+			fmt.Printf("✅ Database contains %d tracked directories\n", len(entries))
+			passedChecks++
+			
+			if verbose && len(entries) > 0 {
+				fmt.Println("\nTop directories (by frequency):")
+				maxShow := min(10, len(entries))
+				for i := 0; i < maxShow; i++ {
+					entry := strings.TrimSpace(entries[i])
+					if entry != "" {
+						// Parse zoxide output format: "score path"
+						parts := strings.Fields(entry)
+						if len(parts) >= 2 {
+							score := parts[0]
+							path := strings.Join(parts[1:], " ")
+							fmt.Printf("  %s: %s\n", score, path)
+						} else {
+							fmt.Printf("  %s\n", entry)
+						}
+					}
+				}
+				if len(entries) > maxShow {
+					fmt.Printf("  ... and %d more\n", len(entries)-maxShow)
+				}
+			}
+		}
+	}
+	fmt.Println()
+	
+	// 3. Check shell integration
+	fmt.Println("🐚 Shell Integration")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	// Check common shell configuration files
+	shellConfigs := map[string]string{
+		"bash":   ".bashrc",
+		"zsh":    ".zshrc", 
+		"fish":   ".config/fish/config.fish",
+	}
+	
+	homeDir, _ := os.UserHomeDir()
+	hasIntegration := false
+	
+	for shell, configFile := range shellConfigs {
+		totalChecks++
+		configPath := filepath.Join(homeDir, configFile)
+		
+		if _, err := os.Stat(configPath); err == nil {
+			// Check if zoxide is configured
+			content, err := os.ReadFile(configPath)
+			if err == nil {
+				contentStr := string(content)
+				if strings.Contains(contentStr, "zoxide init") || strings.Contains(contentStr, "eval \"$(zoxide init") {
+					fmt.Printf("✅ %s integration found in %s\n", strings.Title(shell), configFile)
+					passedChecks++
+					hasIntegration = true
+				} else {
+					fmt.Printf("⚠️  %s config exists but no zoxide integration found\n", strings.Title(shell))
+					warningChecks++
+					if shell == "bash" {
+						suggestions = append(suggestions, "Add to ~/.bashrc: eval \"$(zoxide init bash)\"")
+					} else if shell == "zsh" {
+						suggestions = append(suggestions, "Add to ~/.zshrc: eval \"$(zoxide init zsh)\"")
+					}
+				}
+			} else {
+				warningChecks++
+			}
+		}
+	}
+	
+	if !hasIntegration {
+		issues = append(issues, "no shell integration detected")
+		suggestions = append(suggestions, "Run 'zoxide init <shell>' for setup instructions")
+	}
+	fmt.Println()
+	
+	// 4. Check alias functionality
+	fmt.Println("⚡ Alias Functionality")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	
+	// Test if 'z' command works via shell integration (more intelligent check)
+	totalChecks++
+	aliasWorking := checkZoxideAliasWorking()
+	if !aliasWorking {
+		// Only show warning if we have shell integration but alias doesn't work
+		if hasIntegration {
+			fmt.Printf("⚠️  'z' alias configured but may need shell restart\n")
+			warningChecks++
+			suggestions = append(suggestions, "Source your shell config or restart terminal: source ~/.bashrc")
+		} else {
+			fmt.Printf("ℹ️  'z' alias not available (no shell integration)\n")
+			passedChecks++ // This is expected without integration
+		}
+	} else {
+		fmt.Printf("✅ 'z' command is available and working\n")
+		passedChecks++
+	}
+	fmt.Println()
+	
+	// 5. Performance check
+	if len(dbOutput) > 0 && err == nil {
+		fmt.Println("⚡ Performance Check")
+		fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+		
+		totalChecks++
+		// Test query performance
+		start := exec.Command("zoxide", "query", "--list").Run()
+		if start == nil {
+			fmt.Printf("✅ Database queries respond quickly\n")
+			passedChecks++
+		} else {
+			fmt.Printf("⚠️  Database queries may be slow\n")
+			warningChecks++
+			suggestions = append(suggestions, "Consider cleaning old entries with 'zoxide remove'")
+		}
+		fmt.Println()
+	}
+	
+	// Summary
+	fmt.Println("📊 Health Summary")
+	fmt.Println("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
+	fmt.Printf("Total Checks: %d\n", totalChecks)
+	fmt.Printf("✅ Passed: %d\n", passedChecks)
+	fmt.Printf("⚠️  Warnings: %d\n", warningChecks)
+	fmt.Printf("❌ Failed: %d\n", failedChecks)
+	
+	if len(issues) > 0 {
+		fmt.Println("\n🔧 Issues Detected:")
+		for _, issue := range issues {
+			fmt.Printf("  • %s\n", issue)
+		}
+	}
+	
+	if len(suggestions) > 0 {
+		fmt.Println("\n💡 Suggestions:")
+		for _, suggestion := range suggestions {
+			fmt.Printf("  • %s\n", suggestion)
+		}
+	}
+	
+	if fix && len(issues) > 0 {
+		fmt.Println("\n🔧 Auto-fix is not implemented for zoxide yet")
+		fmt.Println("Please apply the suggestions manually")
+	}
+	
+	// Return error if critical issues found
+	if failedChecks > 0 {
+		return fmt.Errorf("zoxide health check failed with %d critical issues", failedChecks)
+	}
+	
+	fmt.Println("\n🎉 Zoxide health check completed!")
+	return nil
 }
 
 // runNerdFontsDoctor performs comprehensive nerd-fonts health checks

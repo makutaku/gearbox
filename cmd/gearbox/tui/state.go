@@ -15,7 +15,7 @@ const (
 	ViewDashboard ViewType = iota
 	ViewToolBrowser
 	ViewBundleExplorer
-	ViewInstallManager
+	ViewMonitor
 	ViewConfig
 	ViewHealth
 	ViewHelp
@@ -299,8 +299,8 @@ func (v ViewType) String() string {
 		return "Tool Browser"
 	case ViewBundleExplorer:
 		return "Bundle Explorer"
-	case ViewInstallManager:
-		return "Install Manager"
+	case ViewMonitor:
+		return "Monitor"
 	case ViewConfig:
 		return "Configuration"
 	case ViewHealth:

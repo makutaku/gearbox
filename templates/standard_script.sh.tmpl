@@ -1,0 +1,350 @@
+#!/bin/bash
+# Gearbox Installation Script - {{.Name}}
+# Implements Standard Gearbox Script Protocol v1.0
+
+set -e  # Exit on any error
+
+# Find the script directory and load common library
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_DIR="$(dirname "$(dirname "$(dirname "$(dirname "$SCRIPT_DIR")")")")"
+
+# Source common library for shared functions
+if [[ -f "$REPO_DIR/scripts/lib/common.sh" ]]; then
+    source "$REPO_DIR/scripts/lib/common.sh"
+else
+    echo "ERROR: common.sh not found in $REPO_DIR/scripts/lib/" >&2
+    exit 1
+fi
+
+# Script metadata
+SCRIPT_VERSION="1.0.0"
+TOOL_NAME="{{.Name}}"
+TOOL_DESCRIPTION="{{.Description}}"
+TOOL_REPO="{{.Repository}}"
+
+# Standard protocol variables
+BUILD_TYPE="standard"
+MODE="install" 
+SKIP_DEPS=false
+FORCE=false
+RUN_TESTS=false
+NO_SHELL=false
+DRY_RUN=false
+VERBOSE=false
+QUIET=false
+NO_CACHE=false
+CLEAN=false
+
+# Tool-specific configuration
+{{.Name | ToUpper}}_DIR="{{.Name}}"
+{{.Name | ToUpper}}_REPO="{{.Repository}}"
+{{if .MinVersion}}MIN_VERSION="{{.MinVersion}}"{{end}}
+
+# Standard argument parsing
+parse_args() {
+    while [[ $# -gt 0 ]]; do
+        case $1 in
+            --minimal)
+                BUILD_TYPE="minimal"
+                shift
+                ;;
+            --standard)
+                BUILD_TYPE="standard"
+                shift
+                ;;
+            --maximum)
+                BUILD_TYPE="maximum"
+                shift
+                ;;
+            --config-only)
+                MODE="config"
+                shift
+                ;;
+            --build-only)
+                MODE="build"
+                shift
+                ;;
+            --install)
+                MODE="install"
+                shift
+                ;;
+            --skip-deps)
+                SKIP_DEPS=true
+                shift
+                ;;
+            --force)
+                FORCE=true
+                shift
+                ;;
+            --run-tests)
+                RUN_TESTS=true
+                shift
+                ;;
+            --no-shell)
+                NO_SHELL=true
+                shift
+                ;;
+            --dry-run)
+                DRY_RUN=true
+                shift
+                ;;
+            --verbose)
+                VERBOSE=true
+                shift
+                ;;
+            --quiet)
+                QUIET=true
+                shift
+                ;;
+            --no-cache)
+                NO_CACHE=true
+                shift
+                ;;
+            --clean)
+                CLEAN=true
+                shift
+                ;;
+            --help|-h)
+                show_help
+                exit 0
+                ;;
+            --version)
+                echo "$TOOL_NAME installation script version: $SCRIPT_VERSION"
+                exit 0
+                ;;
+            -*)
+                log_warning "Unknown option: $1 (ignoring)"
+                shift
+                ;;
+            *)
+                error "Unexpected argument: $1"
+                ;;
+        esac
+    done
+}
+
+# Standard help display
+show_help() {
+    cat << EOF
+$TOOL_NAME Installation Script - Gearbox Standard Protocol
+
+DESCRIPTION:
+    $TOOL_DESCRIPTION
+
+USAGE:
+    $0 [OPTIONS]
+
+BUILD TYPES:
+    --minimal           Fast build with essential features only
+    --standard          Balanced build with reasonable features (default)
+    --maximum           Full-featured build with all optimizations
+
+EXECUTION MODES:
+    --config-only       Configure only (prepare build environment)
+    --build-only        Configure and build (no installation)
+    --install           Configure, build, and install (default)
+
+COMMON OPTIONS:
+    --skip-deps         Skip dependency installation
+    --force             Force reinstallation if already installed
+    --run-tests         Run test suite after building
+    --no-shell          Skip shell integration setup
+    --dry-run           Show what would be done without executing
+    --verbose           Enable verbose output
+    --quiet             Suppress non-error output
+    --no-cache          Disable build cache usage
+    --clean             Clean build artifacts before building
+    --help, -h          Show this help message
+    --version           Show script version
+
+EXAMPLES:
+    $0                              # Standard build and install
+    $0 --minimal --config-only      # Minimal build, config only  
+    $0 --maximum --force            # Maximum build, force reinstall
+    $0 --dry-run --verbose          # Preview with verbose output
+
+EOF
+}
+
+# Standard logging functions (override common.sh if needed)
+log() {
+    [[ $QUIET == false ]] && echo "📦 $TOOL_NAME: $@"
+}
+
+log_verbose() {
+    [[ $VERBOSE == true ]] && echo "🔍 $TOOL_NAME: $@"
+}
+
+log_success() {
+    [[ $QUIET == false ]] && success "$@"
+}
+
+log_error() {
+    error "$@"
+}
+
+log_warning() {
+    warning "$@"
+}
+
+# Dry run helper
+execute() {
+    if [[ $DRY_RUN == true ]]; then
+        log_verbose "DRY RUN: $@"
+    else
+        log_verbose "Executing: $@"
+        "$@"
+    fi
+}
+
+# Build type configuration
+configure_build_type() {
+    log_verbose "Configuring $BUILD_TYPE build"
+    
+    case $BUILD_TYPE in
+        minimal)
+            # Tool-specific minimal configuration
+            {{if .BuildTypes.Minimal}}BUILD_FLAGS="{{.BuildTypes.Minimal}}"{{else}}BUILD_FLAGS=""{{end}}
+            ;;
+        standard)
+            # Tool-specific standard configuration
+            {{if .BuildTypes.Standard}}BUILD_FLAGS="{{.BuildTypes.Standard}}"{{else}}BUILD_FLAGS=""{{end}}
+            ;;
+        maximum)
+            # Tool-specific maximum configuration
+            {{if .BuildTypes.Maximum}}BUILD_FLAGS="{{.BuildTypes.Maximum}}"{{else}}BUILD_FLAGS=""{{end}}
+            ;;
+        *)
+            log_warning "Unknown build type: $BUILD_TYPE, using standard"
+            BUILD_TYPE="standard"
+            {{if .BuildTypes.Standard}}BUILD_FLAGS="{{.BuildTypes.Standard}}"{{else}}BUILD_FLAGS=""{{end}}
+            ;;
+    esac
+}
+
+# Installation phases
+configure_tool() {
+    log "Configuring $TOOL_NAME ($BUILD_TYPE build)"
+    
+    if [[ $SKIP_DEPS == false ]]; then
+        log "Installing dependencies..."
+        # Tool-specific dependency installation
+        {{range .Dependencies}}
+        execute install_if_missing "{{.}}"
+        {{end}}
+    fi
+    
+    configure_build_type
+    
+    # Tool-specific configuration
+    configure_{{.Name}}_specific
+}
+
+build_tool() {
+    [[ $MODE == "config" ]] && return 0
+    
+    log "Building $TOOL_NAME"
+    
+    if [[ $CLEAN == true ]]; then
+        log "Cleaning build artifacts"
+        execute clean_build_artifacts
+    fi
+    
+    # Tool-specific build process
+    build_{{.Name}}_specific
+    
+    if [[ $RUN_TESTS == true ]]; then
+        log "Running tests"
+        execute test_{{.Name}}_specific
+    fi
+}
+
+install_tool() {
+    [[ $MODE != "install" ]] && return 0
+    
+    log "Installing $TOOL_NAME"
+    
+    # Tool-specific installation
+    install_{{.Name}}_specific
+    
+    if [[ $NO_SHELL == false ]] && [[ "{{.ShellIntegration}}" == "true" ]]; then
+        log "Setting up shell integration"
+        execute setup_shell_integration
+    fi
+    
+    # Verify installation
+    verify_installation
+}
+
+# Tool-specific implementations (to be customized per tool)
+configure_{{.Name}}_specific() {
+    # Implement tool-specific configuration
+    log_verbose "Tool-specific configuration for $TOOL_NAME"
+}
+
+build_{{.Name}}_specific() {
+    # Implement tool-specific build process  
+    log_verbose "Tool-specific build for $TOOL_NAME"
+}
+
+install_{{.Name}}_specific() {
+    # Implement tool-specific installation
+    log_verbose "Tool-specific installation for $TOOL_NAME"
+}
+
+test_{{.Name}}_specific() {
+    # Implement tool-specific tests
+    log_verbose "Tool-specific tests for $TOOL_NAME"
+    {{if .TestCommand}}
+    execute {{.BinaryName}} {{.TestCommand}}
+    {{end}}
+}
+
+setup_shell_integration() {
+    # Implement shell integration if applicable
+    log_verbose "Setting up shell integration for $TOOL_NAME"
+}
+
+verify_installation() {
+    log "Verifying installation"
+    {{if .TestCommand}}
+    if execute {{.BinaryName}} {{.TestCommand}} &>/dev/null; then
+        log_success "$TOOL_NAME installed successfully"
+    else
+        log_error "$TOOL_NAME installation verification failed"
+        exit 1
+    fi
+    {{else}}
+    if command -v {{.BinaryName}} &>/dev/null; then
+        log_success "$TOOL_NAME installed successfully"
+    else
+        log_error "$TOOL_NAME installation verification failed"  
+        exit 1
+    fi
+    {{end}}
+}
+
+clean_build_artifacts() {
+    # Implement build artifact cleanup
+    log_verbose "Cleaning build artifacts for $TOOL_NAME"
+}
+
+# Main execution flow
+main() {
+    parse_args "$@"
+    
+    log "Starting $TOOL_NAME installation (mode: $MODE, build: $BUILD_TYPE)"
+    
+    if [[ $DRY_RUN == true ]]; then
+        log "DRY RUN MODE - No changes will be made"
+    fi
+    
+    configure_tool
+    build_tool  
+    install_tool
+    
+    log_success "$TOOL_NAME installation completed"
+}
+
+# Execute main function with all arguments
+main "$@"

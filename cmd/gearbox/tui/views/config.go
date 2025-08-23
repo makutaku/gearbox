@@ -1,6 +1,7 @@
 package views
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -51,7 +52,7 @@ func NewConfigView() *ConfigView {
 	ti.CharLimit = 100
 	ti.Width = 50
 
-	return &ConfigView{
+	cv := &ConfigView{
 		textInput: ti,
 		configs: []ConfigItem{
 			{
@@ -126,6 +127,62 @@ func NewConfigView() *ConfigView {
 				Editable:    true,
 			},
 		},
+	}
+	
+	// Load existing configuration from ~/.gearboxrc
+	cv.loadExistingConfig()
+	
+	return cv
+}
+
+// loadExistingConfig loads configuration values from ~/.gearboxrc
+func (cv *ConfigView) loadExistingConfig() {
+	configPath := filepath.Join(os.Getenv("HOME"), ".gearboxrc")
+	
+	// Check if config file exists
+	if _, err := os.Stat(configPath); os.IsNotExist(err) {
+		return // No existing config, use defaults
+	}
+	
+	// Read config file
+	file, err := os.Open(configPath)
+	if err != nil {
+		return // Can't read config, use defaults
+	}
+	defer file.Close()
+	
+	// Parse config file
+	configValues := make(map[string]string)
+	scanner := bufio.NewScanner(file)
+	for scanner.Scan() {
+		line := strings.TrimSpace(scanner.Text())
+		
+		// Skip empty lines and comments
+		if line == "" || strings.HasPrefix(line, "#") {
+			continue
+		}
+		
+		// Parse key=value pairs
+		parts := strings.SplitN(line, "=", 2)
+		if len(parts) == 2 {
+			key := strings.TrimSpace(parts[0])
+			value := strings.TrimSpace(parts[1])
+			
+			// Remove quotes if present
+			if (strings.HasPrefix(value, "\"") && strings.HasSuffix(value, "\"")) ||
+			   (strings.HasPrefix(value, "'") && strings.HasSuffix(value, "'")) {
+				value = value[1 : len(value)-1]
+			}
+			
+			configValues[key] = value
+		}
+	}
+	
+	// Update config items with loaded values
+	for i := range cv.configs {
+		if value, exists := configValues[cv.configs[i].Key]; exists {
+			cv.configs[i].Value = value
+		}
 	}
 }
 

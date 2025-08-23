@@ -28,6 +28,12 @@ intuitive way to discover and manage development tools.`,
 		Example: `  # Launch the TUI
   gearbox tui
   
+  # Launch TUI in demo mode with mock data (safe for testing)
+  gearbox tui --demo
+  
+  # Launch TUI in test mode for automated testing
+  gearbox tui --test
+  
   # Navigation:
   #   Tab       - Switch between views
   #   ↑/↓       - Navigate lists
@@ -37,6 +43,11 @@ intuitive way to discover and manage development tools.`,
   #   q         - Quit`,
 		RunE: runTUI,
 	}
+	
+	// Add test and demo mode flags
+	cmd.Flags().BoolP("demo", "d", false, "Launch in demo mode with mock data (safe for testing)")
+	cmd.Flags().BoolP("test", "t", false, "Launch in test mode for automated testing")
+	cmd.Flags().String("test-scenario", "", "Run specific test scenario (basic-nav, tool-install, bundle-install)")
 	
 	// Future flags could include:
 	// cmd.Flags().StringP("theme", "t", "default", "Color theme (default, dark, light)")
@@ -49,14 +60,26 @@ intuitive way to discover and manage development tools.`,
 func runTUI(cmd *cobra.Command, args []string) error {
 	log.Info().Msg("Launching Gearbox TUI")
 	
-	// Check terminal capabilities
-	if !isTerminalInteractive() {
+	// Get flags
+	demoMode, _ := cmd.Flags().GetBool("demo")
+	testMode, _ := cmd.Flags().GetBool("test")
+	testScenario, _ := cmd.Flags().GetString("test-scenario")
+	
+	// Check terminal capabilities (skip for test mode)
+	if !testMode && !isTerminalInteractive() {
 		log.Warn().Msg("Terminal does not appear to be interactive")
 		return ErrNotInteractive
 	}
 	
-	// Run the TUI
-	if err := tui.Run(); err != nil {
+	// Create TUI options
+	opts := tui.Options{
+		DemoMode:     demoMode,
+		TestMode:     testMode,
+		TestScenario: testScenario,
+	}
+	
+	// Run the TUI with options
+	if err := tui.RunWithOptions(opts); err != nil {
 		log.Error().Err(err).Msg("TUI error")
 		return err
 	}

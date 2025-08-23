@@ -8,6 +8,8 @@ import (
 	"sort"
 	"strings"
 	"sync"
+	
+	"gearbox/pkg/manifest"
 )
 
 // NewOrchestrator creates a new orchestrator instance with the given options.
@@ -149,8 +151,8 @@ func (o *Orchestrator) ListTools(category string, verbose bool) error {
 	return nil
 }
 
-// ShowStatus shows installation status of tools
-func (o *Orchestrator) ShowStatus(toolNames []string) error {
+// ShowStatus shows installation status of tools with different modes
+func (o *Orchestrator) ShowStatus(toolNames []string, manifestOnly bool, unified bool) error {
 	var tools []ToolConfig
 	
 	if len(toolNames) == 0 {
@@ -165,7 +167,28 @@ func (o *Orchestrator) ShowStatus(toolNames []string) error {
 		}
 	}
 
-	fmt.Printf("📊 Tool Installation Status\n")
+	// Load manifest data for manifest-only or unified modes
+	var manifestData map[string]bool
+	if manifestOnly || unified {
+		manifestData = make(map[string]bool)
+		
+		// Load manifest data from ~/.gearbox/manifest.json
+		manifestMgr := manifest.NewManager()
+		if manifestContent, err := manifestMgr.Load(); err == nil && manifestContent.Installations != nil {
+			for toolName := range manifestContent.Installations {
+				manifestData[toolName] = true
+			}
+		}
+	}
+	
+	// Show different headers based on mode
+	if manifestOnly {
+		fmt.Printf("📊 Tool Installation Status (Manifest Only)\n")
+	} else if unified {
+		fmt.Printf("📊 Tool Installation Status (Unified: Manifest + Live)\n")
+	} else {
+		fmt.Printf("📊 Tool Installation Status\n")
+	}
 	fmt.Printf("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n")
 
 	var installed, notInstalled int
@@ -179,7 +202,54 @@ func (o *Orchestrator) ShowStatus(toolNames []string) error {
 			} else {
 				notInstalled++
 			}
+			continue
+		}
+		
+		// Different logic based on mode
+		if manifestOnly {
+			// Only show tools that are in manifest
+			if _, inManifest := manifestData[tool.Name]; inManifest {
+				installed++
+				fmt.Printf("✅ %-15s manifest-tracked\n", tool.Name)
+			} else {
+				notInstalled++
+				fmt.Printf("❌ %-15s Not in manifest\n", tool.Name)
+			}
+		} else if unified {
+			// Show unified view with indicators
+			liveInstalled := isToolInstalled(tool)
+			inManifest := false
+			if manifestData != nil {
+				_, inManifest = manifestData[tool.Name]
+			}
+			
+			var status, source string
+			if liveInstalled && inManifest {
+				status = "✅"
+				source = "gearbox"
+				installed++
+			} else if liveInstalled && !inManifest {
+				status = "✅"
+				source = "system"
+				installed++
+			} else if !liveInstalled && inManifest {
+				status = "⚠️"
+				source = "missing"
+				notInstalled++
+			} else {
+				status = "❌"
+				source = "not installed"
+				notInstalled++
+			}
+			
+			version := ""
+			if liveInstalled {
+				version = getToolVersion(tool)
+			}
+			
+			fmt.Printf("%s %-15s %-12s (%s)\n", status, tool.Name, version, source)
 		} else {
+			// Default live detection mode
 			if isToolInstalled(tool) {
 				installed++
 				version := getToolVersion(tool)
@@ -234,6 +304,11 @@ func (o *Orchestrator) VerifyTools(toolNames []string) error {
 	}
 	
 	return nil
+}
+
+// GetConfig returns the orchestrator's configuration
+func (o *Orchestrator) GetConfig() *Config {
+	return &o.config
 }
 
 // RunDoctor runs health checks and diagnostics

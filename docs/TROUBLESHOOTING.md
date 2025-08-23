@@ -353,6 +353,54 @@ git config --list | grep -E "(http|proxy)"
    echo "nameserver 8.8.8.8" | sudo tee /etc/resolv.conf
    ```
 
+## Zoxide Navigation Issues
+
+### Problem: 'z' Command Not Working
+
+**Symptoms:**
+- `z dirname` shows "command not found"
+- Zoxide is installed but navigation shortcuts don't work
+
+**Diagnosis:**
+```bash
+gearbox doctor zoxide
+```
+
+**Common Solutions:**
+
+1. **Shell integration not configured**:
+   ```bash
+   # Add to ~/.bashrc or ~/.zshrc
+   eval "$(zoxide init bash)"   # For bash
+   eval "$(zoxide init zsh)"    # For zsh
+   ```
+
+2. **Need to source configuration**:
+   ```bash
+   source ~/.bashrc      # Reload bash config
+   source ~/.zshrc       # Reload zsh config
+   ```
+
+3. **Database is empty**:
+   ```bash
+   # Navigate to directories to build database
+   cd ~/Documents && cd ~/Projects && cd ~
+   gearbox doctor zoxide --verbose  # Verify database population
+   ```
+
+### Problem: Zoxide Database Issues
+
+**Diagnosis:**
+```bash
+gearbox doctor zoxide --verbose   # Show database contents
+zoxide query --list               # Direct database inspection
+```
+
+**Solutions:**
+- Clear corrupted database: `rm ~/.local/share/zoxide/db.zo`
+- Rebuild by navigating: Use `cd` to visit directories
+- Import from existing tools: `zoxide import --from autojump ~/.local/share/autojump/autojump.txt`
+
 ## Environment Issues
 
 ### Error: "Command not found after installation"

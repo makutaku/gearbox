@@ -4,6 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"io"
+	"os"
+	"os/exec"
+	"path/filepath"
 	"strings"
 	"sync"
 	"time"
@@ -172,12 +175,15 @@ func (tm *TaskManager) runInstallation(task *InstallTask) {
 	outputDone := make(chan bool)
 	go tm.readOutput(task, reader, outputDone)
 	
-	// For now, we'll simulate the installation
-	// In a real implementation, we would integrate with the actual installation scripts
-	
-	// Simulate installation with progress updates
-	// In real implementation, this would call the actual installation scripts
-	err := tm.simulateInstallation(task, writer)
+	// Run installation
+	var err error
+	if tm.orchestrator != nil {
+		// Real installation with progress updates
+		err = tm.runRealInstallation(task, writer)
+	} else {
+		// Fallback to simulation only if no orchestrator (demo mode)
+		err = tm.simulateInstallation(task, writer)
+	}
 	
 	writer.Close()
 	<-outputDone
@@ -308,6 +314,126 @@ func (tm *TaskManager) readOutput(task *InstallTask, reader io.Reader, done chan
 	}
 	
 	close(done)
+}
+
+// runRealInstallation runs a real installation with progress updates
+func (tm *TaskManager) runRealInstallation(task *InstallTask, output io.Writer) error {
+	// Send initial progress
+	tm.sendUpdate(TaskUpdateMsg{
+		TaskID:   task.ID,
+		Stage:    "Starting installation...",
+		Progress: 0.1,
+	})
+	fmt.Fprintf(output, "==> Starting installation of %s\n", task.Tool.Name)
+	
+	// Send mid-progress update
+	tm.sendUpdate(TaskUpdateMsg{
+		TaskID:   task.ID,
+		Stage:    "Running installation...",
+		Progress: 0.5,
+	})
+	fmt.Fprintf(output, "    Installing %s with build type %s\n", task.Tool.Name, task.BuildType)
+	
+	// Instead of running the orchestrator directly (which corrupts TUI output),
+	// run the orchestrator as a subprocess with output redirection
+	err := tm.runInstallationSubprocess(task, output)
+	
+	if err != nil {
+		tm.sendUpdate(TaskUpdateMsg{
+			TaskID:   task.ID,
+			Stage:    "Installation failed",
+			Progress: 0.5,
+			Error:    err,
+		})
+		fmt.Fprintf(output, "    ❌ Installation failed: %v\n", err)
+		return err
+	}
+	
+	// Send completion update
+	tm.sendUpdate(TaskUpdateMsg{
+		TaskID:   task.ID,
+		Stage:    "Installation completed",
+		Progress: 1.0,
+	})
+	fmt.Fprintf(output, "    ✅ Installation completed successfully\n")
+	
+	return nil
+}
+
+// runInstallationSubprocess runs the installation as a subprocess to isolate output
+func (tm *TaskManager) runInstallationSubprocess(task *InstallTask, output io.Writer) error {
+	// Get the path to the orchestrator binary
+	execPath, err := os.Executable()
+	if err != nil {
+		return fmt.Errorf("failed to get executable path: %w", err)
+	}
+	
+	// Build path to orchestrator binary (same directory as gearbox)
+	binDir := filepath.Dir(execPath)
+	orchestratorPath := filepath.Join(binDir, "orchestrator")
+	
+	// Check if orchestrator exists
+	if _, err := os.Stat(orchestratorPath); os.IsNotExist(err) {
+		return fmt.Errorf("orchestrator binary not found at %s", orchestratorPath)
+	}
+	
+	// Prepare the command with proper build type flags
+	var args []string
+	args = append(args, "install", task.Tool.Name)
+	
+	// Add build type flag
+	switch task.BuildType {
+	case "minimal":
+		args = append(args, "--build-type", "minimal")
+	case "maximum":
+		args = append(args, "--build-type", "maximum") 
+	default:
+		args = append(args, "--build-type", "standard")
+	}
+	
+	// Create the command
+	cmd := exec.Command(orchestratorPath, args...)
+	
+	// Create pipes for stdout and stderr
+	stdoutPipe, err := cmd.StdoutPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stdout pipe: %w", err)
+	}
+	
+	stderrPipe, err := cmd.StderrPipe()
+	if err != nil {
+		return fmt.Errorf("failed to create stderr pipe: %w", err)
+	}
+	
+	// Start the command
+	if err := cmd.Start(); err != nil {
+		return fmt.Errorf("failed to start installation: %w", err)
+	}
+	
+	// Read stdout in background
+	go func() {
+		scanner := bufio.NewScanner(stdoutPipe)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Fprintf(output, "%s\n", line)
+		}
+	}()
+	
+	// Read stderr in background
+	go func() {
+		scanner := bufio.NewScanner(stderrPipe)
+		for scanner.Scan() {
+			line := scanner.Text()
+			fmt.Fprintf(output, "[stderr] %s\n", line)
+		}
+	}()
+	
+	// Wait for the command to complete
+	if err := cmd.Wait(); err != nil {
+		return fmt.Errorf("installation failed: %w", err)
+	}
+	
+	return nil
 }
 
 // parseProgress attempts to extract progress from output line

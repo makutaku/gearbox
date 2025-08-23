@@ -92,9 +92,9 @@
       "binary_name": "zoxide",
       "language": "rust",
       "build_types": {
-        "minimal": "-m",
-        "standard": "-s",
-        "maximum": "-r"
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
       },
       "dependencies": [
         "rust",
@@ -152,9 +152,9 @@
       "binary_name": "serena",
       "language": "python",
       "build_types": {
-        "minimal": "-m",
-        "standard": "-s",
-        "maximum": "-f"
+        "minimal": "",
+        "standard": "",
+        "maximum": ""
       },
       "dependencies": [
         "python3",
@@ -163,7 +163,7 @@
       ],
       "min_version": "3.11.0",
       "shell_integration": false,
-      "test_command": "--version"
+      "test_command": "--help"
     },
     {
       "name": "uv",

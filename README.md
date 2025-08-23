@@ -253,6 +253,11 @@ sudo apt-get purge docker docker.io docker-compose
 # Check system health and disk usage
 gearbox doctor
 
+# Tool-specific diagnostics
+gearbox doctor nerd-fonts         # Font installation and availability
+gearbox doctor zoxide             # Navigation database and shell integration
+gearbox doctor zoxide --verbose   # Detailed database contents and performance
+
 # Clean up build artifacts to save space
 gearbox doctor cleanup --all --mode standard
 ```

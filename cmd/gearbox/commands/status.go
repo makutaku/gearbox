@@ -35,6 +35,8 @@ Examples:
 	cmd.Flags().BoolP("installed", "i", false, "Show only installed tools")
 	cmd.Flags().BoolP("missing", "m", false, "Show only missing tools")
 	cmd.Flags().BoolP("detailed", "d", false, "Show detailed information")
+	cmd.Flags().Bool("manifest-only", false, "Show only manifest-tracked tools")
+	cmd.Flags().Bool("unified", false, "Show unified view (manifest + live detection)")
 
 	return cmd
 }
@@ -81,6 +83,12 @@ func runStatusWithOrchestrator(orchestratorPath string, cmd *cobra.Command, args
 	}
 	if detailed, _ := cmd.Flags().GetBool("detailed"); detailed {
 		statusCmd.Args = append(statusCmd.Args, "--detailed")
+	}
+	if manifestOnly, _ := cmd.Flags().GetBool("manifest-only"); manifestOnly {
+		statusCmd.Args = append(statusCmd.Args, "--manifest-only")
+	}
+	if unified, _ := cmd.Flags().GetBool("unified"); unified {
+		statusCmd.Args = append(statusCmd.Args, "--unified")
 	}
 
 	statusCmd.Stdout = os.Stdout
