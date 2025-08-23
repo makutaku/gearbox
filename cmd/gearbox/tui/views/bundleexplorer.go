@@ -184,6 +184,18 @@ func (be *BundleExplorerNew) syncViewportWithLine(lineIndex int) {
 	}
 }
 
+// ensureSelectionVisible syncs viewport to show the currently selected bundle
+func (be *BundleExplorerNew) ensureSelectionVisible() {
+	if be.selectedBundle == "" {
+		return
+	}
+	
+	// Find the line index of the currently selected bundle
+	if lineIndex, exists := be.bundleLineMap[be.selectedBundle]; exists {
+		be.syncViewportWithLine(lineIndex)
+	}
+}
+
 // SetData updates data and refreshes content
 func (be *BundleExplorerNew) SetData(bundles []orchestrator.BundleConfig, installed map[string]*manifest.InstallationRecord) {
 	be.bundles = bundles
@@ -426,6 +438,8 @@ func (be *BundleExplorerNew) moveUp() {
 		
 		if be.ready {
 			be.updateViewportContentTUI()
+			// Ensure selected line stays visible after navigation
+			be.ensureSelectionVisible()
 		}
 	}
 }
@@ -452,6 +466,8 @@ func (be *BundleExplorerNew) moveDown() {
 		
 		if be.ready {
 			be.updateViewportContentTUI()
+			// Ensure selected line stays visible after navigation
+			be.ensureSelectionVisible()
 		}
 	}
 }
@@ -462,6 +478,8 @@ func (be *BundleExplorerNew) toggleExpanded() {
 		// Need to rebuild content when expanding/collapsing
 		if be.ready {
 			be.updateViewportContentTUI()
+			// Ensure selected line stays visible after expansion/collapse
+			be.ensureSelectionVisible()
 		}
 	}
 }
