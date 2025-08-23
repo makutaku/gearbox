@@ -198,11 +198,10 @@ func (tb *ToolBrowserNew) renderTUIStyle() string {
 	)
 	
 	// Content (list items with cursor highlighting)
-	// Ensure viewport has content, but don't block UI with heavy operations
-	// Check if viewport needs initial content by checking if it's at default state
-	if tb.ready && len(tb.filteredTools) > 0 && tb.viewport.TotalLineCount() == 0 {
-		// Initialize with basic content to avoid blocking
-		tb.initializeViewportContent()
+	// Show loading message immediately if no content - completely non-blocking
+	// Don't do ANY processing, just show placeholder
+	if tb.ready && tb.viewport.TotalLineCount() == 0 {
+		tb.setLoadingState()
 	}
 	
 	// Compose: header + viewport + footer (TUI best practice pattern)
@@ -214,36 +213,13 @@ func (tb *ToolBrowserNew) renderTUIStyle() string {
 	)
 }
 
-// initializeViewportContent provides fast, basic viewport initialization to avoid UI blocking
-func (tb *ToolBrowserNew) initializeViewportContent() {
-	if len(tb.filteredTools) == 0 {
-		tb.viewport.SetContent("Loading tools...")
-		return
-	}
-	
-	// Show just the first few tools to avoid blocking - full content will be loaded later
-	var lines []string
-	maxInitialTools := min(10, len(tb.filteredTools))
-	
-	for i := 0; i < maxInitialTools; i++ {
-		tool := tb.filteredTools[i]
-		line := tb.renderToolItem(tool, false)
-		
-		// Apply cursor highlighting for the first item
-		if i == tb.cursor {
-			selectedStyle := lipgloss.NewStyle().Background(lipgloss.Color("62")).Foreground(lipgloss.Color("230"))
-			line = selectedStyle.Render(line)
-		}
-		
-		lines = append(lines, line)
-	}
-	
-	if len(tb.filteredTools) > maxInitialTools {
-		lines = append(lines, fmt.Sprintf("... and %d more tools (loading...)", len(tb.filteredTools)-maxInitialTools))
-	}
-	
-	content := strings.Join(lines, "\n")
-	tb.viewport.SetContent(content)
+// setLoadingState shows loading message without any processing
+func (tb *ToolBrowserNew) setLoadingState() {
+	loadingContent := `Loading tools...
+
+This might take a moment on first access.
+Press any key to continue once loaded.`
+	tb.viewport.SetContent(loadingContent)
 }
 
 // updateViewportContentTUI rebuilds content for the official viewport
@@ -359,11 +335,8 @@ func (tb *ToolBrowserNew) applyFilters() {
 		tb.cursor = max(0, len(tb.filteredTools)-1)
 	}
 	
-	// Update TUI viewport - use fast initialization to avoid blocking UI
-	if tb.ready {
-		// Use fast initialization first, full content will be loaded when needed
-		tb.initializeViewportContent()
-	}
+	// Don't update viewport during filtering - content will be loaded asynchronously
+	// The UI thread should never be blocked by heavy operations
 }
 
 func (tb *ToolBrowserNew) moveUp() {

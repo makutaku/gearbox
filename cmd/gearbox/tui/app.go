@@ -237,7 +237,8 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	case "t", "T":
 		m.state.CurrentView = ViewToolBrowser
 		// Load full content asynchronously when switching to tool browser
-		return m, m.loadToolBrowserContent()
+		// Return immediately without blocking - content loads in background
+		return m, m.loadToolBrowserContentAsync()
 	case "b", "B":
 		m.state.CurrentView = ViewBundleExplorer
 		return m, nil
@@ -362,10 +363,11 @@ func (m Model) loadInitialData() tea.Cmd {
 	}
 }
 
-// loadToolBrowserContent loads tool browser content asynchronously  
-func (m Model) loadToolBrowserContent() tea.Cmd {
+// loadToolBrowserContentAsync loads tool browser content asynchronously  
+func (m Model) loadToolBrowserContentAsync() tea.Cmd {
 	return func() tea.Msg {
-		// Load full content for tool browser in background
+		// This runs in a separate goroutine - completely non-blocking
+		// Give the UI thread a chance to render first
 		m.toolBrowser.LoadFullContent()
 		return toolBrowserContentLoadedMsg{}
 	}
