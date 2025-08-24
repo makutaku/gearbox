@@ -895,6 +895,27 @@
       "test_command": "--version"
     },
     {
+      "name": "claude-monitor",
+      "description": "Real-time Claude AI token usage monitor with ML predictions",
+      "category": "development", 
+      "repository": "https://github.com/Maciek-roboblog/Claude-Code-Usage-Monitor.git",
+      "binary_name": "claude-monitor",
+      "language": "python",
+      "build_types": {
+        "minimal": "--minimal",
+        "standard": "--standard", 
+        "maximum": "--maximum"
+      },
+      "dependencies": [
+        "uv",
+        "python3",
+        "python3-pip"
+      ],
+      "min_version": "3.9.0",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
       "name": "bun",
       "description": "Fast all-in-one JavaScript runtime (alternative to Node.js)",
       "category": "development",
