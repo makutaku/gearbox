@@ -14,6 +14,8 @@ import (
 )
 
 // ToolBrowserNew represents the new tool browser with layout system
+
+
 type ToolBrowserNew struct {
 	// Data
 	tools          []orchestrator.ToolConfig
@@ -278,18 +280,33 @@ func (tb *ToolBrowserNew) updateViewportContentTUI() {
 }
 
 // SetData updates the tool browser data
+// SetData updates the tool browser data
 func (tb *ToolBrowserNew) SetData(tools []orchestrator.ToolConfig, installed map[string]*manifest.InstallationRecord) {
+	debugLog("ToolBrowserNew.SetData: received %d tools, %d installed", len(tools), len(installed))
 	tb.tools = tools
 	tb.installedTools = installed
 	tb.applyFilters()
+	debugLog("ToolBrowserNew.SetData: applyFilters completed, filteredTools=%d", len(tb.filteredTools))
+	
+	// CRITICAL FIX: Always update the display after setting new data
+	// This ensures the viewport shows the latest tool status
+	if tb.ready {
+		tb.updateContent()
+		debugLog("ToolBrowserNew.SetData: updateContent() called to refresh display")
+	}
 }
 
 // LoadFullContent loads the complete viewport content (called when view becomes active)
 func (tb *ToolBrowserNew) LoadFullContent() {
 	// This method is called from the async task
 	// It should ensure content is properly loaded and displayed
+	debugLog("ToolBrowserNew.LoadFullContent: ready=%v, tools=%d, installed=%d", 
+		tb.ready, len(tb.tools), len(tb.installedTools))
 	if tb.ready {
 		tb.updateContent()
+		debugLog("ToolBrowserNew.LoadFullContent: updateContent() completed")
+	} else {
+		debugLog("ToolBrowserNew.LoadFullContent: skipped - not ready")
 	}
 }
 
@@ -369,8 +386,8 @@ func (tb *ToolBrowserNew) applyFilters() {
 		tb.cursor = max(0, len(tb.filteredTools)-1)
 	}
 	
-	// Don't update viewport during filtering - content will be loaded asynchronously
-	// The UI thread should never be blocked by heavy operations
+	// Note: applyFilters() only updates the filtered data
+	// Display refresh is handled by the caller (SetData, LoadFullContent, etc.)
 }
 
 func (tb *ToolBrowserNew) moveUp() {
@@ -455,4 +472,3 @@ func (tb *ToolBrowserNew) ClearSelection() {
 	}
 }
 
-// All deprecated widgets and layout system code removed - using TUI best practices

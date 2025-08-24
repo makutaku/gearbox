@@ -307,10 +307,34 @@ func (t *ToolBrowserAdapter) IsReady() bool {
 // Lifecycle methods implementation
 
 // OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
+// OnActivate is called when the view becomes active
 func (t *ToolBrowserAdapter) OnActivate() tea.Cmd {
-	// Tool browser loads full content when activated
-	t.browser.LoadFullContent()
-	return nil
+	// Debug: Log when OnActivate is called
+	debugLog("ToolBrowserAdapter.OnActivate() called - triggering async loading")
+	
+	// Tool browser triggers fresh unified status loading when activated
+	return tea.Batch(
+		// First refresh the current display
+		func() tea.Msg {
+			debugLog("ToolBrowserAdapter: Calling LoadFullContent()")
+			t.browser.LoadFullContent()
+			debugLog("ToolBrowserAdapter: Sending ToolBrowserContentLoadedMsg")
+			return ToolBrowserContentLoadedMsg{}
+		},
+		// Then trigger a fresh unified status check
+		func() tea.Msg {
+			debugLog("ToolBrowserAdapter: Sending unified-status trigger")
+			return struct{ trigger string }{"unified-status"}
+		},
+	)
 }
 
 // OnDeactivate is called when the view becomes inactive

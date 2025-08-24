@@ -257,18 +257,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case dataLoadedMsg:
 		// Update state with new data
+		debugLog("App: Received dataLoadedMsg - tools: %d, installed: %d", len(msg.tools), len(msg.installed))
 		m.state.Tools = msg.tools
 		m.state.Bundles = msg.bundles
 		m.state.InstalledTools = msg.installed
 		// Update dashboard data
 		m.dashboard.SetData(msg.tools, msg.bundles, msg.installed)
 		// Update tool browser data
+		debugLog("App: Updating tool browser with %d installed tools", len(msg.installed))
 		m.toolBrowser.SetData(msg.tools, msg.installed)
 		// Update bundle explorer data
 		m.bundleExplorer.SetData(msg.bundles, msg.installed)
 		// Update health view data
 		m.healthView.SetData(msg.tools, msg.installed)
 		// Start background unified status loading
+		debugLog("App: Starting background unified status loading")
 		return m, m.loadUnifiedStatusBackground()
 
 	case manifestReloadedMsg:
@@ -283,9 +286,11 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 
 	case unifiedStatusLoadedMsg:
 		// Update with unified status data (background loading complete)
+		debugLog("App: Received unifiedStatusLoadedMsg - installed tools: %d", len(msg.installed))
 		m.state.InstalledTools = msg.installed
 		// Update all views with the comprehensive status data
 		m.dashboard.SetData(m.state.Tools, m.state.Bundles, msg.installed)
+		debugLog("App: Updating tool browser with unified status data (%d tools)", len(msg.installed))
 		m.toolBrowser.SetData(m.state.Tools, msg.installed)
 		m.bundleExplorer.SetData(m.state.Bundles, msg.installed)
 		m.healthView.SetData(m.state.Tools, msg.installed)
@@ -294,7 +299,21 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	case toolBrowserContentLoadedMsg:
 		// Tool browser content loaded in background - trigger re-render
 		// This ensures the UI updates to show the loaded tools
+		debugLog("App: Received toolBrowserContentLoadedMsg - triggering UI refresh")
+		// Force a UI refresh by returning a no-op command that will trigger Update cycle
+		return m, func() tea.Msg { return nil }
+
+	case struct{ trigger string }:
+		// Handle custom triggers from view activation
+		debugLog("App: Received trigger message: %s", msg.trigger)
+		if msg.trigger == "unified-status" {
+			// Trigger unified status loading to get fresh installed tools data
+			debugLog("App: Starting loadUnifiedStatusBackground()")
+			return m, m.loadUnifiedStatusBackground()
+		}
 		return m, nil
+
+
 
 	case healthCheckTriggerMsg:
 		// Trigger health checks in the health view
@@ -365,6 +384,7 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 	// Lazy initialization on first key press - ensures instant responsiveness
 	var initCmd tea.Cmd
 	if !m.state.Initialized {
+		debugLog("App: First key press - starting lazy initialization")
 		m.state.Initialized = true
 		initCmd = tea.Batch(
 			m.watchTaskUpdates(),
@@ -386,10 +406,12 @@ func (m Model) handleKeyPress(msg tea.KeyMsg) (tea.Model, tea.Cmd) {
 		
 		// Check for view change
 		if newView != m.state.CurrentView {
+			debugLog("App: Switching view from %v to %v", m.state.CurrentView, newView)
 			// Update state
 			m.state.CurrentView = newView
 			
 			// Use lifecycle manager to handle view transitions
+			debugLog("App: Calling lifecycle.SwitchToView(%v)", newView)
 			lifecycleCmd := m.lifecycle.SwitchToView(newView)
 			
 			// Combine navigation and lifecycle commands
@@ -426,18 +448,22 @@ var mainViews = []ViewType{
 
 func (m Model) loadInitialData() tea.Cmd {
 	return func() tea.Msg {
+		debugLog("loadInitialData: Starting initial data load")
 		// Load tools configuration
 		configPath := filepath.Join("config", "tools.json")
 		configData, err := os.ReadFile(configPath)
 		var tools []orchestrator.ToolConfig
 		if err != nil {
+			debugLog("loadInitialData: Failed to load tools config: %v", err)
 			zlog.Warn().Err(err).Msg("Failed to load tools config")
 		} else {
 			var toolConfig orchestrator.Config
 			if err := json.Unmarshal(configData, &toolConfig); err != nil {
+				debugLog("loadInitialData: Failed to parse tools config: %v", err)
 				zlog.Warn().Err(err).Msg("Failed to parse tools config")
 			} else {
 				tools = toolConfig.Tools
+				debugLog("loadInitialData: Loaded %d tools from config", len(tools))
 			}
 		}
 		
@@ -462,8 +488,13 @@ func (m Model) loadInitialData() tea.Cmd {
 		manifestData, err := m.manifest.Load()
 		if err == nil && manifestData != nil && manifestData.Installations != nil {
 			installed = manifestData.Installations
+			debugLog("loadInitialData: Loaded %d installed tools from manifest", len(installed))
+		} else {
+			debugLog("loadInitialData: No manifest data available (err=%v)", err)
 		}
 
+		debugLog("loadInitialData: Sending dataLoadedMsg with %d tools, %d bundles, %d installed", 
+			len(tools), len(bundles), len(installed))
 		return dataLoadedMsg{
 			tools:     tools,
 			bundles:   bundles,
@@ -485,24 +516,31 @@ func (m Model) loadToolBrowserContentAsync() tea.Cmd {
 // loadUnifiedStatusBackground loads unified status in background without blocking UI
 func (m Model) loadUnifiedStatusBackground() tea.Cmd {
 	return func() tea.Msg {
+		debugLog("loadUnifiedStatusBackground: Starting unified status service creation")
 		// Load unified status service (this is the expensive operation)
 		unifiedStatus, err := status.NewUnifiedStatusService()
 		if err != nil {
+			debugLog("loadUnifiedStatusBackground: Failed to create unified status service: %v", err)
 			zlog.Warn().Err(err).Msg("Background unified status loading failed")
 			return nil // No update needed
 		}
 		
+		debugLog("loadUnifiedStatusBackground: Getting all tools status")
 		// Get all tool status from unified service
 		allStatus, err := unifiedStatus.GetAllToolsStatus()
 		if err != nil {
+			debugLog("loadUnifiedStatusBackground: Failed to get tools status: %v", err)
 			zlog.Warn().Err(err).Msg("Background unified status check failed")
 			return nil // No update needed
 		}
+		debugLog("loadUnifiedStatusBackground: Got status for %d tools", len(allStatus))
 		
 		// Convert unified status to manifest records for TUI compatibility
 		installed := make(map[string]*manifest.InstallationRecord)
+		installedCount := 0
 		for toolName, toolStatus := range allStatus {
 			if toolStatus.Installed {
+				installedCount++
 				record := &manifest.InstallationRecord{
 					Version:     toolStatus.Version,
 					BinaryPaths: toolStatus.BinaryPaths,
@@ -516,6 +554,8 @@ func (m Model) loadUnifiedStatusBackground() tea.Cmd {
 			}
 		}
 		
+		debugLog("loadUnifiedStatusBackground: Found %d installed tools out of %d total", installedCount, len(allStatus))
+		debugLog("loadUnifiedStatusBackground: Sending unifiedStatusLoadedMsg")
 		return unifiedStatusLoadedMsg{
 			installed: installed,
 		}
@@ -935,7 +975,11 @@ type unifiedStatusLoadedMsg struct {
 	installed map[string]*manifest.InstallationRecord
 }
 
-type toolBrowserContentLoadedMsg struct{}
+// ToolBrowserContentLoadedMsg indicates tool browser content has been loaded
+type ToolBrowserContentLoadedMsg struct{}
+
+// Keep the old unexported type for backward compatibility
+type toolBrowserContentLoadedMsg = ToolBrowserContentLoadedMsg
 
 type healthCheckTriggerMsg struct{}
 
