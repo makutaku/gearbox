@@ -875,6 +875,26 @@
       "test_command": "7zz"
     },
     {
+      "name": "ccusage",
+      "description": "Claude Code usage analysis tool (token usage & cost tracking)",
+      "category": "development",
+      "repository": "https://github.com/ryoppippi/ccusage.git",
+      "binary_name": "ccusage",
+      "language": "typescript",
+      "build_types": {
+        "minimal": "--minimal",
+        "standard": "--standard",
+        "maximum": "--maximum"
+      },
+      "dependencies": [
+        "nodejs",
+        "npm"
+      ],
+      "min_version": "1.0.0",
+      "shell_integration": false,
+      "test_command": "--version"
+    },
+    {
       "name": "bun",
       "description": "Fast all-in-one JavaScript runtime (alternative to Node.js)",
       "category": "development",
