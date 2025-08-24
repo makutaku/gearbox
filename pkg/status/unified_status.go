@@ -37,7 +37,7 @@ func NewUnifiedStatusService() (*UnifiedStatusService, error) {
 	opts := orchestrator.InstallationOptions{
 		BuildType: "standard",
 	}
-	orch, err := orchestrator.NewOrchestrator(opts)
+	orch, err := orchestrator.NewOrchestratorBuilder(opts).Build()
 	if err != nil {
 		return nil, err
 	}

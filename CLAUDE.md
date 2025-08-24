@@ -278,6 +278,64 @@ go test ./cmd/gearbox/tui/... -v             # All TUI tests
 go test -bench=. ./cmd/gearbox/tui/...       # Performance benchmarks
 ```
 
+## Recent Architecture Improvements (2024)
+
+### Major Refactoring and Security Enhancements
+
+The codebase has undergone significant architectural improvements to eliminate anti-patterns and enhance security:
+
+**Core Architecture Changes:**
+- **Eliminated global variables**: Removed `globalConfig` and `bundleConfigs` anti-pattern that caused race conditions
+- **Added ConfigManager**: Thread-safe configuration management with RWMutex synchronization
+- **Implemented Builder pattern**: Replaced monolithic 89-line NewOrchestrator() constructor with clean, validated builder
+- **Added comprehensive cleanup**: Resource management with proper cleanup mechanisms and leak prevention
+- **Dynamic resource calculation**: Intelligent job limits based on system CPU count and memory
+
+**Security Enhancements:**
+- **Secure debug logging**: Moved from world-readable `/tmp/gearbox-debug.log` to user-only `~/.cache/gearbox/tui-debug.log` with 0600 permissions
+- **Fixed debug code in production**: Replaced fmt.Printf debug statements with proper structured logging
+- **Information disclosure prevention**: Secure debug file locations and access controls
+
+**Code Quality Improvements:**
+- **Structured error handling**: Added context and suggestions to error messages
+- **Modern Go practices**: Eliminated all deprecated `ioutil.*` functions 
+- **Proper resource management**: Added cleanup mechanisms throughout orchestrator lifecycle
+- **Enhanced testing**: Updated all tests to work with new ConfigManager pattern
+
+**Technical Implementation:**
+- ConfigManager with RWMutex for thread-safe configuration access
+- Builder pattern for orchestrator construction with validation steps
+- Dynamic worker pool sizing: `min(runtime.NumCPU(), maxJobs)` with memory considerations
+- All function calls updated to use `configMgr.GetConfig()` pattern instead of global variables
+
+These changes maintain full backward compatibility while significantly improving code quality and security posture.
+
+### Post-Refactoring Cleanup (2024)
+
+After the major architectural improvements, additional cleanup was performed to eliminate refactoring artifacts:
+
+**Legacy Code Elimination:**
+- **Removed NewOrchestrator wrapper**: Eliminated the `func NewOrchestrator(options) (*Orchestrator, error)` wrapper that was just calling `NewOrchestratorBuilder(options).Build()`
+- **Updated all 15+ references**: Replaced with direct Builder pattern usage throughout codebase
+- **Cleaner architecture**: No unnecessary indirection, proper Builder pattern implementation
+
+**Bundle Loading Consolidation:**
+- **Fixed duplicate implementations**: Removed placeholder `loadBundleConfiguration()` function with hardcoded empty data
+- **Integrated real implementation**: Builder now uses proper JSON parsing directly from `bundles.json`
+- **Eliminated TODO comments**: Removed placeholder code that was bypassing real bundle loading
+
+**Security Consistency:**
+- **Fixed debug logging**: `cmd/gearbox/tui/debug.go` now uses secure `~/.cache/gearbox/tui-debug.log` with 0600 permissions
+- **Eliminated inconsistency**: All TUI debug logging now follows the secure pattern established in the architecture improvements
+- **No world-readable files**: Debug logs are properly secured to user-only access
+
+**Code Quality:**
+- **Removed refactoring artifacts**: Cleaned up placeholder functions and TODO comments left from the architectural migration
+- **Single responsibility**: Each component now has one clear implementation path
+- **Consistent patterns**: All code now follows the intended post-refactoring architecture without legacy exceptions
+
+This cleanup ensures the codebase fully embodies the architectural improvements without any legacy artifacts or inconsistencies.
+
 ## Key Implementation Patterns
 
 ### Standardized Script Protocol

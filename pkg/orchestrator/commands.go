@@ -18,7 +18,7 @@ func installCmd() *cobra.Command {
 		Long: `Install one or more tools with dependency resolution, parallel execution,
 and comprehensive progress tracking. If no tools are specified, all tools will be installed.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := NewOrchestrator(opts)
+			orchestrator, err := NewOrchestratorBuilder(opts).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
@@ -70,7 +70,7 @@ func listCmd() *cobra.Command {
 Without arguments, lists all available tools.
 Use 'list bundles' to list all available bundles.`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
@@ -100,7 +100,7 @@ func showCmd() *cobra.Command {
 				return fmt.Errorf("only 'show bundle' is supported")
 			}
 			
-			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
@@ -118,7 +118,7 @@ func statusCmd() *cobra.Command {
 		Use:   "status [tools...]",
 		Short: "Show installation status of tools",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
@@ -145,7 +145,7 @@ func verifyCmd() *cobra.Command {
 		Use:   "verify [tools...]",
 		Short: "Verify tool installations",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}
@@ -161,7 +161,7 @@ func doctorCmd() *cobra.Command {
 		Use:   "doctor [tool]",
 		Short: "Run health checks and diagnostics",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			orchestrator, err := NewOrchestrator(InstallationOptions{})
+			orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 			if err != nil {
 				return fmt.Errorf("failed to initialize orchestrator: %w", err)
 			}

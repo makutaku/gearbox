@@ -133,7 +133,7 @@ func TestNewOrchestrator(t *testing.T) {
 		DryRun:          false,
 	}
 	
-	orchestrator, err := NewOrchestrator(options)
+	orchestrator, err := NewOrchestratorBuilder(options).Build()
 	if err != nil {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
@@ -161,7 +161,7 @@ func TestFindTool(t *testing.T) {
 	repoDir = tempDir
 	configPath = testConfigPath
 	
-	orchestrator, err := NewOrchestrator(InstallationOptions{})
+	orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 	if err != nil {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
@@ -195,7 +195,7 @@ func TestResolveDependencies(t *testing.T) {
 	repoDir = tempDir
 	configPath = testConfigPath
 	
-	orchestrator, err := NewOrchestrator(InstallationOptions{})
+	orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 	if err != nil {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
@@ -236,7 +236,7 @@ func TestInstallationOptions(t *testing.T) {
 	configPath = testConfigPath
 	
 	// Test with empty options (should use defaults)
-	orchestrator, err := NewOrchestrator(InstallationOptions{})
+	orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 	if err != nil {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
@@ -318,7 +318,7 @@ func TestTemplateData(t *testing.T) {
 	repoDir = tempDir
 	configPath = testConfigPath
 	
-	orchestrator, err := NewOrchestrator(InstallationOptions{})
+	orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 	if err != nil {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
@@ -430,7 +430,7 @@ func BenchmarkResolveDependencies(b *testing.B) {
 	repoDir = tempDir
 	configPath = configPath
 	
-	orchestrator, err := NewOrchestrator(InstallationOptions{})
+	orchestrator, err := NewOrchestratorBuilder(InstallationOptions{}).Build()
 	if err != nil {
 		b.Fatalf("Failed to create orchestrator: %v", err)
 	}

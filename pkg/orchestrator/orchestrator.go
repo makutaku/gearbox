@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"encoding/json"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -185,19 +186,45 @@ func (b *OrchestratorBuilder) getAvailableMemoryMB() int {
 
 // loadBundleConfig loads bundle configuration (optional)
 func (b *OrchestratorBuilder) loadBundleConfig() error {
+	// Use the real bundle loading implementation
 	bundleConfigPath := filepath.Join(b.repoDir, "config", "bundles.json")
-	bundleConfig, err := loadBundleConfiguration(bundleConfigPath)
+	
+	// Read and parse the bundle configuration file directly
+	file, err := os.Open(bundleConfigPath)
 	if err != nil {
-		// Bundles are optional, so just log warning if verbose
-		if b.options.Verbose {
-			fmt.Printf("⚠️  Warning: Failed to load bundles: %v\n", err)
+		// Bundles are optional, so return empty config if file doesn't exist
+		if os.IsNotExist(err) {
+			b.bundleConfig = &BundleConfiguration{
+				SchemaVersion: "1.0",
+				Bundles:       []BundleConfig{},
+			}
+			return nil
 		}
-		bundleConfig = &BundleConfiguration{
+		if b.options.Verbose {
+			fmt.Printf("⚠️  Warning: Failed to open bundles.json: %v\n", err)
+		}
+		b.bundleConfig = &BundleConfiguration{
 			SchemaVersion: "1.0",
 			Bundles:       []BundleConfig{},
 		}
+		return nil
 	}
-	b.bundleConfig = bundleConfig
+	defer file.Close()
+
+	var bundleConfig BundleConfiguration
+	decoder := json.NewDecoder(file)
+	if err := decoder.Decode(&bundleConfig); err != nil {
+		if b.options.Verbose {
+			fmt.Printf("⚠️  Warning: Failed to decode bundles.json: %v\n", err)
+		}
+		b.bundleConfig = &BundleConfiguration{
+			SchemaVersion: "1.0",
+			Bundles:       []BundleConfig{},
+		}
+		return nil
+	}
+
+	b.bundleConfig = &bundleConfig
 	return nil
 }
 
@@ -253,19 +280,9 @@ func (b *OrchestratorBuilder) Build() (*Orchestrator, error) {
 	return orchestrator, nil
 }
 
-// loadBundleConfiguration loads bundle configuration from file
-func loadBundleConfiguration(path string) (*BundleConfiguration, error) {
-	// This function should be implemented based on existing bundle loading logic
-	// For now, return a placeholder to avoid compilation errors
-	return &BundleConfiguration{
-		SchemaVersion: "1.0",
-		Bundles:       []BundleConfig{},
-	}, nil
-}
 
-func NewOrchestrator(options InstallationOptions) (*Orchestrator, error) {
-	return NewOrchestratorBuilder(options).Build()
-}
+
+
 
 // findTool finds a tool by name in the configuration
 func (o *Orchestrator) findTool(name string) (ToolConfig, bool) {

@@ -47,7 +47,7 @@ func NewDependencyFactory(opts orchestrator.InstallationOptions) *DependencyFact
 // CreateDependencies creates all dependencies for the TUI application
 func (f *DependencyFactory) CreateDependencies() (*Dependencies, error) {
 	// Create core services (concrete types)
-	orch, err := orchestrator.NewOrchestrator(f.orchestratorOpts)
+	orch, err := orchestrator.NewOrchestratorBuilder(f.orchestratorOpts).Build()
 	if err != nil {
 		return nil, err
 	}
