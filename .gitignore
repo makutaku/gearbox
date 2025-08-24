@@ -43,6 +43,15 @@ test-results/
 *.swo
 *~
 
+# Claude Code IDE integration
+.claude/settings.local.json
+
+# MCP (Model Context Protocol) local configuration
+.mcp.json
+
+# Serena development tool cache/state
+.serena/
+
 # OS generated files
 Thumbs.db
 .directory
