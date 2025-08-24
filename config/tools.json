@@ -873,6 +873,26 @@
       "min_version": "",
       "shell_integration": false,
       "test_command": "7zz"
+    },
+    {
+      "name": "bun",
+      "description": "Fast all-in-one JavaScript runtime (alternative to Node.js)",
+      "category": "development",
+      "repository": "https://github.com/oven-sh/bun.git",
+      "binary_name": "bun",
+      "language": "javascript",
+      "build_types": {
+        "minimal": "--minimal",
+        "standard": "--standard",
+        "maximum": "--maximum"
+      },
+      "dependencies": [
+        "unzip",
+        "curl"
+      ],
+      "min_version": "1.0.0",
+      "shell_integration": true,
+      "test_command": "--version"
     }
   ],
   "categories": {
