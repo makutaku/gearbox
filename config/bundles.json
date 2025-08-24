@@ -4,14 +4,14 @@
     {
       "name": "minimal",
       "description": "Bare minimum essentials for productivity",
-      "category": "legacy",
+      "category": "foundation",
       "tools": ["fd", "ripgrep", "fzf"],
       "tags": ["essential", "search", "productivity"]
     },
     {
       "name": "essential",
       "description": "Modern terminal essentials that everyone should have",
-      "category": "legacy",
+      "category": "foundation",
       "tools": ["fd", "ripgrep", "fzf", "bat", "eza", "jq", "zoxide"],
       "tags": ["essential", "terminal", "productivity", "search", "navigation"]
     },

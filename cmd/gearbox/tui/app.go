@@ -311,6 +311,18 @@ func (m Model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 			debugLog("App: Starting loadUnifiedStatusBackground()")
 			return m, m.loadUnifiedStatusBackground()
 		}
+		if msg.trigger == "initial-data" {
+			// Trigger initial data loading if not already initialized
+			if !m.state.Initialized {
+				debugLog("App: Starting loadInitialData() from initial-data trigger")
+				m.state.Initialized = true
+				return m, tea.Batch(
+					m.watchTaskUpdates(),
+					m.loadInitialData(),
+				)
+			}
+			debugLog("App: Skipping loadInitialData() - already initialized")
+		}
 		return m, nil
 
 

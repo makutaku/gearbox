@@ -320,7 +320,7 @@ func (t *ToolBrowserAdapter) OnActivate() tea.Cmd {
 	// Debug: Log when OnActivate is called
 	debugLog("ToolBrowserAdapter.OnActivate() called - triggering async loading")
 	
-	// Tool browser triggers fresh unified status loading when activated
+	// Tool browser triggers data loading and unified status loading when activated
 	return tea.Batch(
 		// First refresh the current display
 		func() tea.Msg {
@@ -333,6 +333,11 @@ func (t *ToolBrowserAdapter) OnActivate() tea.Cmd {
 		func() tea.Msg {
 			debugLog("ToolBrowserAdapter: Sending unified-status trigger")
 			return struct{ trigger string }{"unified-status"}
+		},
+		// Also trigger initial data loading if not already initialized
+		func() tea.Msg {
+			debugLog("ToolBrowserAdapter: Sending initial-data trigger")
+			return struct{ trigger string }{"initial-data"}
 		},
 	)
 }

@@ -69,7 +69,7 @@ track_installation() {
                 shift
                 ;;
             *)
-                log_warning "Unknown tracking option: $1"
+                warning "Unknown tracking option: $1"
                 shift
                 ;;
         esac
@@ -121,11 +121,11 @@ track_installation() {
     
     # Call Go-based tracker
     if ! "$GEARBOX_BIN/orchestrator" track-installation "${tracking_args[@]}"; then
-        log_error "Failed to track installation of $tool_name"
+        error "Failed to track installation of $tool_name"
         return 1
     fi
     
-    log_debug "Tracked installation: $tool_name ($method)"
+    debug "Tracked installation: $tool_name ($method)"
     return 0
 }
 
@@ -167,11 +167,11 @@ track_bundle() {
     fi
     
     if ! "$GEARBOX_BIN/orchestrator" track-bundle "${args[@]}"; then
-        log_error "Failed to track bundle installation: $bundle_name"
+        error "Failed to track bundle installation: $bundle_name"
         return 1
     fi
     
-    log_debug "Tracked bundle installation: $bundle_name"
+    debug "Tracked bundle installation: $bundle_name"
     return 0
 }
 
@@ -213,7 +213,7 @@ detect_preexisting() {
         
         # Track as pre-existing
         if "$GEARBOX_BIN/orchestrator" track-preexisting "$tool_name" "$binary_path" "$version"; then
-            log_info "Detected pre-existing installation: $tool_name ($binary_path)"
+            log "Detected pre-existing installation: $tool_name ($binary_path)"
             return 0
         fi
     fi
@@ -325,7 +325,7 @@ track_tool_installation() {
     binary_paths=$(detect_binary_paths "$tool_name")
     
     if [[ -z "$binary_paths" ]]; then
-        log_warning "Could not detect binary paths for $tool_name"
+        warning "Could not detect binary paths for $tool_name"
         return 1
     fi
     
@@ -377,7 +377,7 @@ maybe_track_installation() {
     if is_tracking_enabled; then
         track_installation "$@"
     else
-        log_debug "Installation tracking disabled"
+        debug "Installation tracking disabled"
     fi
 }
 
@@ -386,7 +386,7 @@ GEARBOX_BIN="${GEARBOX_BIN:-$(dirname "$(dirname "${BASH_SOURCE[0]}")")/../bin}"
 
 # Validate that orchestrator binary exists
 if [[ ! -x "$GEARBOX_BIN/orchestrator" ]]; then
-    log_warning "Orchestrator binary not found at $GEARBOX_BIN/orchestrator"
-    log_warning "Installation tracking will be disabled"
+    warning "Orchestrator binary not found at $GEARBOX_BIN/orchestrator"
+    warning "Installation tracking will be disabled"
     GEARBOX_DISABLE_TRACKING=true
 fi

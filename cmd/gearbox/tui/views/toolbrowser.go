@@ -52,7 +52,7 @@ func NewToolBrowserNew() *ToolBrowserNew {
 		selectedTools:  make(map[string]bool),
 		installedTools: make(map[string]*manifest.InstallationRecord),
 		showPreview:    true,
-		categories:     []string{"All", "Core", "Development", "System", "Text", "Media", "UI"},
+		categories:     []string{"All"}, // Will be discovered dynamically from tool data
 		selectedCategory: "All",
 		filteredTools:  []orchestrator.ToolConfig{},
 	}
@@ -285,6 +285,22 @@ func (tb *ToolBrowserNew) SetData(tools []orchestrator.ToolConfig, installed map
 	debugLog("ToolBrowserNew.SetData: received %d tools, %d installed", len(tools), len(installed))
 	tb.tools = tools
 	tb.installedTools = installed
+	
+	// Dynamically discover categories from the tool data
+	tb.categories = tb.discoverToolCategories()
+	
+	// Validate current selectedCategory is still valid
+	validCategory := false
+	for _, cat := range tb.categories {
+		if cat == tb.selectedCategory {
+			validCategory = true
+			break
+		}
+	}
+	if !validCategory {
+		tb.selectedCategory = "All" // Reset to "All" if current category not found
+	}
+	
 	tb.applyFilters()
 	debugLog("ToolBrowserNew.SetData: applyFilters completed, filteredTools=%d", len(tb.filteredTools))
 	
@@ -295,8 +311,6 @@ func (tb *ToolBrowserNew) SetData(tools []orchestrator.ToolConfig, installed map
 		debugLog("ToolBrowserNew.SetData: updateContent() called to refresh display")
 	}
 }
-
-// LoadFullContent loads the complete viewport content (called when view becomes active)
 func (tb *ToolBrowserNew) LoadFullContent() {
 	// This method is called from the async task
 	// It should ensure content is properly loaded and displayed
@@ -390,6 +404,45 @@ func (tb *ToolBrowserNew) applyFilters() {
 	// Display refresh is handled by the caller (SetData, LoadFullContent, etc.)
 }
 
+
+
+// discoverToolCategories dynamically discovers all categories from tool data
+func (tb *ToolBrowserNew) discoverToolCategories() []string {
+	if len(tb.tools) == 0 {
+		return []string{"All"}
+	}
+	
+	categorySet := make(map[string]bool)
+	
+	// Collect all categories from tools
+	for _, tool := range tb.tools {
+		if tool.Category != "" {
+			categorySet[tool.Category] = true
+		}
+	}
+	
+	// Convert to sorted slice with "All" first
+	var categories []string
+	categories = append(categories, "All")
+	
+	// Preferred order for common categories (if they exist)
+	preferredOrder := []string{"core", "navigation", "development", "system", "media"}
+	
+	for _, category := range preferredOrder {
+		if categorySet[category] {
+			categories = append(categories, category)
+			delete(categorySet, category) // Remove from set so we don't add it twice
+		}
+	}
+	
+	// Add any remaining categories alphabetically
+	for category := range categorySet {
+		categories = append(categories, category)
+	}
+	
+	return categories
+}
+
 func (tb *ToolBrowserNew) moveUp() {
 	if tb.cursor > 0 {
 		tb.cursor--
@@ -426,6 +479,10 @@ func (tb *ToolBrowserNew) toggleSelection() {
 }
 
 func (tb *ToolBrowserNew) cycleCategory() {
+	if len(tb.categories) <= 1 {
+		return // No point in cycling if there's 0 or 1 categories
+	}
+	
 	currentIdx := 0
 	for i, cat := range tb.categories {
 		if cat == tb.selectedCategory {
@@ -436,7 +493,16 @@ func (tb *ToolBrowserNew) cycleCategory() {
 	
 	nextIdx := (currentIdx + 1) % len(tb.categories)
 	tb.selectedCategory = tb.categories[nextIdx]
+	
+	// Reset cursor when changing category
+	tb.cursor = 0
+	
 	tb.applyFilters()
+	
+	// CRITICAL FIX: Refresh display after category cycling
+	if tb.ready {
+		tb.updateContent()
+	}
 }
 
 func (tb *ToolBrowserNew) selectAll() {
