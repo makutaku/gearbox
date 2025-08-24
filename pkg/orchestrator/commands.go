@@ -26,7 +26,8 @@ and comprehensive progress tracking. If no tools are specified, all tools will b
 			var toolsToInstall []string
 			if len(args) == 0 {
 				// Install all tools
-				for _, tool := range orchestrator.config.Tools {
+				config := orchestrator.configMgr.GetConfig()
+				for _, tool := range config.Tools {
 					toolsToInstall = append(toolsToInstall, tool.Name)
 				}
 			} else {

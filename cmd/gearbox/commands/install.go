@@ -71,11 +71,11 @@ func runInstall(cmd *cobra.Command, args []string) error {
 		args = append(args, bundleName)
 	}
 	
-	// Debug: Show detailed argument parsing info
-	fmt.Printf("🔍 CLI Debug - Raw args from Cobra: %v\n", args)
-	fmt.Printf("🔍 CLI Debug - Command line: %v\n", os.Args)
+	// Log detailed argument parsing info at debug level
+	log.Debugf("Raw args from Cobra: %v", args)
+	log.Debugf("Command line: %v", os.Args)
 	if fonts, _ := cmd.Flags().GetString("fonts"); fonts != "" {
-		fmt.Printf("🔍 CLI Debug - fonts flag value: '%s'\n", fonts)
+		log.Debugf("fonts flag value: '%s'", fonts)
 	}
 	
 	log.Infof("Starting installation of %d tools", len(args))

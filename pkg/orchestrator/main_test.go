@@ -139,8 +139,9 @@ func TestNewOrchestrator(t *testing.T) {
 	}
 	
 	// Verify orchestrator fields
-	if orchestrator.config.SchemaVersion != testConfig.SchemaVersion {
-		t.Errorf("Expected schema version %s, got %s", testConfig.SchemaVersion, orchestrator.config.SchemaVersion)
+	config := orchestrator.configMgr.GetConfig()
+	if config.SchemaVersion != testConfig.SchemaVersion {
+		t.Errorf("Expected schema version %s, got %s", testConfig.SchemaVersion, config.SchemaVersion)
 	}
 	
 	if orchestrator.options.BuildType != "standard" {
@@ -199,10 +200,12 @@ func TestResolveDependencies(t *testing.T) {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
 	
+	config := orchestrator.configMgr.GetConfig()
+	
 	// Test dependency resolution with multiple tools
 	tools := []ToolConfig{
-		orchestrator.config.Tools[0], // test-tool (rust)
-		orchestrator.config.Tools[1], // test-go-tool (go)
+		config.Tools[0], // test-tool (rust)
+		config.Tools[1], // test-go-tool (go)
 	}
 	
 	resolvedOrder, err := orchestrator.resolveDependencies(tools)
@@ -320,7 +323,8 @@ func TestTemplateData(t *testing.T) {
 		t.Fatalf("Failed to create orchestrator: %v", err)
 	}
 	
-	tool := orchestrator.config.Tools[0] // test-tool
+	config := orchestrator.configMgr.GetConfig()
+	tool := config.Tools[0] // test-tool
 	
 	// Note: prepareTemplateData is not exported in the actual code,
 	// so this test would need the function to be exported or moved to a testable form
@@ -431,7 +435,8 @@ func BenchmarkResolveDependencies(b *testing.B) {
 		b.Fatalf("Failed to create orchestrator: %v", err)
 	}
 	
-	tools := orchestrator.config.Tools
+	config := orchestrator.configMgr.GetConfig()
+	tools := config.Tools
 	
 	b.ResetTimer()
 	for i := 0; i < b.N; i++ {

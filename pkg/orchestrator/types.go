@@ -1,6 +1,7 @@
 package orchestrator
 
 import (
+	"fmt"
 	"sync"
 	"time"
 
@@ -66,7 +67,7 @@ type InstallationResult struct {
 
 // Orchestrator handles tool installation orchestration
 type Orchestrator struct {
-	config        Config
+	configMgr     *ConfigManager
 	bundleConfig  *BundleConfiguration
 	packageMgr    *PackageManager
 	options       InstallationOptions
@@ -78,10 +79,61 @@ type Orchestrator struct {
 	resultPool    sync.Pool     // Memory pool for result objects
 }
 
-// Global variables
-var (
-	// Global configuration loaded at startup
-	globalConfig Config
-	// Available bundle configurations
+// ConfigManager handles configuration management without global state
+type ConfigManager struct {
+	config        Config
 	bundleConfigs map[string][]string
-)
+	mu            sync.RWMutex
+}
+
+// NewConfigManager creates a new configuration manager that handles
+// loading and thread-safe access to tool and bundle configurations.
+// It replaces the use of global variables for better maintainability.
+//
+// Parameters:
+//   - configPath: Path to the tools.json configuration file
+//
+// Returns:
+//   - *ConfigManager: Configured manager instance
+//   - error: Error if configuration loading fails
+func NewConfigManager(configPath string) (*ConfigManager, error) {
+	config, err := loadConfig(configPath)
+	if err != nil {
+		return nil, fmt.Errorf("failed to load configuration: %w", err)
+	}
+	
+	return &ConfigManager{
+		config:        config,
+		bundleConfigs: make(map[string][]string),
+	}, nil
+}
+
+// GetConfig returns the current configuration in a thread-safe manner.
+// This method uses a read lock to allow concurrent access while preventing
+// data races with configuration updates.
+//
+// Returns:
+//   - Config: Copy of the current configuration
+func (cm *ConfigManager) GetConfig() Config {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	return cm.config
+}
+
+// SetBundleConfigs sets the bundle configurations (thread-safe)
+func (cm *ConfigManager) SetBundleConfigs(configs map[string][]string) {
+	cm.mu.Lock()
+	defer cm.mu.Unlock()
+	cm.bundleConfigs = configs
+}
+
+// GetBundleConfigs returns the bundle configurations (thread-safe)
+func (cm *ConfigManager) GetBundleConfigs() map[string][]string {
+	cm.mu.RLock()
+	defer cm.mu.RUnlock()
+	result := make(map[string][]string)
+	for k, v := range cm.bundleConfigs {
+		result[k] = v
+	}
+	return result
+}

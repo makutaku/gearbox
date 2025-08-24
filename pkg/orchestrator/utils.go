@@ -31,8 +31,9 @@ func contains(slice []string, str string) bool {
 }
 
 // isToolInConfig checks if a tool exists in the configuration
-func isToolInConfig(toolName string) bool {
-	for _, tool := range globalConfig.Tools {
+func isToolInConfig(configMgr *ConfigManager, toolName string) bool {
+	config := configMgr.GetConfig()
+	for _, tool := range config.Tools {
 		if tool.Name == toolName {
 			return true
 		}

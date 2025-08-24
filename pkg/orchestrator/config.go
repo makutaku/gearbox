@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	
+	"gearbox/pkg/errors"
 )
 
 // loadConfig loads the configuration from a JSON file
@@ -16,18 +18,21 @@ func loadConfig(path string) (Config, error) {
 		if _, err := os.Stat(path); err == nil {
 			file, err := os.Open(path)
 			if err != nil {
-				return config, fmt.Errorf("failed to open config file %s: %w", path, err)
+				return config, errors.NewFileError("open config file", path, err)
 			}
 			defer file.Close()
 
 			decoder := json.NewDecoder(file)
 			if err := decoder.Decode(&config); err != nil {
-				return config, fmt.Errorf("failed to decode config from %s: %w", path, err)
+				return config, errors.NewConfigurationError("decode config", 
+					fmt.Sprintf("Invalid JSON in config file: %s", path)).
+					WithContext("file", path)
 			}
 			return config, nil
 		} else {
 			// If a specific path was provided but doesn't exist, return error
-			return config, fmt.Errorf("config file not found: %s", path)
+			return config, errors.NewFileError("find config file", path, err).
+				WithMessage(fmt.Sprintf("Configuration file not found: %s", path))
 		}
 	}
 

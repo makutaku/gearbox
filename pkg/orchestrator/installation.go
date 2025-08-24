@@ -569,13 +569,13 @@ func (o *Orchestrator) suggestRelatedTools(tools []ToolConfig) {
 	// Terminal enhancement bundle
 	if (hasFzf || hasBat || hasEza) && len(installingNames) == 1 {
 		missing := []string{}
-		if !hasFzf && !isToolInConfig("fzf") {
+		if !hasFzf && !isToolInConfig(o.configMgr, "fzf") {
 			missing = append(missing, "fzf")
 		}
-		if !hasBat && !isToolInConfig("bat") {
+		if !hasBat && !isToolInConfig(o.configMgr, "bat") {
 			missing = append(missing, "bat")
 		}
-		if !hasEza && !isToolInConfig("eza") {
+		if !hasEza && !isToolInConfig(o.configMgr, "eza") {
 			missing = append(missing, "eza")
 		}
 		
@@ -585,7 +585,7 @@ func (o *Orchestrator) suggestRelatedTools(tools []ToolConfig) {
 	}
 	
 	// Git workflow enhancement
-	if hasDelta && !contains(installingNames, "lazygit") && !isToolInConfig("lazygit") {
+	if hasDelta && !contains(installingNames, "lazygit") && !isToolInConfig(o.configMgr, "lazygit") {
 		suggestions = append(suggestions, "🔧 Consider adding 'lazygit' - A terminal UI for Git that pairs well with Delta")
 	}
 	
@@ -601,7 +601,7 @@ func (o *Orchestrator) suggestRelatedTools(tools []ToolConfig) {
 	if installingDev >= 1 && installingDev < len(developmentTools) {
 		missing := []string{}
 		for _, devTool := range developmentTools {
-			if !contains(installingNames, devTool) && !isToolInConfig(devTool) {
+			if !contains(installingNames, devTool) && !isToolInConfig(o.configMgr, devTool) {
 				missing = append(missing, devTool)
 			}
 		}
