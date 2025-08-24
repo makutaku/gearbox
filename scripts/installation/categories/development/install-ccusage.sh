@@ -290,7 +290,31 @@ case $INSTALL_METHOD in
                     ;;
                 standard|maximum)
                     log "Installing ccusage globally via npm..."
-                    npm install -g ccusage || error "Failed to install ccusage via npm"
+                    # Try global install first, fallback to user-local if permissions fail
+                    if ! npm install -g ccusage 2>/dev/null; then
+                        log "Global npm install failed, trying user-local installation..."
+                        # Configure npm to use user-local prefix
+                        mkdir -p ~/.npm-global
+                        npm config set prefix '~/.npm-global'
+                        npm install -g ccusage || error "Failed to install ccusage via npm"
+                        
+                        # Add ~/.npm-global/bin to PATH if not already there
+                        NPM_GLOBAL_PATH="$HOME/.npm-global/bin"
+                        if [[ ":$PATH:" != *":$NPM_GLOBAL_PATH:"* ]]; then
+                            export PATH="$NPM_GLOBAL_PATH:$PATH"
+                            log "Added $NPM_GLOBAL_PATH to PATH for this session"
+                            
+                            if [[ "$NO_SHELL" != true ]]; then
+                                # Update shell profiles for persistent PATH
+                                for profile in ~/.bashrc ~/.zshrc ~/.profile; do
+                                    if [[ -f "$profile" ]] && ! grep -q ".npm-global/bin" "$profile"; then
+                                        echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$profile"
+                                        log "Updated $profile to include ~/.npm-global/bin in PATH"
+                                    fi
+                                done
+                            fi
+                        fi
+                    fi
                     ;;
             esac
         fi
@@ -318,7 +342,31 @@ case $INSTALL_METHOD in
                     ;;
                 standard|maximum)
                     log "Installing ccusage globally via Bun..."
-                    bun install -g ccusage || error "Failed to install ccusage via bun"
+                    # Try global install first, fallback if permissions fail
+                    if ! bun install -g ccusage 2>/dev/null; then
+                        log "Global bun install failed, trying alternative installation..."
+                        # Fallback to npm user-local installation
+                        mkdir -p ~/.npm-global
+                        npm config set prefix '~/.npm-global'
+                        npm install -g ccusage || error "Failed to install ccusage via fallback npm"
+                        
+                        # Add ~/.npm-global/bin to PATH if not already there
+                        NPM_GLOBAL_PATH="$HOME/.npm-global/bin"
+                        if [[ ":$PATH:" != *":$NPM_GLOBAL_PATH:"* ]]; then
+                            export PATH="$NPM_GLOBAL_PATH:$PATH"
+                            log "Added $NPM_GLOBAL_PATH to PATH for this session"
+                            
+                            if [[ "$NO_SHELL" != true ]]; then
+                                # Update shell profiles for persistent PATH
+                                for profile in ~/.bashrc ~/.zshrc ~/.profile; do
+                                    if [[ -f "$profile" ]] && ! grep -q ".npm-global/bin" "$profile"; then
+                                        echo 'export PATH="$HOME/.npm-global/bin:$PATH"' >> "$profile"
+                                        log "Updated $profile to include ~/.npm-global/bin in PATH"
+                                    fi
+                                done
+                            fi
+                        fi
+                    fi
                     ;;
             esac
         fi
