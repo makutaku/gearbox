@@ -646,19 +646,17 @@
     },
     {
       "name": "ai-tools",
-      "description": "AI-powered coding assistance and semantic code analysis tools",
+      "description": "General AI-powered coding assistance tools (works with any AI assistant)",
       "category": "workflow",
-      "tools": ["serena", "aider", "mise", "just", "ccusage"],
+      "tools": ["serena", "aider", "mise", "just"],
       "post_install": [
         "echo 'AI coding tools installed:'",
         "echo '  🤖 Serena MCP server: configure with your preferred AI assistant (Claude, etc.)'",
         "echo '  🧠 Aider: AI pair programming in terminal'",
         "echo '  🔧 mise: Multi-language version manager'",
         "echo '  ⚡ just: Modern command runner'",
-        "echo '  📊 ccusage: Claude Code usage analysis and cost tracking'",
         "echo 'See https://github.com/oraios/serena for Serena integration'",
-        "echo 'See https://github.com/paul-gauthier/aider for Aider setup'",
-        "echo 'See https://github.com/ryoppippi/ccusage for ccusage documentation'"
+        "echo 'See https://github.com/paul-gauthier/aider for Aider setup'"
       ],
       "includes_bundles": ["essential"],
       "tags": ["workflow", "ai", "coding-agent", "semantic-analysis", "mcp", "assistant", "llm"]
